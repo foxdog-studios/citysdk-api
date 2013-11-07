@@ -61,6 +61,9 @@ aptitude=(
     'protobuf-c-compiler'
     'zlib1g-dev'
 
+    # Passenger
+    'libcurl4-openssl-dev'
+
     # Memcached
     'memcached'
 )
@@ -91,11 +94,6 @@ codename() {
 }
 
 
-ensure_build() {
-    mkdir -p "${build_path}"
-}
-
-
 pg() {
     sudo -u postgres "${@}"
 }
@@ -104,6 +102,14 @@ pg() {
 psql() {
     pg psql "${db_name}" "${@}"
 }
+
+rvmsudo() {(
+    PATH+=:/usr/local/rvm/bin
+    set +o nounset
+    source /usr/local/rvm/scripts/rvm
+    set -o nounset
+    command rvmsudo -s "${@}"
+)}
 
 
 # =============================================================================
@@ -150,7 +156,6 @@ aptitude_upgrade() {
 # = osm2pgsql =================================================================
 
 osm2pgsql_clone() {
-    ensure_build
     if [[ ! -d "${osm2pgsql_path}" ]]; then
         local "url=https://github.com/openstreetmap/${osm2pgsql_name}.git"
         git clone "${url}" "${osm2pgsql_path}"
@@ -203,7 +208,6 @@ ruby_gemrc() {
 ruby_rvm() {
     sudo -s <<-EOF
 		set -o errexit
-		set -o nounset
 		curl -L https://get.rvm.io | bash -s stable --rails
 	EOF
 }
@@ -211,26 +215,18 @@ ruby_rvm() {
 
 ruby_gems() {
     for gem in "${gems[@]}"; do
-        sudo -s <<-EOF
-			set -o errexit
-			source /usr/local/rvm/scripts/rvm
-			gem install --verbose ${gem}
-		EOF
+        rvmsudo gem install --verbose ${gem}
     done
 }
 
 
-ruby_passenger() {
-    sudo -s <<-'EOF'
-		set -o errexit
-		source /usr/local/rvm/scripts/rvm
-		cd -- "$(passenger-config --root)"
-		./bin/passenger-install-nginx-module \
-		        --auto                       \
-		        --auto-download              \
-		        --prefix=/usr/local/nginx
-	EOF
-}
+ruby_passenger() {(
+    cd -- "$(rvmsudo passenger-config --root)"
+    rvmsudo ./bin/passenger-install-nginx-module                              \
+        --auto                                                                \
+        --auto-download                                                       \
+        --prefix=/usr/local/nginx
+)}
 
 
 # = Database ==================================================================

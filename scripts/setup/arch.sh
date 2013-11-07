@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -o errexit
 set -o nounset
@@ -10,10 +10,29 @@ set -o nounset
 
 repo=$(realpath "$(dirname "$(realpath -- "${BASH_SOURCE[0]}")")/../..")
 
+ruby_version=1.9.2
+
+gems=(
+    'capistrano     -v 2.15.4'
+    'capistrano-ext -v 1.2.1 '
+)
+
 system_packages=(
     'git'
     'virtualbox'
 )
+
+
+# =============================================================================
+# = Helpers                                                                   =
+# =============================================================================
+
+rvmshell() {
+    # If RVM has just been installed, the user needs to log out and
+    # back in for it to work. We get around this by running rvm
+    # inside a new login shell.
+    bash --login -s <<< "rvm use ${ruby_version}; ${@}"
+}
 
 
 # =============================================================================
@@ -25,12 +44,25 @@ install_system_packages() {
 }
 
 
+install_rvm() {
+    sudo sed -i '/gem: --user-install/d' /etc/gemrc
+    curl -L https://get.rvm.io | bash -s stable "--ruby=${ruby_version}"
+}
+
+
+install_gems() {
+    rvmshell bundle
+}
+
+
 # =============================================================================
 # = Command line interface                                                    =
 # =============================================================================
 
 all_tasks=(
     install_system_packages
+    install_rvm
+    install_gems
 )
 
 usage() {
@@ -43,10 +75,12 @@ usage() {
 
 		    -s  Start from TASK_ID
 
-		Task:
+		Tasks:
 
-		    ID  Name
-		    1   install_system_packages
+		    ID  Description
+		    1   Install system packages
+		    2   Install RVM
+		    3   Install gems
 	EOF
     exit 1
 }

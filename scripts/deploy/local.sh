@@ -24,12 +24,38 @@ set -o nounset
 
 path_repo=$(realpath "$(dirname "$(realpath -- "${BASH_SOURCE[0]}")")/../..")
 
+ruby_version=1.9.2
+
+
+# =============================================================================
+# = Helpers                                                                   =
+# =============================================================================
+
+rvmshell() {
+    # If RVM has just been installed, the user needs to log out and
+    # back in for it to work. We get around this by running rvm
+    # inside a new login shell.
+    bash --login -s <<< "rvm use ${ruby_version}; ${@}"
+}
+
+
+# =============================================================================
+# = Tasks                                                                     =
+# =============================================================================
+
+server_deploy() {(
+    cd -- "${path_repo}/server"
+    rvmshell cap production deploy
+)}
+
 
 # =============================================================================
 # = Command line interface                                                    =
 # =============================================================================
 
-all_task=()
+all_tasks=(
+    'server_deploy'
+)
 
 usage() {
     cat <<-'EOF'
@@ -44,7 +70,8 @@ usage() {
 		Task:
 
 		    ID  Name
-EOF
+		    1   Deploy the server
+	EOF
     exit 1
 }
 
