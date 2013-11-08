@@ -24,12 +24,22 @@ set -o nounset
 
 path_repo=$(realpath "$(dirname "$(realpath -- "${BASH_SOURCE[0]}")")/../..")
 
-ruby_version=1.9.2
+ruby_version=1.9.3
 
 
 # =============================================================================
 # = Helpers                                                                   =
 # =============================================================================
+
+bundle() {
+    rvmshell bundle "${@}"
+}
+
+
+cap() {
+    bundle exec cap "${@}"
+}
+
 
 rvmshell() {
     # If RVM has just been installed, the user needs to log out and
@@ -45,7 +55,9 @@ rvmshell() {
 
 server_deploy() {(
     cd -- "${path_repo}/server"
-    rvmshell cap production deploy
+    cap production deploy:setup
+    cap production deploy:check
+    cap production deploy
 )}
 
 

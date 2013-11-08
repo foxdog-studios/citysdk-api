@@ -28,12 +28,21 @@ postgis_version=2.1
 
 osm2pgsql_tag=v0.82.0
 
+ruby_version=1.9.3
+
 db_name=citysdk
+
+user=citysdk
+
+group=citysdk
 
 
 # = Site specific configuration ===============================================
 
-source "$(dirname "$(readlink -f -- ${BASH_SOURCE[0]})")/config.sh"
+source "$(dirname "$(readlink -f -- "${BASH_SOURCE[0]}")")/config.sh"
+# XXX: Move this to config.sh
+
+site_host=citysdk
 
 
 # = Packages ==================================================================
@@ -47,7 +56,7 @@ aptitude=(
     "postgresql-${postgresql_version}-postgis-${postgis_version}"
 
     # osm2pgsql
-    'autoconf'
+    'automake'
     'g++'
     'git'
     'libbz2-dev'
@@ -79,18 +88,30 @@ osm2pgsql_name=osm2pgsql
 
 osm2pgsql_path=${osm2pgsql_name}
 
+citysdk_path_root=/var/www/citysdk
+citysdk_path_releases=${citysdk_path_root}/releases
+citysdk_path_shared=${citysdk_path_root}/shared
+
+citysdk_paths=(
+    "${citysdk_path_root}"
+    "${citysdk_path_releases}"
+    "${citysdk_path_shared}"
+)
+
+nginx_path_root=/opt/nginx
+
 
 # =============================================================================
 # = Helpers                                                                   =
 # =============================================================================
 
 apt-get() {
-    sudo apt-get --assume-yes "${@}"
+    sudo apt-get --assume-yes --no-install-recommends "${@}"
 }
 
 
-codename() {
-    lsb_release --codename --short
+passenger-config() {
+    rvmshell passenger-config "${@}"
 }
 
 
@@ -103,39 +124,37 @@ psql() {
     pg psql "${db_name}" "${@}"
 }
 
-rvmsudo() {(
-    PATH+=:/usr/local/rvm/bin
-    set +o nounset
-    source /usr/local/rvm/scripts/rvm
-    set -o nounset
-    command rvmsudo -s "${@}"
-)}
+
+rvmshell() {
+    # If RVM has just been installed, the user needs to log out and
+    # back in for it to work. We get around this by running rvm
+    # inside a new login shell.
+    sudo -i <<< "rvm use ${ruby_version} &> /dev/null; ${@}"
+}
 
 
 # =============================================================================
 # = Tasks                                                                     =
 # =============================================================================
 
-# = Aptitude (1) ==============================================================
+# = Aptitude ==================================================================
 
 aptitude_curl() {
-    # cURL is required by postgresql_ppa and RVM
+    # cURL is required by the PostgreSQL repository
     apt-get install curl
 }
 
 
-# = PostgreSQL ================================================================
-
-postgresql_ppa() {
+aptitude_ppas() {
+    # PostgreSQL
+    local "codename=$(lsb_release --codename --short)"
     sudo tee /etc/apt/sources.list.d/pgdg.list <<-EOF
-		deb http://apt.postgresql.org/pub/repos/apt/ $(codename)-pgdg main
+		deb http://apt.postgresql.org/pub/repos/apt/ ${codename}-pgdg main
 	EOF
     local 'url=http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc'
     curl "${url}" | sudo apt-key add -
 }
 
-
-# = Aptitude (2) ==============================================================
 
 aptitude_update() {
     apt-get update
@@ -201,32 +220,129 @@ osm2pgsql_install() {(
 # = Ruby ======================================================================
 
 ruby_gemrc() {
-    sudo tee /etc/gemrc <<< 'gem: --no-rdoc --no-ri'
+    echo 'gem: --no-rdoc --no-ri' > ~/.gemrc
 }
 
 
 ruby_rvm() {
-    sudo -s <<-EOF
-		set -o errexit
-		curl -L https://get.rvm.io | bash -s stable --rails
-	EOF
+    curl -L https://get.rvm.io                                                \
+        | sudo bash -s stable --rails "--ruby=${ruby_version}"
 }
 
 
 ruby_gems() {
     for gem in "${gems[@]}"; do
-        rvmsudo gem install --verbose ${gem}
+        rvmshell gem install --verbose ${gem}
     done
 }
 
 
-ruby_passenger() {(
-    cd -- "$(rvmsudo passenger-config --root)"
-    rvmsudo ./bin/passenger-install-nginx-module                              \
+ruby_passenger() {
+    # The prefix is the default but passing it prevents the installer
+    # prompting the user.
+    rvmshell passenger-install-nginx-module                                   \
         --auto                                                                \
         --auto-download                                                       \
-        --prefix=/usr/local/nginx
-)}
+        --prefix=/opt/nginx
+
+    # Allow the worker processes to write to the logs.
+    sudo chown www-data:www-data /opt/nginx/*.log
+}
+
+
+# = CitySDK ===================================================================
+
+citysdk_dirs() {
+    sudo mkdir -p "${citysdk_paths[@]}"
+    sudo chown -R citysdk:www-data /var/www
+}
+
+
+# = Nginx =====================================================================
+
+nginx_conf() {
+    local "root=$(passenger-config --root)"
+    local "ruby=$(passenger-config --ruby-command                             \
+        | grep --only-matching 'passenger_ruby.*'                             \
+        | cut --delimiter=' ' --fields=2
+    )"
+
+    sudo tee /opt/nginx/conf/nginx.conf <<-EOF
+		worker_processes  6;
+		user www-data;
+
+		events {
+		    worker_connections 1024;
+		}
+
+		http {
+		    passenger_root ${root};
+		    passenger_ruby ${ruby};
+		    passenger_show_version_in_header off;
+		    passenger_max_pool_size 24;
+		    passenger_pool_idle_time 10;
+		    passenger_min_instances 4;
+		    passenger_spawn_method smart;
+
+		    server_tokens off;
+
+		    upstream memcached {
+		        server localhost:11211 weight=5 max_fails=3 fail_timeout=3s;
+		        keepalive 1024;
+		    }
+
+		    include mime.types;
+		    default_type  application/octet-stream;
+		    log_format main '\$remote_addr "\$time_iso8601" "\$http_referer" "\$request" \$status \$body_bytes_sent';
+
+		    sendfile on;
+		    keepalive_timeout 65;
+
+		    gzip             on;
+		    gzip_min_length  1000;
+		    gzip_proxied     expired no-cache no-store private auth;
+		    gzip_types       text/plain application/xml application/json application/x-javascript;
+
+		    # API over HTTP
+		    server {
+		        listen      80;
+		        server_name citysdk;
+		        root        ${citysdk_path_root}/current/public;
+
+		        location = /favicon.ico {
+		            access_log    off;
+		            log_not_found off;
+		            return        444;
+		        }
+
+		        location /get_session  {
+		            return 404;
+		        }
+
+		        location = /robots.txt {
+		            access_log    off;
+		            log_not_found off;
+		            return        444;
+		        }
+
+		        passenger_enabled on;
+		    }
+
+		    passenger_pre_start http://${site_host};
+		}
+	EOF
+}
+
+
+nginx_service() {
+    local path=/etc/init.d/nginx
+    local url=http://library.linode.com/assets/660-init-deb.sh
+
+    sudo wget --output-document "${path}" "${url}"
+    sudo chmod +x "${path}"
+    sudo update-rc.d -f nginx defaults
+    sudo service nginx restart
+}
 
 
 # = Database ==================================================================
@@ -253,9 +369,7 @@ db_extensions() {
 
 all_tasks=(
     aptitude_curl
-
-    postgresql_ppa
-
+    aptitude_ppas
     aptitude_update
     aptitude_install
     aptitude_upgrade
@@ -270,6 +384,11 @@ all_tasks=(
     ruby_rvm
     ruby_gems
     ruby_passenger
+
+    citysdk_dirs
+
+    nginx_conf
+    nginx_service
 
     db_create
     db_extensions
@@ -289,7 +408,7 @@ usage() {
 
 		    ID  Name
 		    1   aptitude_curl
-		    2   postgresql_ppa
+		    2   aptitude_ppas
 		    3   aptitude_update
 		    4   aptitude_install
 		    5   aptitude_upgrade
@@ -302,8 +421,11 @@ usage() {
 		    12  ruby_rvm
 		    13  ruby_gems
 		    14  ruby_passenger
-		    15  db_create
-		    16  db_extensions
+		    15  citysdk_dirs
+		    16  nginx_conf
+		    17  nginx_service
+		    18  db_create
+		    19  db_extensions
 	EOF
     exit 1
 }
@@ -329,6 +451,7 @@ else
 fi
 
 for task in "${tasks[@]}"; do
+    echo -e "\n\e[5;32mTask: ${task}\e[0m\n"
     ${task}
 done
 

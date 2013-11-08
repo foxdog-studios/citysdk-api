@@ -10,7 +10,7 @@ set -o nounset
 
 repo=$(realpath "$(dirname "$(realpath -- "${BASH_SOURCE[0]}")")/../..")
 
-ruby_version=1.9.2
+ruby_version=1.9.3
 
 gems=(
     'capistrano     -v 2.15.4'
