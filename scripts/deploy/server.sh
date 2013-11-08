@@ -77,10 +77,6 @@ aptitude=(
     'memcached'
 )
 
-gems=(
-    'passenger -v 4.0.23'
-)
-
 
 # = Paths =====================================================================
 
@@ -98,8 +94,6 @@ citysdk_paths=(
     "${citysdk_path_shared}"
 )
 
-nginx_path_root=/opt/nginx
-
 
 # =============================================================================
 # = Helpers                                                                   =
@@ -107,11 +101,6 @@ nginx_path_root=/opt/nginx
 
 apt-get() {
     sudo apt-get --assume-yes --no-install-recommends "${@}"
-}
-
-
-passenger-config() {
-    rvmshell passenger-config "${@}"
 }
 
 
@@ -125,11 +114,10 @@ psql() {
 }
 
 
-rvmshell() {
-    # If RVM has just been installed, the user needs to log out and
-    # back in for it to work. We get around this by running rvm
-    # inside a new login shell.
-    sudo -i <<< "rvm use ${ruby_version} &> /dev/null; ${@}"
+rvm_source() {
+    set +o nounset
+    source "${HOME}/.rvm/scripts/rvm"
+    set -o nounset
 }
 
 
@@ -172,95 +160,60 @@ aptitude_upgrade() {
 }
 
 
-# = osm2pgsql =================================================================
+# = RVM ======================================================================
 
-osm2pgsql_clone() {
-    if [[ ! -d "${osm2pgsql_path}" ]]; then
-        local "url=https://github.com/openstreetmap/${osm2pgsql_name}.git"
-        git clone "${url}" "${osm2pgsql_path}"
-    fi
+
+rvm_install() {
+   curl --location https://get.rvm.io | bash -s stable
 }
 
-
-osm2pgsql_checkout() {(
-    cd -- "${osm2pgsql_path}"
-    git checkout "${osm2pgsql_tag}"
+rvm_requirements() {(
+    rvm_source
+    rvmsudo rvm requirements
 )}
 
 
-osm2pgsql_configure() {(
-    cd -- "${osm2pgsql_path}"
-    ./autogen.sh
-    ./configure
-    patch Makefile <<-"EOF"
-		229c229
-		< CFLAGS = -g -O2
-		---
-		> CFLAGS = -O2 -march=native -fomit-frame-pointer
-		235c235
-		< CXXFLAGS = -g -O2
-		---
-		> CXXFLAGS = -O2 -march=native -fomit-frame-pointer
-	EOF
+rvm_ruby() {(
+    rvm_source
+    set +o nounset
+    rvm install "${ruby_version}"
 )}
 
 
-osm2pgsql_build() {(
-    cd -- "${osm2pgsql_path}"
-    make "--jobs=$(nproc)"
-)}
-
-
-osm2pgsql_install() {(
-    cd -- "${osm2pgsql_path}"
-    sudo make install
-)}
-
-
-# = Ruby ======================================================================
-
-ruby_gemrc() {
-    echo 'gem: --no-rdoc --no-ri' > ~/.gemrc
-}
-
-
-ruby_rvm() {
-    curl -L https://get.rvm.io                                                \
-        | sudo bash -s stable --rails "--ruby=${ruby_version}"
-}
-
-
-ruby_gems() {
-    for gem in "${gems[@]}"; do
-        rvmshell gem install --verbose ${gem}
-    done
-}
-
-
-ruby_passenger() {
-    # The prefix is the default but passing it prevents the installer
-    # prompting the user.
-    rvmshell passenger-install-nginx-module                                   \
-        --auto                                                                \
-        --auto-download                                                       \
-        --prefix=/opt/nginx
-
-    # Allow the worker processes to write to the logs.
-    sudo chown www-data:www-data /opt/nginx/*.log
+function rvm_gems() {
+    rvm 1.9.3 do gem install                                                  \
+        --no-ri                                                               \
+        --no-rdoc                                                             \
+        --verbose                                                             \
+        passenger                                                             \
+        --version '~>4.0.23'
 }
 
 
 # = CitySDK ===================================================================
 
 citysdk_dirs() {
-    sudo mkdir -p "${citysdk_paths[@]}"
-    sudo chown -R citysdk:www-data /var/www
+    sudo mkdir -p /var/www/citysdk
+    sudo chown -R citysdk:citysdk /var/www/citysdk
 }
 
 
 # = Nginx =====================================================================
 
-nginx_conf() {
+nginx_install() {(
+    rvm_source
+
+    # The prefix is the default but passing it prevents the installer
+    # prompting the user.
+    rvmsudo passenger-install-nginx-module                                    \
+        --auto                                                                \
+        --auto-download                                                       \
+        --prefix=/opt/nginx
+)}
+
+
+nginx_conf() {(
+    rvm_source
     local "root=$(passenger-config --root)"
     local "ruby=$(passenger-config --ruby-command                             \
         | grep --only-matching 'passenger_ruby.*'                             \
@@ -269,7 +222,7 @@ nginx_conf() {
 
     sudo tee /opt/nginx/conf/nginx.conf <<-EOF
 		worker_processes  6;
-		user www-data;
+		user citysdk;
 
 		events {
 		    worker_connections 1024;
@@ -331,7 +284,7 @@ nginx_conf() {
 		    passenger_pre_start http://${site_host};
 		}
 	EOF
-}
+)}
 
 
 nginx_service() {
@@ -341,7 +294,6 @@ nginx_service() {
     sudo wget --output-document "${path}" "${url}"
     sudo chmod +x "${path}"
     sudo update-rc.d -f nginx defaults
-    sudo service nginx restart
 }
 
 
@@ -363,6 +315,51 @@ db_extensions() {
 }
 
 
+# = osm2pgsql =================================================================
+
+osm2pgsql_clone() {
+    if [[ ! -d "${osm2pgsql_path}" ]]; then
+        local "url=https://github.com/openstreetmap/${osm2pgsql_name}.git"
+        git clone "${url}" "${osm2pgsql_path}"
+    fi
+}
+
+
+osm2pgsql_checkout() {(
+    cd -- "${osm2pgsql_path}"
+    git checkout "${osm2pgsql_tag}"
+)}
+
+
+osm2pgsql_configure() {(
+    cd -- "${osm2pgsql_path}"
+    ./autogen.sh
+    ./configure
+    patch Makefile <<-"EOF"
+		229c229
+		< CFLAGS = -g -O2
+		---
+		> CFLAGS = -O2 -march=native -fomit-frame-pointer
+		235c235
+		< CXXFLAGS = -g -O2
+		---
+		> CXXFLAGS = -O2 -march=native -fomit-frame-pointer
+	EOF
+)}
+
+
+osm2pgsql_build() {(
+    cd -- "${osm2pgsql_path}"
+    make "--jobs=$(nproc)"
+)}
+
+
+osm2pgsql_install() {(
+    cd -- "${osm2pgsql_path}"
+    sudo make install
+)}
+
+
 # =============================================================================
 # = Command line interface                                                    =
 # =============================================================================
@@ -374,24 +371,25 @@ all_tasks=(
     aptitude_install
     aptitude_upgrade
 
-    osm2pgsql_clone
-    osm2pgsql_checkout
-    osm2pgsql_configure
-    osm2pgsql_build
-    osm2pgsql_install
-
-    ruby_gemrc
-    ruby_rvm
-    ruby_gems
-    ruby_passenger
+    rvm_install
+    rvm_requirements
+    rvm_ruby
+    rvm_gems
 
     citysdk_dirs
 
+    nginx_install
     nginx_conf
     nginx_service
 
     db_create
     db_extensions
+
+    osm2pgsql_clone
+    osm2pgsql_checkout
+    osm2pgsql_configure
+    osm2pgsql_build
+    osm2pgsql_install
 )
 
 usage() {
@@ -412,20 +410,21 @@ usage() {
 		    3   aptitude_update
 		    4   aptitude_install
 		    5   aptitude_upgrade
-		    6   osm2pgsql_clone
-		    7   osm2pgsql_checkout
-		    8   osm2pgsql_configure
-		    9   osm2pgsql_build
-		    10  osm2pgsql_install
-		    11  ruby_gemrc
-		    12  ruby_rvm
-		    13  ruby_gems
-		    14  ruby_passenger
-		    15  citysdk_dirs
-		    16  nginx_conf
-		    17  nginx_service
-		    18  db_create
-		    19  db_extensions
+		    6   rvm_install
+		    7   rvm_requirements
+		    8   rvm_ruby
+		    9   rvm_gems
+		    10  citysdk_dirs
+		    11  nginx_install
+		    12  nginx_conf
+		    13  nginx_service
+		    14  db_create
+		    15  db_extensions
+		    16  osm2pgsql_clone
+		    17  osm2pgsql_checkout
+		    18  osm2pgsql_configure
+		    19  osm2pgsql_build
+		    20  osm2pgsql_install
 	EOF
     exit 1
 }

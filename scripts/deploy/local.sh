@@ -31,21 +31,9 @@ ruby_version=1.9.3
 # = Helpers                                                                   =
 # =============================================================================
 
-bundle() {
-    rvmshell bundle "${@}"
-}
-
-
 cap() {
-    bundle exec cap "${@}"
-}
-
-
-rvmshell() {
-    # If RVM has just been installed, the user needs to log out and
-    # back in for it to work. We get around this by running rvm
-    # inside a new login shell.
-    bash --login -s <<< "rvm use ${ruby_version}; ${@}"
+    cd -- "${path_repo}/server"
+    command cap production "${@}"
 }
 
 
@@ -53,12 +41,13 @@ rvmshell() {
 # = Tasks                                                                     =
 # =============================================================================
 
-server_deploy() {(
-    cd -- "${path_repo}/server"
-    cap production deploy:setup
-    cap production deploy:check
-    cap production deploy
-)}
+citysdk_setup() {
+    cap deploy:setup deploy:check
+}
+
+citysdk_deploy() {
+    cap deploy
+}
 
 
 # =============================================================================
@@ -66,7 +55,8 @@ server_deploy() {(
 # =============================================================================
 
 all_tasks=(
-    'server_deploy'
+    citysdk_setup
+    citysdk_deploy
 )
 
 usage() {
@@ -82,7 +72,8 @@ usage() {
 		Task:
 
 		    ID  Name
-		    1   Deploy the server
+		    1   Setup the production target
+		    2   Deploy onto the production target
 	EOF
     exit 1
 }

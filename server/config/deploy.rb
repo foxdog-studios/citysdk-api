@@ -1,32 +1,35 @@
-set :stages, %w(production testing opt istb lamia)
-set :default_stage, "testing"
+require 'bundler/capistrano'
 require 'capistrano/ext/multistage'
-# require "bundler/capistrano"
-
+require 'rvm/capistrano'
 
 set :application, "citysdk-api"
-# set :repository,  "gits:citysdk"
-# 
-# set :scm, :git
-
+set :branch, "master"
+set :copy_exclude, ['config.json','tmp']
+set :default_stage, "testing"
+set :deploy_to, '/var/www/citysdk'
+set :deploy_via, :copy
 set :repository,  "."
 set :scm, :none
-
-
-set :branch, "master"
-
-set :deploy_to, "/var/www/citysdk"
-# set :deploy_via, :remote_cache
-
-set :copy_exclude, ['config.json','tmp']
-
-set :deploy_via, :copy
-
-
+set :stages, %w(production testing opt istb lamia)
 set :use_sudo, false
-set :user, "citysdk"
+set :user, 'citysdk'
 
 default_run_options[:shell] = '/bin/bash'
+
+
+# =============================================================================
+# = Gem installation                                                          =
+# =============================================================================
+
+# XXX: Hack to make Blunder's Capistrano tasks see the RVM. Is there a
+#      better way of doing this?
+set :bundle_cmd, '/home/citysdk/.rvm/bin/rvm 1.9.3 do bundle'
+set :rvm_ruby_string, '1.9.3'
+before 'deploy', 'rvm:install_rvm'
+before 'deploy', 'rvm:install_ruby'
+
+
+# =============================================================================
 
 namespace :deploy do
   task :start do ; end
@@ -35,7 +38,7 @@ namespace :deploy do
   task :restart, :roles => :app, :except => { :no_release => true } do
     run "touch #{File.join(current_path,'tmp','restart.txt')}"
   end
- 
+
   task :finalize_update, :except => { :no_release => true } do
 
     run <<-CMD
@@ -47,8 +50,8 @@ namespace :deploy do
     CMD
 
     top.upload("../importers/periodic", "#{shared_path}", :via => :scp, :recursive => true)
- 
+
   end
-end  
+end
 
 

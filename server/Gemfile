@@ -1,21 +1,22 @@
-source "https://rubygems.org"
+source 'https://rubygems.org'
 
-gem "active_support"
-gem "amatch"
-gem "base62"
-gem "capistrano"
-gem "faraday"
-gem "i18n"
-gem "logger"
-gem "passenger"
-gem "pg"
-gem "racksh"
-gem "rgeo"
-gem "rgeo-geojson"
-gem "sequel"
-gem "sinatra", :require => "sinatra/base"
-gem "sinatra-sequel"
-gem "stringex"
-gem "yajl-ruby"
-gem 'dalli' # memcache
+gem 'active_support'
+gem 'amatch'
+gem 'base62'
+gem 'capistrano', '~>2.14.1'
+gem 'dalli' # Memcache
+gem 'faraday'
+gem 'i18n'
+gem 'logger'
+gem 'passenger'
+gem 'pg'
+gem 'racksh'
+gem 'rgeo'
+gem 'rgeo-geojson'
+gem 'rvm-capistrano'
+gem 'sequel'
+gem 'sinatra', :require => 'sinatra/base'
+gem 'sinatra-sequel'
+gem 'stringex'
+gem 'yajl-ruby'
 
