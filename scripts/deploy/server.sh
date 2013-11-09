@@ -22,19 +22,14 @@ set -o nounset
 # = Configuration                                                             =
 # =============================================================================
 
-postgresql_version=9.3
-
-postgis_version=2.1
-
-osm2pgsql_tag=v0.82.0
-
-ruby_version=1.9.3
-
 db_name=citysdk
-
-user=citysdk
-
-group=citysdk
+osm2pgsql_tag=v0.82.0
+passenger_version=4.0.23
+postgis_version=2.1
+postgresql_version=9.3
+ruby_version=1.9.3
+user_group=citysdk
+user_name=citysdk
 
 
 # = Site specific configuration ===============================================
@@ -211,7 +206,7 @@ function rvm-gems()
         --no-rdoc                                                             \
         --verbose                                                             \
         passenger                                                             \
-        --version '~>4.0.23'
+        --version "~>${passenger_version}"
 }
 
 

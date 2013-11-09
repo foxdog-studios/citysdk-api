@@ -24,6 +24,7 @@ default_run_options[:shell] = '/bin/bash'
 # XXX: Hack to make Blunder's Capistrano tasks see the RVM. Is there a
 #      better way of doing this?
 set :bundle_cmd, '/home/citysdk/.rvm/bin/rvm 1.9.3 do bundle'
+set :bundle_flags, '--deployment --verbose'
 set :rvm_ruby_string, '1.9.3'
 before 'deploy', 'rvm:install_rvm'
 before 'deploy', 'rvm:install_ruby'

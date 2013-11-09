@@ -1,11 +1,10 @@
-source "https://rubygems.org"
+source 'https://rubygems.org'
 
-gem "sinatra", :require => "sinatra/base"
-gem "i18n"
-gem "active_support"
-gem "faraday"
-gem "rgeo"
-gem "rgeo-geojson"
-gem "i18n"
-gem "passenger"
-gem 'dalli' # memcache 
+gem 'active_support'
+gem 'dalli' # memcache
+gem 'faraday'
+gem 'i18n'
+gem 'rgeo'
+gem 'rgeo-geojson'
+gem 'sinatra', :require => 'sinatra/base'
+
