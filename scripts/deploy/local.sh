@@ -22,30 +22,37 @@ set -o nounset
 # = Configration                                                              =
 # =============================================================================
 
-path_repo=$(realpath "$(dirname "$(realpath -- "${BASH_SOURCE[0]}")")/../..")
+repo=$(realpath "$(dirname "$(realpath -- "${BASH_SOURCE[0]}")")/../..")
 
 ruby_version=1.9.3
+
+rvm_root=${HOME}/.rvm
+
+rvm_bin=${rvm_root}/bin/rvm
 
 
 # =============================================================================
 # = Helpers                                                                   =
 # =============================================================================
 
-cap() {
-    cd -- "${path_repo}/server"
-    command cap production "${@}"
-}
+function cap()
+{(
+    cd -- "${repo}/server"
+    "${rvm_bin}" "${ruby_version}" 'do' bundle 'exec' cap production "${@}"
+)}
 
 
 # =============================================================================
 # = Tasks                                                                     =
 # =============================================================================
 
-citysdk_setup() {
+function cap-setup()
+{
     cap deploy:setup deploy:check
 }
 
-citysdk_deploy() {
+function cap-deploy()
+{
     cap deploy
 }
 
@@ -55,8 +62,8 @@ citysdk_deploy() {
 # =============================================================================
 
 all_tasks=(
-    citysdk_setup
-    citysdk_deploy
+    cap-setup
+    cap-deploy
 )
 
 usage() {
@@ -72,13 +79,13 @@ usage() {
 		Task:
 
 		    ID  Name
-		    1   Setup the production target
-		    2   Deploy onto the production target
+		    1   cap-setup
+		    2   cap-deploy
 	EOF
     exit 1
 }
 
-start_index=0
+start_index=
 
 while getopts :s: opt; do
     case "${opt}" in
@@ -93,12 +100,20 @@ tasks=()
 if [[ "${#}" == 0 ]]; then
     tasks+=( "${all_tasks[@]:${start_index}}" )
 else
-    for task_id in "${@}"; do
-        tasks+=( "${all_tasks[$[ task_id - 1 ]]}" )
+    if [[ -n "${start_index}" ]]; then
+        usage
+    fi
+    for task in "${@}"; do
+        if [[ "${task}" =~ '^[0-9]+$' ]]; then
+            tasks+=( "${all_tasks[$[ task - 1 ]]}" )
+        else
+            tasks+=( "${task}" )
+        fi
     done
 fi
 
 for task in "${tasks[@]}"; do
+    echo -e "\e[5;32mTask: ${task}\e[0m\n"
     ${task}
 done
 

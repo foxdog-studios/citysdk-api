@@ -81,10 +81,19 @@ aptitude=(
 # = Paths =====================================================================
 
 citysdk_root=/var/www/citysdk
+citysdk_current=${citysdk_root}/current
+citysdk_public=${citysdk_current}/public
 
 # This should be the same as the default prefix suggested by the
 # interactive Passenger installation.
 nginx_prefix=/opt/nginx
+nginx_log=/var/log/nginx
+nginx_log_access=${nginx_log}/access.log
+nginx_log_error=${nginx_log}/error.log
+nginx_logs=(
+    "${nginx_log_access}"
+    "${nginx_log_error}"
+)
 
 osm2pgsql_name=osm2pgsql
 osm2pgsql_path=${osm2pgsql_name}
@@ -106,7 +115,6 @@ function pg()
 {
     sudo -u postgres "${@}"
 }
-
 
 function psql()
 {
@@ -228,10 +236,20 @@ function nginx-install()
         "--prefix=${nginx_prefix}"
 }
 
+function nginx-logs()
+{
+    sudo mkdir --parents "${nginx_log}"
+    local log
+    for log in "${nginx_logs[@]}"; do
+        sudo touch "${log}"
+        sudo chmod g+w "${log}"
+        sudo chown ":${group}" "${log}"
+    done
+}
+
 function nginx-conf()
 {
     sudo tee /opt/nginx/conf/nginx.conf <<-EOF
-		worker_processes  6;
 		user ${user};
 
 		events {
@@ -241,57 +259,14 @@ function nginx-conf()
 		http {
 		    passenger_root $(rvmdo-passenger-root);
 		    passenger_ruby $(rvmdo-passenger-ruby);
-		    passenger_show_version_in_header off;
-		    passenger_max_pool_size 24;
-		    passenger_pool_idle_time 10;
-		    passenger_min_instances 4;
-		    passenger_spawn_method smart;
-
-		    server_tokens off;
-
-		    upstream memcached {
-		        server localhost:11211 weight=5 max_fails=3 fail_timeout=3s;
-		        keepalive 1024;
-		    }
-
-		    include mime.types;
-		    default_type  application/octet-stream;
-		    log_format main '\$remote_addr "\$time_iso8601" "\$http_referer" "\$request" \$status \$body_bytes_sent';
-
-		    sendfile on;
-		    keepalive_timeout 65;
-
-		    gzip             on;
-		    gzip_min_length  1000;
-		    gzip_proxied     expired no-cache no-store private auth;
-		    gzip_types       text/plain application/xml application/json application/x-javascript;
-
-		    # API over HTTP
 		    server {
-		        listen      80;
+		        listen 80;
 		        server_name ${server_name};
-		        root        ${citysdk_root}/current/public;
-
-		        location = /favicon.ico {
-		            access_log    off;
-		            log_not_found off;
-		            return        444;
-		        }
-
-		        location /get_session  {
-		            return 404;
-		        }
-
-		        location = /robots.txt {
-		            access_log    off;
-		            log_not_found off;
-		            return        444;
-		        }
-
+		        root ${citysdk_public};
+		        access_log ${nginx_log_access};
+		        error_log ${nginx_log_error};
 		        passenger_enabled on;
 		    }
-
-		    passenger_pre_start http://${server_name};
 		}
 	EOF
 }
@@ -392,6 +367,7 @@ all_tasks=(
     citysdk-root
 
     nginx-install
+    nginx-logs
     nginx-conf
     nginx-service
 
@@ -430,20 +406,21 @@ function usage()
 		    9   rvm-gems
 		    10  citysdk-dirs
 		    11  nginx-install
-		    12  nginx-conf
-		    13  nginx-service
-		    14  db-create
-		    15  db-extensions
-		    16  osm2pgsql-clone
-		    17  osm2pgsql-checkout
-		    18  osm2pgsql-configure
-		    19  osm2pgsql-build
-		    20  osm2pgsql-install
+		    12  nginx-logs
+		    13  nginx-conf
+		    14  nginx-service
+		    15  db-create
+		    16  db-extensions
+		    17  osm2pgsql-clone
+		    18  osm2pgsql-checkout
+		    19  osm2pgsql-configure
+		    20  osm2pgsql-build
+		    21  osm2pgsql-install
 	EOF
     exit 1
 }
 
-start_index=0
+start_index=
 
 while getopts :s: opt; do
     case "${opt}" in
@@ -458,8 +435,15 @@ tasks=()
 if [[ "${#}" == 0 ]]; then
     tasks+=( "${all_tasks[@]:${start_index}}" )
 else
-    for task_id in "${@}"; do
-        tasks+=( "${all_tasks[$[ task_id - 1 ]]}" )
+    if [[ -n "${start_index}" ]]; then
+        usage
+    fi
+    for task in "${@}"; do
+        if [[ "${task}" =~ '^[0-9]+$' ]]; then
+            tasks+=( "${all_tasks[$[ task - 1 ]]}" )
+        else
+            tasks+=( "${task}" )
+        fi
     done
 fi
 
