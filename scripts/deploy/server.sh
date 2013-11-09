@@ -42,7 +42,7 @@ group=citysdk
 source "$(dirname "$(readlink -f -- "${BASH_SOURCE[0]}")")/config.sh"
 # XXX: Move this to config.sh
 
-site_host=citysdk
+server_name=citysdk
 
 
 # = Packages ==================================================================
@@ -80,44 +80,58 @@ aptitude=(
 
 # = Paths =====================================================================
 
-osm2pgsql_name=osm2pgsql
+citysdk_root=/var/www/citysdk
 
+# This should be the same as the default prefix suggested by the
+# interactive Passenger installation.
+nginx_prefix=/opt/nginx
+
+osm2pgsql_name=osm2pgsql
 osm2pgsql_path=${osm2pgsql_name}
 
-citysdk_path_root=/var/www/citysdk
-citysdk_path_releases=${citysdk_path_root}/releases
-citysdk_path_shared=${citysdk_path_root}/shared
-
-citysdk_paths=(
-    "${citysdk_path_root}"
-    "${citysdk_path_releases}"
-    "${citysdk_path_shared}"
-)
+rvm_root=${HOME}/.rvm
+rvm_bin=${rvm_root}/bin/rvm
 
 
 # =============================================================================
 # = Helpers                                                                   =
 # =============================================================================
 
-apt-get() {
+function aptgetwrap()
+{
     sudo apt-get --assume-yes --no-install-recommends "${@}"
 }
 
-
-pg() {
+function pg()
+{
     sudo -u postgres "${@}"
 }
 
 
-psql() {
+function psql()
+{
     pg psql "${db_name}" "${@}"
 }
 
+function rvmdo()
+{
+    # The 'do' argument does not need to be quoted. However, as a shell
+    # keyword, unquoted it messes up syntax highlighting.
+    "${rvm_bin}" "${ruby_version}" 'do' "${@}"
+}
 
-rvm_source() {
-    set +o nounset
-    source "${HOME}/.rvm/scripts/rvm"
-    set -o nounset
+function rvmdo-passenger-root()
+{
+    rvmdo passenger-config --root
+}
+
+function rvmdo-passenger-ruby()
+{
+    # XXX: There must be cleaner way of getting the path of the Ruby
+    #      binary.
+    rvmdo passenger-config --ruby-command                                     \
+        | grep --only-matching 'passenger_ruby.*'                             \
+        | cut --delimiter=' ' --fields=2
 }
 
 
@@ -127,13 +141,14 @@ rvm_source() {
 
 # = Aptitude ==================================================================
 
-aptitude_curl() {
+function aptitude-curl()
+{
     # cURL is required by the PostgreSQL repository
-    apt-get install curl
+    aptgetwrap install curl
 }
 
-
-aptitude_ppas() {
+function aptitude-ppas()
+{
     # PostgreSQL
     local "codename=$(lsb_release --codename --short)"
     sudo tee /etc/apt/sources.list.d/pgdg.list <<-EOF
@@ -143,45 +158,47 @@ aptitude_ppas() {
     curl "${url}" | sudo apt-key add -
 }
 
-
-aptitude_update() {
-    apt-get update
+function aptitude-update()
+{
+    aptgetwrap update
 }
 
-
-aptitude_install() {
-    apt-get install "${aptitude[@]}"
+function aptitude-install()
+{
+    aptgetwrap install "${aptitude[@]}"
 }
 
-
-aptitude_upgrade() {
-    apt-get dist-upgrade
-    apt-get autoremove
+function aptitude-upgrade()
+{
+    aptgetwrap dist-upgrade
+    aptgetwrap autoremove
 }
 
 
 # = RVM ======================================================================
 
-
-rvm_install() {
+function rvm-install()
+{
+   # XXX: Is it a good idea to install a user RVM (as opposed to a
+   #      system RVM) when Nginx will installed globally and its config
+   #      will reference citysdk's home directory (passenger_root and
+   #      passenger_ruby)?
    curl --location https://get.rvm.io | bash -s stable
 }
 
-rvm_requirements() {(
-    rvm_source
-    rvmsudo rvm requirements
-)}
+function rvm-requirements()
+{
+    sudo "${rvm_bin}" requirements
+}
 
+function rvm-ruby()
+{
+    "${rvm_bin}" install "${ruby_version}"
+}
 
-rvm_ruby() {(
-    rvm_source
-    set +o nounset
-    rvm install "${ruby_version}"
-)}
-
-
-function rvm_gems() {
-    rvm 1.9.3 do gem install                                                  \
+function rvm-gems()
+{
+    rvmdo gem install                                                         \
         --no-ri                                                               \
         --no-rdoc                                                             \
         --verbose                                                             \
@@ -192,45 +209,38 @@ function rvm_gems() {
 
 # = CitySDK ===================================================================
 
-citysdk_dirs() {
-    sudo mkdir -p /var/www/citysdk
-    sudo chown -R citysdk:citysdk /var/www/citysdk
+function citysdk-root()
+{
+    sudo mkdir --parents "${citysdk_root}"
+    sudo chown --recursive "${user}:${group}" "${citysdk_root}"
 }
 
 
 # = Nginx =====================================================================
 
-nginx_install() {(
-    rvm_source
-
+function nginx-install()
+{
     # The prefix is the default but passing it prevents the installer
     # prompting the user.
-    rvmsudo passenger-install-nginx-module                                    \
+    rvmdo rvmsudo passenger-install-nginx-module                              \
         --auto                                                                \
         --auto-download                                                       \
-        --prefix=/opt/nginx
-)}
+        "--prefix=${nginx_prefix}"
+}
 
-
-nginx_conf() {(
-    rvm_source
-    local "root=$(passenger-config --root)"
-    local "ruby=$(passenger-config --ruby-command                             \
-        | grep --only-matching 'passenger_ruby.*'                             \
-        | cut --delimiter=' ' --fields=2
-    )"
-
+function nginx-conf()
+{
     sudo tee /opt/nginx/conf/nginx.conf <<-EOF
 		worker_processes  6;
-		user citysdk;
+		user ${user};
 
 		events {
 		    worker_connections 1024;
 		}
 
 		http {
-		    passenger_root ${root};
-		    passenger_ruby ${ruby};
+		    passenger_root $(rvmdo-passenger-root);
+		    passenger_ruby $(rvmdo-passenger-ruby);
 		    passenger_show_version_in_header off;
 		    passenger_max_pool_size 24;
 		    passenger_pool_idle_time 10;
@@ -259,8 +269,8 @@ nginx_conf() {(
 		    # API over HTTP
 		    server {
 		        listen      80;
-		        server_name citysdk;
-		        root        ${citysdk_path_root}/current/public;
+		        server_name ${server_name};
+		        root        ${citysdk_root}/current/public;
 
 		        location = /favicon.ico {
 		            access_log    off;
@@ -281,13 +291,13 @@ nginx_conf() {(
 		        passenger_enabled on;
 		    }
 
-		    passenger_pre_start http://${site_host};
+		    passenger_pre_start http://${server_name};
 		}
 	EOF
-)}
+}
 
-
-nginx_service() {
+function nginx-service()
+{
     local path=/etc/init.d/nginx
     local url=http://library.linode.com/assets/660-init-deb.sh
 
@@ -299,14 +309,16 @@ nginx_service() {
 
 # = Database ==================================================================
 
-db_create() {
+function db-create()
+{
     # XXX: Always succeeding may mask problems. Instead query for the
     #      database and only create it if it does not exist.
     pg createdb "${db_name}" || true
 }
 
 
-db_extensions() {
+function db-extensions()
+{
     psql <<-"EOF"
 		CREATE EXTENSION IF NOT EXISTS hstore;
 		CREATE EXTENSION IF NOT EXISTS pg_trgm;
@@ -317,21 +329,22 @@ db_extensions() {
 
 # = osm2pgsql =================================================================
 
-osm2pgsql_clone() {
+function osm2pgsql-clone()
+{
     if [[ ! -d "${osm2pgsql_path}" ]]; then
         local "url=https://github.com/openstreetmap/${osm2pgsql_name}.git"
         git clone "${url}" "${osm2pgsql_path}"
     fi
 }
 
-
-osm2pgsql_checkout() {(
+function osm2pgsql-checkout()
+{(
     cd -- "${osm2pgsql_path}"
     git checkout "${osm2pgsql_tag}"
 )}
 
-
-osm2pgsql_configure() {(
+function osm2pgsql-configure()
+{(
     cd -- "${osm2pgsql_path}"
     ./autogen.sh
     ./configure
@@ -347,14 +360,14 @@ osm2pgsql_configure() {(
 	EOF
 )}
 
-
-osm2pgsql_build() {(
+function osm2pgsql-build()
+{(
     cd -- "${osm2pgsql_path}"
     make "--jobs=$(nproc)"
 )}
 
-
-osm2pgsql_install() {(
+function osm2pgsql-install()
+{(
     cd -- "${osm2pgsql_path}"
     sudo make install
 )}
@@ -365,34 +378,35 @@ osm2pgsql_install() {(
 # =============================================================================
 
 all_tasks=(
-    aptitude_curl
-    aptitude_ppas
-    aptitude_update
-    aptitude_install
-    aptitude_upgrade
+    aptitude-curl
+    aptitude-ppas
+    aptitude-update
+    aptitude-install
+    aptitude-upgrade
 
-    rvm_install
-    rvm_requirements
-    rvm_ruby
-    rvm_gems
+    rvm-install
+    rvm-requirements
+    rvm-ruby
+    rvm-gems
 
-    citysdk_dirs
+    citysdk-root
 
-    nginx_install
-    nginx_conf
-    nginx_service
+    nginx-install
+    nginx-conf
+    nginx-service
 
-    db_create
-    db_extensions
+    db-create
+    db-extensions
 
-    osm2pgsql_clone
-    osm2pgsql_checkout
-    osm2pgsql_configure
-    osm2pgsql_build
-    osm2pgsql_install
+    osm2pgsql-clone
+    osm2pgsql-checkout
+    osm2pgsql-configure
+    osm2pgsql-build
+    osm2pgsql-install
 )
 
-usage() {
+function usage()
+{
     cat <<-'EOF'
 		Perform server deployment tasks
 
@@ -405,26 +419,26 @@ usage() {
 		Tasks:
 
 		    ID  Name
-		    1   aptitude_curl
-		    2   aptitude_ppas
-		    3   aptitude_update
-		    4   aptitude_install
-		    5   aptitude_upgrade
-		    6   rvm_install
-		    7   rvm_requirements
-		    8   rvm_ruby
-		    9   rvm_gems
-		    10  citysdk_dirs
-		    11  nginx_install
-		    12  nginx_conf
-		    13  nginx_service
-		    14  db_create
-		    15  db_extensions
-		    16  osm2pgsql_clone
-		    17  osm2pgsql_checkout
-		    18  osm2pgsql_configure
-		    19  osm2pgsql_build
-		    20  osm2pgsql_install
+		    1   aptitude-curl
+		    2   aptitude-ppas
+		    3   aptitude-update
+		    4   aptitude-install
+		    5   aptitude-upgrade
+		    6   rvm-install
+		    7   rvm-requirements
+		    8   rvm-ruby
+		    9   rvm-gems
+		    10  citysdk-dirs
+		    11  nginx-install
+		    12  nginx-conf
+		    13  nginx-service
+		    14  db-create
+		    15  db-extensions
+		    16  osm2pgsql-clone
+		    17  osm2pgsql-checkout
+		    18  osm2pgsql-configure
+		    19  osm2pgsql-build
+		    20  osm2pgsql-install
 	EOF
     exit 1
 }
@@ -450,7 +464,7 @@ else
 fi
 
 for task in "${tasks[@]}"; do
-    echo -e "\n\e[5;32mTask: ${task}\e[0m\n"
+    echo -e "\e[5;32mTask: ${task}\e[0m\n"
     ${task}
 done
 
