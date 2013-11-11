@@ -23,7 +23,15 @@ set -o nounset
 # =============================================================================
 
 deploy_name=deploy
+osm_data_url=https://github.com/ibigroup/JourneyPlanner/blob/master/Ibi.JourneyPlanner.Web/App_Data/Manchester.osm.pbf?raw=true
+osm_data_pbf=/var/tmp/osm-data.pbf
 
+citysdk_db_root=/var/www/citysdk/current/db
+
+db_name=citysdk
+db_user=postgres
+db_host=localhost
+cache_size_mb=800
 
 # =============================================================================
 # = Tasks                                                                     =
@@ -43,6 +51,47 @@ function nginx-restart()
     sudo service nginx start
 }
 
+function ensure-db-user()
+{
+    sudo -u "${db_user}" -s <<-EOF
+		psql postgres \
+            -tAc  "SELECT 1 FROM pg_roles WHERE rolname='${db_user}'" \
+            | grep -q 1 \
+        || create_user --pwprompt ${db_user}
+	EOF
+}
+
+function osm-data()
+{
+    if [[ ! -f ${osm_data_pbf} ]]; then
+        curl -L -o ${osm_data_pbf} ${osm_data_url}
+    fi
+    cd /var/tmp
+    osm2pgsql                                                                 \
+        --cache "${cache_size_mb}"                                            \
+        --database "${db_name}"                                               \
+        --host "${db_host}"                                                   \
+        --hstore-all                                                          \
+        --latlong                                                             \
+        --password ${osm_data_pbf}                                            \
+        --slim                                                                \
+        --username "${db_user}"
+}
+
+function osm-schema()
+{(
+    cd ${citysdk_db_root}
+    sudo -u "${db_user}" psql                                                 \
+        -d "${db_name}"                                                       \
+        -U "${db_user}" < osm_schema.sql
+)}
+
+function run-migrations()
+{(
+    cd ${citysdk_db_root}
+    rvm 1.9.3 do ./run_migrations.rb 0
+    rvm 1.9.3 do ./run_migrations.rb
+)}
 
 # =============================================================================
 # = Command line interface                                                    =
@@ -51,6 +100,10 @@ function nginx-restart()
 all_tasks=(
     deploy-delete_password
     nginx-restart
+    ensure-db-user
+    osm-data
+    osm-schema
+    run-migrations
 )
 
 function usage()
@@ -69,6 +122,10 @@ function usage()
 		    ID  Name
 		    1   deploy-delete_password
 		    2   nginx-restart
+		    3   ensure-db-user
+		    4   osm-data
+		    5   osm-schema
+		    6   run-migrations
 	EOF
     exit 1
 }
