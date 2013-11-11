@@ -12,11 +12,6 @@ repo=$(realpath "$(dirname "$(realpath -- "${BASH_SOURCE[0]}")")/../..")
 
 ruby_version=1.9.3
 
-gems=(
-    'capistrano     -v 2.15.4'
-    'capistrano-ext -v 1.2.1 '
-)
-
 system_packages=(
     'git'
     'virtualbox'
@@ -27,11 +22,9 @@ system_packages=(
 # = Helpers                                                                   =
 # =============================================================================
 
-rvmshell() {
-    # If RVM has just been installed, the user needs to log out and
-    # back in for it to work. We get around this by running rvm
-    # inside a new login shell.
-    bash --login -s <<< "rvm use ${ruby_version}; ${@}"
+function rvmdo()
+{
+    "${HOME}/.rvm/bin/rvm" "${ruby_version}" 'do' "${@}"
 }
 
 
@@ -39,19 +32,21 @@ rvmshell() {
 # = Tasks                                                                     =
 # =============================================================================
 
-install_system_packages() {
+function install_system_packages()
+{
     sudo pacman --needed --noconfirm --refresh --sync "${system_packages[@]}"
 }
 
-
-install_rvm() {
+function install_rvm()
+{
     sudo sed -i '/gem: --user-install/d' /etc/gemrc
-    curl -L https://get.rvm.io | bash -s stable "--ruby=${ruby_version}"
+    curl --location  https://get.rvm.io                                       \
+        | bash -s stable "--ruby=${ruby_version}"
 }
 
-
-install_gems() {
-    rvmshell bundle
+function install_gems()
+{
+    rvmdo bundle install "--gemfile=${repo}/server/Gemfile"
 }
 
 
