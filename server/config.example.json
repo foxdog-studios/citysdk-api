@@ -1,11 +1,9 @@
-// copy to 'config.json', fill in the right values; do not check 'config.json' in!
-
 {
   "db_host": "localhost",
   "db_name": "citysdk",
   "db_user": "postgres",
   "db_pass": "<passwd>",
-  
+
   "ep_code":             "asd",
   "ep_description":      "Amsterdam/NL CitySDK endpoint.",
   "ep_api_url":          "http://api.citysdk.waag.org",
@@ -16,3 +14,4 @@
   "ep_maintainer_email": "citysdk@waag.org",
   "ep_mapxyz":           "4.90312,52.37274,13"
 }
+
