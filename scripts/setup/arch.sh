@@ -46,7 +46,9 @@ function ruby-rvm()
 
 function ruby-gems()
 {
-    rvmdo bundle install "--gemfile=${repo}/server/Gemfile"
+    for app in cms server; do
+        rvmdo bundle install "--gemfile=${repo}/${app}/Gemfile"
+    done
 }
 
 function config-init()
