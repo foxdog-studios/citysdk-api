@@ -23,13 +23,16 @@ set -o nounset
 # =============================================================================
 
 db_name=citysdk
+
+deploy_name=deploy
+nginx_name=www-data
+group=www-data
+
 osm2pgsql_tag=v0.82.0
 passenger_version=4.0.23
 postgis_version=2.1
 postgresql_version=9.3
 ruby_version=1.9.3
-user_group=citysdk
-user_name=citysdk
 
 
 # = Site specific configuration ===============================================
@@ -78,10 +81,20 @@ aptitude=(
 citysdk_root=/var/www/citysdk
 citysdk_current=${citysdk_root}/current
 citysdk_public=${citysdk_current}/public
+citysdk_releases=${citysdk_root}/releases
+citysdk_shared=${citysdk_root}/shared
+citysdk_paths=(
+    "${citysdk_root}"
+    "${citysdk_current}"
+    "${citysdk_public}"
+    "${citysdk_releases}"
+    "${citysdk_shared}"
+)
 
 # This should be the same as the default prefix suggested by the
 # interactive Passenger installation.
 nginx_prefix=/opt/nginx
+nginx_conf=${nginx_prefix}/conf/nginx.conf
 nginx_log=/var/log/nginx
 nginx_log_access=${nginx_log}/access.log
 nginx_log_error=${nginx_log}/error.log
@@ -93,7 +106,7 @@ nginx_logs=(
 osm2pgsql_name=osm2pgsql
 osm2pgsql_path=${osm2pgsql_name}
 
-rvm_root=${HOME}/.rvm
+rvm_root=/usr/local/rvm
 rvm_bin=${rvm_root}/bin/rvm
 
 
@@ -104,6 +117,12 @@ rvm_bin=${rvm_root}/bin/rvm
 function aptgetwrap()
 {
     sudo apt-get --assume-yes --no-install-recommends "${@}"
+}
+
+function generate-password()
+{
+    tr --delete --complement 'a-z' < /dev/urandom                             \
+        | head --bytes=12
 }
 
 function pg()
@@ -135,6 +154,11 @@ function rvmdo-passenger-ruby()
     rvmdo passenger-config --ruby-command                                     \
         | grep --only-matching 'passenger_ruby.*'                             \
         | cut --delimiter=' ' --fields=2
+}
+
+function rvmsudo()
+{
+    rvmdo rvmsudo "${@}"
 }
 
 
@@ -178,15 +202,12 @@ function aptitude-upgrade()
 }
 
 
-# = RVM ======================================================================
+# = RVM =======================================================================
 
 function rvm-install()
 {
-   # XXX: Is it a good idea to install a user RVM (as opposed to a
-   #      system RVM) when Nginx will installed globally and its config
-   #      will reference citysdk's home directory (passenger_root and
-   #      passenger_ruby)?
-   curl --location https://get.rvm.io | bash -s stable
+   # Multi-user RVM installation
+   curl --location https://get.rvm.io | sudo bash -s stable
 }
 
 function rvm-requirements()
@@ -196,12 +217,12 @@ function rvm-requirements()
 
 function rvm-ruby()
 {
-    "${rvm_bin}" install "${ruby_version}"
+    sudo "${rvm_bin}" install "${ruby_version}"
 }
 
 function rvm-gems()
 {
-    rvmdo gem install                                                         \
+    rvmsudo gem install                                                       \
         --no-ri                                                               \
         --no-rdoc                                                             \
         --verbose                                                             \
@@ -210,12 +231,31 @@ function rvm-gems()
 }
 
 
+# = User ======================================================================
+
+function user-ensure-deploy()
+{
+    if ! getent passwd "${deploy_name}"; then
+        sudo useradd                                                          \
+            --create-home                                                     \
+            --gid "${group}"                                                  \
+            --groups rvm                                                      \
+            "${deploy_name}"
+
+        # Generate, set and print deploy's password
+        local password=$(generate-password)
+        trap "echo deploy password: ${password}" EXIT
+        sudo chpasswd <<< "${deploy_name}:${password}"
+    fi
+}
+
+
 # = CitySDK ===================================================================
 
 function citysdk-root()
 {
-    sudo mkdir --parents "${citysdk_root}"
-    sudo chown --recursive "${user}:${group}" "${citysdk_root}"
+    sudo mkdir --parents "${citysdk_paths[@]}"
+    sudo chown --recursive "${deploy_name}:${group}" "${citysdk_root}"
 }
 
 
@@ -225,7 +265,7 @@ function nginx-install()
 {
     # The prefix is the default but passing it prevents the installer
     # prompting the user.
-    rvmdo rvmsudo passenger-install-nginx-module                              \
+    rvmsudo passenger-install-nginx-module                                    \
         --auto                                                                \
         --auto-download                                                       \
         "--prefix=${nginx_prefix}"
@@ -244,8 +284,8 @@ function nginx-logs()
 
 function nginx-conf()
 {
-    sudo tee /opt/nginx/conf/nginx.conf <<-EOF
-		user ${user};
+    sudo tee "${nginx_conf}" <<-EOF
+		user ${nginx_name};
 
 		events {
 		    worker_connections 1024;
@@ -254,12 +294,15 @@ function nginx-conf()
 		http {
 		    passenger_root $(rvmdo-passenger-root);
 		    passenger_ruby $(rvmdo-passenger-ruby);
+
 		    server {
 		        listen 80;
 		        server_name ${server_name};
 		        root ${citysdk_public};
+
 		        access_log ${nginx_log_access};
 		        error_log ${nginx_log_error};
+
 		        passenger_enabled on;
 		    }
 		}
@@ -285,7 +328,6 @@ function db-create()
     #      database and only create it if it does not exist.
     pg createdb "${db_name}" || true
 }
-
 
 function db-extensions()
 {
@@ -359,6 +401,8 @@ all_tasks=(
     rvm-ruby
     rvm-gems
 
+    user-ensure-deploy
+
     citysdk-root
 
     nginx-install
@@ -399,18 +443,19 @@ function usage()
 		    7   rvm-requirements
 		    8   rvm-ruby
 		    9   rvm-gems
-		    10  citysdk-dirs
-		    11  nginx-install
-		    12  nginx-logs
-		    13  nginx-conf
-		    14  nginx-service
-		    15  db-create
-		    16  db-extensions
-		    17  osm2pgsql-clone
-		    18  osm2pgsql-checkout
-		    19  osm2pgsql-configure
-		    20  osm2pgsql-build
-		    21  osm2pgsql-install
+		    10  user-ensure-deploy
+		    11  citysdk-root
+		    12  nginx-install
+		    13  nginx-logs
+		    14  nginx-conf
+		    15  nginx-service
+		    16  db-create
+		    17  db-extensions
+		    18  osm2pgsql-clone
+		    19  osm2pgsql-checkout
+		    20  osm2pgsql-configure
+		    21  osm2pgsql-build
+		    22  osm2pgsql-install
 	EOF
     exit 1
 }
@@ -434,7 +479,7 @@ else
         usage
     fi
     for task in "${@}"; do
-        if [[ "${task}" =~ '^[0-9]+$' ]]; then
+        if [[ "${task}" =~ ^[0-9]+$ ]]; then
             tasks+=( "${all_tasks[$[ task - 1 ]]}" )
         else
             tasks+=( "${task}" )
