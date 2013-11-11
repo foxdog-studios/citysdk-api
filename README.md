@@ -28,8 +28,11 @@ To set up a development environment, Arch Linux users should run;
 Configuration
 -------------
 
-Complete the `development.json` and `production.json` configurations in the
-`config/local` directory.
+1. Complete the `development.json` and `production.json` configurations in the
+   `config/local` directory.
+
+2. Enter the host name of the production machine into
+   `config/local/production_hostname.txt`.
 
 
 Deployment

@@ -57,6 +57,7 @@ function config-init()
     mkdir --parent "${config_local}"
     cp "${template}" "${config_local}/development.json"
     cp "${template}" "${config_local}/production.json"
+    touch "${config_local}/production_hostname.txt"
 }
 
 function config-ln()

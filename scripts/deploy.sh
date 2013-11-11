@@ -22,13 +22,17 @@ set -o nounset
 # = Configration                                                              =
 # =============================================================================
 
-repo=$(realpath "$(dirname "$(realpath -- "${BASH_SOURCE[0]}")")/..")
+repo="$(realpath "$(dirname "$(realpath -- "${BASH_SOURCE[0]}")")/..")"
+
+config_path="${repo}/config/local"
+
+host="deploy@$(cat "${config_path}/production_hostname.txt")"
 
 ruby_version=1.9.3
 
-rvm_root=${HOME}/.rvm
+rvm_root="${HOME}/.rvm"
 
-rvm_bin=${rvm_root}/bin/rvm
+rvm_bin="${rvm_root}/bin/rvm"
 
 
 # =============================================================================
@@ -46,6 +50,15 @@ function cap()
 # = Tasks                                                                     =
 # =============================================================================
 
+function cap-config()
+{
+    local dir="${repo}/server/config/deploy"
+    mkdir --parents "${dir}"
+    tee "${dir}/production.rb" <<-EOF
+		server '${host}', :app, :web, :primary => true
+	EOF
+}
+
 function cap-setup()
 {
     cap deploy:setup
@@ -61,15 +74,25 @@ function cap-deploy()
     cap deploy
 }
 
+function config-cp()
+{
+    local src="${config_path}/production.json"
+    local dst='/var/www/citysdk/shared/config'
+    ssh "${host}" mkdir --parents "${dst}"
+    scp "${src}" "${host}:${dst}/config.json"
+}
+
 
 # =============================================================================
 # = Command line interface                                                    =
 # =============================================================================
 
 all_tasks=(
+    cap-config
     cap-setup
     cap-check
     cap-deploy
+    config-cp
 )
 
 usage() {
@@ -85,9 +108,11 @@ usage() {
 		Task:
 
 		    ID  Name
-		    1   cap-setup
-		    2   cap-check
-		    3   cap-deploy
+		    1   cap-config
+		    2   cap-setup
+		    3   cap-check
+		    4   cap-deploy
+		    5   config-cp
 	EOF
     exit 1
 }
