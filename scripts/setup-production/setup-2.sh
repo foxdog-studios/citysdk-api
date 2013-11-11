@@ -48,13 +48,13 @@ function nginx-restart()
     # Passing restart does not start Nginx if it is not already
     # running. So, we explicitly stop (no effect if already stopped)
     # and then start.
-    sudo service nginx stop
+    sudo service nginx stop || true
     sudo service nginx start
 }
 
 function ensure-db-user()
 {
-    sudo -u "${db_user}" -s <<-EOF
+    sudo -u postgres -s <<-EOF
 		psql postgres \
             -tAc  "SELECT 1 FROM pg_roles WHERE rolname='${db_user}'" \
             | grep -q 1 \
@@ -63,16 +63,23 @@ function ensure-db-user()
 }
 
 function osm-data()
-{
+{(
     if [[ ! -f ${osm_data_pbf} ]]; then
         curl -L -o ${osm_data_pbf} ${osm_data_url}
     fi
     cd /var/tmp
-    osm2pgsql --slim -j -d citysdk -l -C 800 -H localhost -U postgres -W ${osm_data_pbf}
-}
+    osm2pgsql                                                                 \
+        --cache "${cache_size_mb}"                                            \
+        --database "${db_name}"                                               \
+        --host "${db_host}"                                                   \
+        --hstore-all                                                          \
+        --latlong                                                             \
+        --password                                                            \
+        --slim                                                                \
+        --username "${db_user}"                                               \
+        "${osm_data_pbf}"
+)}
 
-<<<<<<< HEAD
-=======
 function osm-schema()
 {(
     cd ${citysdk_db_root}
@@ -99,7 +106,6 @@ function set-admin-password()
 		racksh "o = Owner[0]; o.createPW('password')"
 	EOF
 }
->>>>>>> ffe86c4... Script sets admin password
 
 # =============================================================================
 # = Command line interface                                                    =
@@ -110,12 +116,9 @@ all_tasks=(
     nginx-restart
     ensure-db-user
     osm-data
-<<<<<<< HEAD
-=======
     osm-schema
     run-migrations
     set-admin-password
->>>>>>> ffe86c4... Script sets admin password
 )
 
 function usage()

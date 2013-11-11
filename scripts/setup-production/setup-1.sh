@@ -129,13 +129,6 @@ function generate-password()
         | head --bytes=12
 }
 
-function getpasswd()
-{
-    local "user=${1}"
-    local "field=${2}"
-    getent passwd "${user}" | cut --delimiter=: "--field=${2}"
-}
-
 function pg()
 {
     sudo -u postgres "${@}"
@@ -247,7 +240,7 @@ function rvm-gems()
 function deploy-ensure()
 {
     # Do the deploy user already exists?
-    if getpasswd "${deploy_name}" 1; then
+    if getent passwd "${deploy_name}"; then
         return
     fi
 

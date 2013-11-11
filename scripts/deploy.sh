@@ -41,7 +41,6 @@ rvm_root="${HOME}/.rvm"
 rvm_bin="${rvm_root}/bin/rvm"
 
 
-
 # =============================================================================
 # = Helpers                                                                   =
 # =============================================================================
@@ -70,6 +69,11 @@ function deploy-config()
 # =============================================================================
 # = Tasks                                                                     =
 # =============================================================================
+
+function config-create()
+{
+    "${repo}/scripts/create_config.sh"
+}
 
 function deploy-config-all()
 {
@@ -106,6 +110,7 @@ function config-cp()
 # =============================================================================
 
 all_tasks=(
+    config-create
     deploy-config-all
     cap-setup-all
     cap-check-all
@@ -126,11 +131,12 @@ usage() {
 		Task:
 
 		    ID  Name
-		    1   deploy-config-all
-		    2   cap-setup-all
-		    3   cap-check-all
-		    4   cap-deploy-all
-		    5   config-cp
+		    1   config-create
+		    2   deploy-config-all
+		    3   cap-setup-all
+		    4   cap-check-all
+		    5   cap-deploy-all
+		    6   config-cp
 	EOF
     exit 1
 }
