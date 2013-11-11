@@ -74,11 +74,11 @@ all_tasks=(
 
 usage() {
     cat <<-'EOF'
-		Perform local deployment tasks
+		Deploy to the production machine
 
 		Usage:
 
-		    local.sh [-s TASK_ID | [TASK_ID...]]
+		    deploy.sh [-s TASK_ID | [TASK_ID...]]
 
 		    -s  Start from TASK_ID
 

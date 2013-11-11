@@ -20,36 +20,58 @@ you'll find additional documentation.
 Set up
 ------
 
-Arch Linux developers can run `scripts/setup/arch.sh` to install development
-dependencies and set up the repository
+To set up a development environment, Arch Linux users should run;
+
+    [local]$ ./scripts/setup/arch.sh
+
+
+Configuration
+-------------
+
+Complete the `development.json` and `production.json` configurations in the
+`config/local` directory.
 
 
 Deployment
 ----------
 
-To deploy CitySDK to a clean installation of Ubuntu 12.04 LTS (64-bit):
+Before deploying, ensure you've set up your development environment. To deploy
+CitySDK to a clean installation of Ubuntu 12.04 LTS (64-bit):
 
 1.  Create yourself an administrative account (i.e., the user is a member of
     the `wheel` group) on the target machine.
 
-2.  From your local CitySDK repository, copy the scripts in the
-    `scripts/deploy/target` directory to the target machine, e.g.,
-    `scp scripts/deploy/target* user@target:`.
+2.  From your local repository, copy the `scripts/setup-production` directory
+    to the target machine, e.g.;
 
-3.  On the target machine, run `target-1.sh`. You may be prompted for your
-    password by `sudo`.
+        [local]$ scp -r scripts/setup-production user@target:setup
 
-4.  Note `deploy`'s password print just before the script finishes.
+3.  On the target machine, run;
 
-5.  Reboot the target machine to ensure all packages upgrades take effect.
+        [target]$ ./setup/setup-1.sh
+
+    Note: You may be prompted for your password by `sudo`.
+
+4.  Record `deploy`'s password printed just before the script finishes.
+
+5.  Reboot the target machine to ensure all package upgrades take effect.
 
 6.  Set up passwordless log in between your local user and the `deploy` user on
-    the target machine (e.g., using `ssh-copy-id`).
+    the target machine, e.g.;
 
-7.  On the target machine, run `target-2.sh`. You may be prompted for your
-    password by `sudo`.
+        [local]$ ssh-copy-id deploy@target_host
 
-8.  From your local repository, run `scripts/deploy/local.sh`.
+    You'll be prompted from password printed by `setup-1.sh`
+
+8.  From your local repository, run;
+
+        [local]$ ./scripts/deploy.sh
+
+7.  On the target machine, run;
+
+        [target]$ ./setup/setup-2.sh
+
+    Note: You may be prompted for your password by `sudo`.
 
 
 ### Testing
@@ -58,22 +80,22 @@ Deployment can be tested using a VirtualBox. The following functions may be
 useful when testing. They should be added to your `.bashrc` on the target
 machine.
 
-    function _deploy()
+    function _setup()
     {
         local num=${1}
-        local remote=local_user@path/to/repository
-        local src=${remote}/scripts/deploy/target/target-${num}.sh
-        local dst=${HOME}/deploy-${num}.sh
-        scp "${src}" "${dst}" && "${dst}" "${@:2}"
+        local repo=local_user@path/to/repository
+        local src=${repo}/scripts/setup-production
+        local dst=${HOME}/setup
+        scp "${src}" "${dst}" && "${dst}/setup-${num}.sh" "${@:2}"
     }
 
-    function deploy-1()
+    function setup-1()
     {
-        _deploy 1 "${@}"
+        _setup 1 "${@}"
     }
 
-    function deploy-2()
+    function setup-2()
     {
-        _deploy 2 "${@}"
+        _setup 2 "${@}"
     }
 

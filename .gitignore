@@ -1,10 +1,11 @@
 /cms/log/
 /cms/tmp/
-/discovery/log/
-/discovery/tmp/
+/config/local/
 /devsite/log/
 /devsite/tmp/
 /discovery/log/
+/discovery/log/
+/discovery/tmp/
 /discovery/tmp/
 /server/config.json
 /server/log/
