@@ -85,11 +85,12 @@ CitySDK to a clean installation of Ubuntu 12.04 LTS (64-bit):
     Note: You may be prompted for your password by `sudo`.
 
 
-### Testing
+### Testing a deployment on a staging server
 
-Deployment can be tested using a VirtualBox. The following functions may be
-useful when testing. They should be added to your `.bashrc` on the target
-machine.
+Deployment can be tested using a VirtualBox as a staging server.
+
+The following functions may be useful when testing. They should be added to
+your `.bashrc` on the target machine.
 
     function _setup()
     {
@@ -118,4 +119,15 @@ machine.
     {
         _setup 2 "${@}"
     }
+
+Then call
+
+    $ setup-1
+
+or
+
+    $ setup-2
+
+Which will pull over any changes you have made on your local develpoment
+machine and run the setup script.
 
