@@ -414,7 +414,7 @@ all_tasks=(
 function usage()
 {
     cat <<-'EOF'
-		Perform server deployment tasks
+		Perform deployment tasks on the target machine
 
 		Usage:
 

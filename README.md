@@ -32,24 +32,48 @@ To deploy CitySDK to a clean installation of Ubuntu 12.04 LTS (64-bit):
 1.  Create yourself an administrative account (i.e., the user is a member of
     the `wheel` group) on the target machine.
 
-2.  From your local CitySDK repository, copy the `scripts/deploy/server.sh`
-    script to the target machine, e.g.,
-    `scp scripts/deplpoy/server.sh user@target:`.
+2.  From your local CitySDK repository, copy the scripts in the
+    `scripts/deploy/target` directory to the target machine, e.g.,
+    `scp scripts/deploy/target* user@target:`.
 
-3.  Run `server.sh` on the target machine. You may be prompted for your
+3.  On the target machine, run `target-1.sh`. You may be prompted for your
     password by `sudo`.
 
-5.  Note `deploy`'s password print just before the script completes.
+4.  Note `deploy`'s password print just before the script finishes.
 
-4.  Delete the `server.sh` script from the target machine.
+5.  Reboot the target machine to ensure all packages upgrades take effect.
 
-6.  Reboot the system to allow all upgrades to take effect.
-
-7.  Set up passwordless log in between your local user and the `deploy` user on
+6.  Set up passwordless log in between your local user and the `deploy` user on
     the target machine (e.g., using `ssh-copy-id`).
 
-8.  Using your account on the target machine, delete `deploy`'s password, e.g.,
-    `sudo passwd --delete deploy`.
+7.  On the target machine, run `target-2.sh`. You may be prompted for your
+    password by `sudo`.
 
-9.  From your local repository, run `scripts/deploy/local.sh`.
+8.  From your local repository, run `scripts/deploy/local.sh`.
+
+
+### Testing
+
+Deployment can be tested using a VirtualBox. The following functions may be
+useful when testing. They should be added to your `.bashrc` on the target
+machine.
+
+    function _deploy()
+    {
+        local num=${1}
+        local remote=local_user@path/to/repository
+        local src=${remote}/scripts/deploy/target/target-${num}.sh
+        local dst=${HOME}/deploy-${num}.sh
+        scp "${src}" "${dst}" && "${dst}" "${@:2}"
+    }
+
+    function deploy-1()
+    {
+        _deploy 1 "${@}"
+    }
+
+    function deploy-2()
+    {
+        _deploy 2 "${@}"
+    }
 
