@@ -51,6 +51,16 @@ function nginx-restart()
     sudo service nginx start
 }
 
+function ensure-db-user()
+{
+    sudo -u "${db_user}" -s <<-EOF
+		psql postgres \
+            -tAc  "SELECT 1 FROM pg_roles WHERE rolname='${db_user}'" \
+            | grep -q 1 \
+        || create_user --pwprompt ${db_user}
+	EOF
+}
+
 function osm-data()
 {
     if [[ ! -f ${osm_data_pbf} ]]; then
@@ -90,6 +100,7 @@ function run-migrations()
 all_tasks=(
     deploy-delete_password
     nginx-restart
+    ensure-db-user
     osm-data
     osm-schema
     run-migrations
@@ -111,9 +122,10 @@ function usage()
 		    ID  Name
 		    1   deploy-delete_password
 		    2   nginx-restart
-		    3   osm-data
-		    4   osm-schema
-		    5   run-migrations
+		    3   ensure-db-user
+		    4   osm-data
+		    5   osm-schema
+		    6   run-migrations
 	EOF
     exit 1
 }
