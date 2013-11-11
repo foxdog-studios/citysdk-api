@@ -117,6 +117,12 @@ function generate-password()
         | head --bytes=12
 }
 
+function getpasswd()
+{
+    local user=${1} field=${2}
+    getent passwd "${user}" | cut --delimiter=: "--field=${2}"
+}
+
 function pg()
 {
     sudo -u postgres "${@}"
@@ -223,21 +229,21 @@ function rvm-gems()
 }
 
 
-# = User ======================================================================
+# = Deploy ====================================================================
 
-function user-ensure-deploy()
+function deploy-ensure()
 {
-    if ! getent passwd "${deploy_name}"; then
-        sudo useradd                                                          \
-            --create-home                                                     \
-            --gid "${group}"                                                  \
-            "${deploy_name}"
-
-        # Generate, set and print deploy's password
-        local password=$(generate-password)
-        trap "echo deploy password: ${password}" EXIT
-        sudo chpasswd <<< "${deploy_name}:${password}"
+    # Do the deploy user already exists?
+    if getpasswd "${deploy_name}" 1; then
+        return
     fi
+
+    sudo useradd --create-home --gid "${group}" "${deploy_name}"
+
+    # Generate, set and print deploy's password
+    local password=$(generate-password)
+    trap "echo deploy password: ${password}" EXIT
+    sudo chpasswd <<< "${deploy_name}:${password}"
 }
 
 
@@ -392,7 +398,7 @@ all_tasks=(
     rvm-ruby
     rvm-gems
 
-    user-ensure-deploy
+    deploy-ensure
 
     citysdk-root
 
@@ -434,7 +440,7 @@ function usage()
 		    7   rvm-requirements
 		    8   rvm-ruby
 		    9   rvm-gems
-		    10  user-ensure-deploy
+		    10  deploy-ensure
 		    11  citysdk-root
 		    12  nginx-install
 		    13  nginx-logs

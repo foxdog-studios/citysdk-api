@@ -7,7 +7,7 @@ gem 'amatch'
 gem 'base62'
 gem 'dalli' # Memcache
 gem 'faraday'
-gem 'i18n'
+gem 'i18n', '~>0.6.4'
 gem 'logger'
 gem 'pg'
 gem 'racksh'

@@ -12,7 +12,7 @@ repo=$(realpath "$(dirname "$(realpath -- "${BASH_SOURCE[0]}")")/../..")
 
 ruby_version=1.9.3
 
-system_packages=(
+packages=(
     'git'
     'virtualbox'
 )
@@ -32,21 +32,36 @@ function rvmdo()
 # = Tasks                                                                     =
 # =============================================================================
 
-function install_system_packages()
+function packages-install()
 {
-    sudo pacman --needed --noconfirm --refresh --sync "${system_packages[@]}"
+    sudo pacman --needed --noconfirm --refresh --sync "${packages[@]}"
 }
 
-function install_rvm()
+function ruby-rvm()
 {
     sudo sed -i '/gem: --user-install/d' /etc/gemrc
     curl --location  https://get.rvm.io                                       \
         | bash -s stable "--ruby=${ruby_version}"
 }
 
-function install_gems()
+function ruby-gems()
 {
     rvmdo bundle install "--gemfile=${repo}/server/Gemfile"
+}
+
+function config-init()
+{
+    local config=${repo}/config
+    local template=${config}/config.template.json
+    local config_local=${config}/local
+    mkdir --parent "${config_local}"
+    cp "${template}" "${config_local}/development.json"
+    cp "${template}" "${config_local}/production.json"
+}
+
+function config-ln()
+{
+    ln -s ../config/local/development.json "${repo}/server/config.json"
 }
 
 
@@ -55,9 +70,11 @@ function install_gems()
 # =============================================================================
 
 all_tasks=(
-    install_system_packages
-    install_rvm
-    install_gems
+    packages-install
+    ruby-rvm
+    ruby-gems
+    config-init
+    config-ln
 )
 
 usage() {
@@ -73,14 +90,16 @@ usage() {
 		Tasks:
 
 		    ID  Description
-		    1   Install system packages
-		    2   Install RVM
-		    3   Install gems
+		    1   packages-install
+		    2   ruby-rvm
+		    3   ruby-gems
+		    4   config-init
+		    5   config-ln
 	EOF
     exit 1
 }
 
-start_index=0
+start_index=
 
 while getopts :s: opt; do
     case "${opt}" in
@@ -95,12 +114,20 @@ tasks=()
 if [[ "${#}" == 0 ]]; then
     tasks+=( "${all_tasks[@]:${start_index}}" )
 else
-    for task_id in "${@}"; do
-        tasks+=( "${all_tasks[$[ task_id - 1 ]]}" )
+    if [[ -n "${start_index}" ]]; then
+        usage
+    fi
+    for task in "${@}"; do
+        if [[ "${task}" =~ ^[0-9]+$ ]]; then
+            tasks+=( "${all_tasks[$[ task - 1 ]]}" )
+        else
+            tasks+=( "${task}" )
+        fi
     done
 fi
 
 for task in "${tasks[@]}"; do
+    echo -e "\e[5;32mTask: ${task}\e[0m\n"
     ${task}
 done
 
