@@ -23,7 +23,8 @@ set -o nounset
 # =============================================================================
 
 deploy_name=deploy
-
+osm_data_url=https://github.com/ibigroup/JourneyPlanner/blob/master/Ibi.JourneyPlanner.Web/App_Data/Manchester.osm.pbf?raw=true
+osm_data_pbf=/var/tmp/osm-data.pbf
 
 # =============================================================================
 # = Tasks                                                                     =
@@ -39,6 +40,15 @@ function nginx-restart()
     sudo service nginx restart
 }
 
+function osm-data()
+{
+    if [[ ! -f ${osm_data_pbf} ]]; then
+        curl -L -o ${osm_data_pbf} ${osm_data_url}
+    fi
+    cd /var/tmp
+    osm2pgsql --slim -j -d citysdk -l -C 800 -H localhost -U postgres -W ${osm_data_pbf}
+}
+
 # =============================================================================
 # = Command line interface                                                    =
 # =============================================================================
@@ -46,6 +56,7 @@ function nginx-restart()
 all_tasks=(
     deploy-delete_password
     nginx-restart
+    osm-data
 )
 
 function usage()
@@ -64,6 +75,7 @@ function usage()
 		    ID  Name
 		    1   deploy-delete_password
 		    2   nginx-restart
+		    3   osm-data
 	EOF
     exit 1
 }
