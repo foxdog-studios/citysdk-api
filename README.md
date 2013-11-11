@@ -87,9 +87,9 @@ machine.
     {
         local num=${1}
         local repo=local_user@path/to/repository
-        local src=${repo}/scripts/setup-production
+        local src=${repo}/scripts/setup-production/*.sh
         local dst=${HOME}/setup
-        scp "${src}" "${dst}" && "${dst}/setup-${num}.sh" "${@:2}"
+        scp -r "${src}" "${dst}" && "${dst}/setup-${num}.sh" "${@:2}"
     }
 
     function setup-1()
