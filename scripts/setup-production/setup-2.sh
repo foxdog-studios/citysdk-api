@@ -26,6 +26,14 @@ deploy_name=deploy
 osm_data_url=https://github.com/ibigroup/JourneyPlanner/blob/master/Ibi.JourneyPlanner.Web/App_Data/Manchester.osm.pbf?raw=true
 osm_data_pbf=/var/tmp/osm-data.pbf
 
+citysdk_current=/var/www/citysdk/current/
+citysdk_db_root="${citysdk_current}/db/"
+
+db_name=citysdk
+db_user=postgres
+db_host=localhost
+cache_size_mb=800
+
 # =============================================================================
 # = Tasks                                                                     =
 # =============================================================================
@@ -63,6 +71,35 @@ function osm-data()
     osm2pgsql --slim -j -d citysdk -l -C 800 -H localhost -U postgres -W ${osm_data_pbf}
 }
 
+<<<<<<< HEAD
+=======
+function osm-schema()
+{(
+    cd ${citysdk_db_root}
+    sudo -u "${db_user}" psql                                                 \
+        -d "${db_name}"                                                       \
+        -U "${db_user}" < osm_schema.sql
+)}
+
+function run-migrations()
+{
+    /bin/bash --login -s <<-EOF
+		rvm use 1.9.3
+		cd ${citysdk_db_root}
+		rvm 1.9.3 do ./run_migrations.rb 0
+		rvm 1.9.3 do ./run_migrations.rb
+	EOF
+}
+
+function set-admin-password()
+{
+    /bin/bash --login -s <<-EOF
+		rvm use 1.9.3
+		cd ${citysdk_current}
+		racksh "o = Owner[0]; o.createPW('password')"
+	EOF
+}
+>>>>>>> ffe86c4... Script sets admin password
 
 # =============================================================================
 # = Command line interface                                                    =
@@ -73,6 +110,12 @@ all_tasks=(
     nginx-restart
     ensure-db-user
     osm-data
+<<<<<<< HEAD
+=======
+    osm-schema
+    run-migrations
+    set-admin-password
+>>>>>>> ffe86c4... Script sets admin password
 )
 
 function usage()
@@ -95,6 +138,7 @@ function usage()
 		    4   osm-data
 		    5   osm-schema
 		    6   run-migrations
+		    7   set-admin-password
 	EOF
     exit 1
 }
