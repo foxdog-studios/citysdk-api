@@ -28,6 +28,7 @@ repo="$(realpath "$(dirname "$(realpath -- "${BASH_SOURCE[0]}")")/..")"
 applications=(
     server
     cms
+    rdf
 )
 
 config_path="${repo}/config/local"
@@ -79,6 +80,7 @@ function deploy-config-all()
 {
     deploy-config server
     deploy-config cms cms
+    deploy-config rdf rdf
 }
 
 function cap-setup-all()
