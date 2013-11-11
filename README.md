@@ -103,10 +103,10 @@ machine.
         scp -r "${src}" "${setup}"
 
         local src="${repo}/config/local/production.sh"
-        local dst=${setup}/config.sh
+        dst=${setup}/config.sh
         scp "${src}" "${dst}"
 
-        "${dst}/setup-${num}.sh" "${@:2}"
+        "${setup}/setup-${num}.sh" "${@:2}"
     }
 
     function setup-1()
