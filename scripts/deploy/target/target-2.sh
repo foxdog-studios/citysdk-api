@@ -36,8 +36,13 @@ function deploy-delete_password()
 
 function nginx-restart()
 {
-    sudo service nginx restart
+    # Passing restart does not start Nginx if it is not already
+    # running. So, we explicitly stop (no effect if already stopped)
+    # and then start.
+    sudo service nginx stop
+    sudo service nginx start
 }
+
 
 # =============================================================================
 # = Command line interface                                                    =
