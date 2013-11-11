@@ -28,10 +28,15 @@ To set up a development environment, Arch Linux users should run;
 Configuration
 -------------
 
-1. Complete the `development.json` and `production.json` configurations in the
+1. Complete the `development.sh` and `production.sh` configurations in the
    `config/local` directory.
 
-2. Enter the host name of the production machine into
+2. To generate JSON versions of the development and production configurations
+   run
+
+    [local]$ ./scripts/create_config.sh
+
+3. Enter the host name of the production machine into
    `config/local/production_hostname.txt`.
 
 
@@ -45,9 +50,12 @@ CitySDK to a clean installation of Ubuntu 12.04 LTS (64-bit):
     the `wheel` group) on the target machine.
 
 2.  From your local repository, copy the `scripts/setup-production` directory
-    to the target machine, e.g.;
+    and the production configuration to the target machine, e.g.;
 
         [local]$ scp -r scripts/setup-production user@target:setup
+        [local]$ scp config/local/production.sh setup/config.sh
+
+    Note: Make sure you name the files like the example above.
 
 3.  On the target machine, run;
 
@@ -87,9 +95,18 @@ machine.
     {
         local num=${1}
         local repo=local_user@path/to/repository
+        local setup=${HOME}/setup
+
+        mkdir --parent "${setup}"
+
         local src=${repo}/scripts/setup-production/*.sh
-        local dst=${HOME}/setup
-        scp -r "${src}" "${dst}" && "${dst}/setup-${num}.sh" "${@:2}"
+        scp -r "${src}" "${setup}"
+
+        local src="${repo}/config/local/production.sh"
+        local dst=${setup}/config.sh
+        scp "${src}" "${dst}"
+
+        "${dst}/setup-${num}.sh" "${@:2}"
     }
 
     function setup-1()

@@ -54,11 +54,11 @@ function ruby-gems()
 function config-init()
 {
     local config=${repo}/config
-    local template=${config}/config.template.json
+    local template=${config}/config.template.sh
     local config_local=${config}/local
     mkdir --parent "${config_local}"
-    cp "${template}" "${config_local}/development.json"
-    cp "${template}" "${config_local}/production.json"
+    cp "${template}" "${config_local}/development.sh"
+    cp "${template}" "${config_local}/production.sh"
     touch "${config_local}/production_hostname.txt"
 }
 

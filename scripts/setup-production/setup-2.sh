@@ -48,13 +48,13 @@ function nginx-restart()
     # Passing restart does not start Nginx if it is not already
     # running. So, we explicitly stop (no effect if already stopped)
     # and then start.
-    sudo service nginx stop
+    sudo service nginx stop || true
     sudo service nginx start
 }
 
 function ensure-db-user()
 {
-    sudo -u "${db_user}" -s <<-EOF
+    sudo -u postgres -s <<-EOF
 		psql postgres \
             -tAc  "SELECT 1 FROM pg_roles WHERE rolname='${db_user}'" \
             | grep -q 1 \
@@ -63,7 +63,7 @@ function ensure-db-user()
 }
 
 function osm-data()
-{
+{(
     if [[ ! -f ${osm_data_pbf} ]]; then
         curl -L -o ${osm_data_pbf} ${osm_data_url}
     fi
@@ -74,10 +74,11 @@ function osm-data()
         --host "${db_host}"                                                   \
         --hstore-all                                                          \
         --latlong                                                             \
-        --password ${osm_data_pbf}                                            \
+        --password                                                            \
         --slim                                                                \
-        --username "${db_user}"
-}
+        --username "${db_user}"                                               \
+        "${osm_data_pbf}"
+)}
 
 function osm-schema()
 {(
