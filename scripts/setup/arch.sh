@@ -62,7 +62,13 @@ function config-init()
 
 function config-ln()
 {
-    ln -s ../config/local/development.json "${repo}/server/config.json"
+    local dir
+    for dir in cms server; do
+        local dst="${repo}/${dir}/config.json"
+        if [[ ! -h "${dst}" ]]; then
+            ln -s ../config/local/development.json "${dst}"
+        fi
+    done
 }
 
 

@@ -71,6 +71,9 @@ aptitude=(
     # Passenger
     'libcurl4-openssl-dev'
 
+    # charlock_holmes
+    'libicu-dev'
+
     # Memcached
     'memcached'
 )
@@ -81,18 +84,27 @@ aptitude=(
 citysdk_root=/var/www/citysdk
 citysdk_current=${citysdk_root}/current
 citysdk_public=${citysdk_current}/public
+citysdk_log_access=
 
+cms_root=/var/www/citysdk-cms
+cms_current="${cms_root}/current"
+cms_public="${cms_current}/public"
 
 # This should be the same as the default prefix suggested by the
 # interactive Passenger installation.
 nginx_prefix=/opt/nginx
 nginx_conf=${nginx_prefix}/conf/nginx.conf
 nginx_log=/var/log/nginx
-nginx_log_access=${nginx_log}/access.log
-nginx_log_error=${nginx_log}/error.log
-nginx_logs=(
-    "${nginx_log_access}"
-    "${nginx_log_error}"
+
+log_access_citysdk=${nginx_log}/citysdk-access.log
+log_access_cms=${nginx_log}/cms-access.log
+log_error_citysdk=${nginx_log}/citysdk-error.log
+log_error_cms=${nginx_log}/cms-error.log
+logs=(
+    "${log_access_citysdk}"
+    "${log_access_cms}"
+    "${log_error_citysdk}"
+    "${log_error_cms}"
 )
 
 osm2pgsql_name=osm2pgsql
@@ -119,7 +131,8 @@ function generate-password()
 
 function getpasswd()
 {
-    local user=${1} field=${2}
+    local "user=${1}"
+    local "field=${2}"
     getent passwd "${user}" | cut --delimiter=: "--field=${2}"
 }
 
@@ -247,12 +260,16 @@ function deploy-ensure()
 }
 
 
-# = CitySDK ===================================================================
+# = Apps ======================================================================
 
-function citysdk-root()
+function apps-roots()
 {
-    sudo mkdir --parents "${citysdk_root}"
-    sudo chown "${deploy_name}:${group}" "${citysdk_root}"
+    local roots=( "${citysdk_root}" "${cms_root}" )
+    local root
+    for root in "${roots[@]}"; do
+        sudo mkdir --parents "${root}"
+        sudo chown "${deploy_name}:${group}" "${root}"
+    done
 }
 
 
@@ -272,7 +289,7 @@ function nginx-logs()
 {
     sudo mkdir --parents "${nginx_log}"
     local log
-    for log in "${nginx_logs[@]}"; do
+    for log in "${logs[@]}"; do
         sudo touch "${log}"
         sudo chmod g+w "${log}"
         sudo chown ":${group}" "${log}"
@@ -292,13 +309,26 @@ function nginx-conf()
 		    passenger_root $(rvmdo-passenger-root);
 		    passenger_ruby $(rvmdo-passenger-ruby);
 
+		    # API
 		    server {
 		        listen 80;
 		        server_name ${server_name};
 		        root ${citysdk_public};
 
-		        access_log ${nginx_log_access};
-		        error_log ${nginx_log_error};
+		        access_log ${log_access_citysdk};
+		        error_log ${log_error_citysdk};
+
+		        passenger_enabled on;
+		    }
+
+		    # CMS
+		    server {
+		        listen 80;
+		        server_name cms.${server_name};
+		        root ${cms_public};
+
+		        access_log ${log_access_cms};
+		        error_log ${log_error_cms};
 
 		        passenger_enabled on;
 		    }
@@ -400,7 +430,7 @@ all_tasks=(
 
     deploy-ensure
 
-    citysdk-root
+    apps-roots
 
     nginx-install
     nginx-logs
@@ -441,7 +471,7 @@ function usage()
 		    8   rvm-ruby
 		    9   rvm-gems
 		    10  deploy-ensure
-		    11  citysdk-root
+		    11  apps-roots
 		    12  nginx-install
 		    13  nginx-logs
 		    14  nginx-conf

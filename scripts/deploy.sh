@@ -24,9 +24,15 @@ set -o nounset
 
 repo="$(realpath "$(dirname "$(realpath -- "${BASH_SOURCE[0]}")")/..")"
 
+# Server must be deployed before any other applications
+applications=(
+    server
+    cms
+)
+
 config_path="${repo}/config/local"
 
-host="deploy@$(cat "${config_path}/production_hostname.txt")"
+hostname="deploy@$(cat "${config_path}/production_hostname.txt")"
 
 ruby_version=1.9.3
 
@@ -35,51 +41,63 @@ rvm_root="${HOME}/.rvm"
 rvm_bin="${rvm_root}/bin/rvm"
 
 
+
 # =============================================================================
 # = Helpers                                                                   =
 # =============================================================================
 
-function cap()
+function capall()
 {(
-    cd -- "${repo}/server"
-    "${rvm_bin}" "${ruby_version}" 'do' bundle 'exec' cap production "${@}"
+    local app
+    for app in "${applications[@]}"; do
+        cd -- "${repo}/${app}"
+        "${rvm_bin}" "${ruby_version}" 'do' bundle 'exec' cap production "${@}"
+    done
 )}
+
+function deploy-config()
+{
+    local app="${1}"
+    local domain="${2:+${2}.}${hostname}"
+    local dir="${repo}/${app}/config/deploy"
+    mkdir --parents "${dir}"
+    tee "${dir}/production.rb" <<-EOF
+		server '${hostname}', :app, :web, :primary => true
+	EOF
+}
 
 
 # =============================================================================
 # = Tasks                                                                     =
 # =============================================================================
 
-function cap-config()
+function deploy-config-all()
 {
-    local dir="${repo}/server/config/deploy"
-    mkdir --parents "${dir}"
-    tee "${dir}/production.rb" <<-EOF
-		server '${host}', :app, :web, :primary => true
-	EOF
+    deploy-config server
+    deploy-config cms cms
 }
 
-function cap-setup()
+function cap-setup-all()
 {
-    cap deploy:setup
+    capall deploy:setup
 }
 
-function cap-check()
+function cap-check-all()
 {
-   cap deploy:check
+   capall deploy:check
 }
 
-function cap-deploy()
+function cap-deploy-all()
 {
-    cap deploy
+    capall deploy
 }
 
 function config-cp()
 {
     local src="${config_path}/production.json"
     local dst='/var/www/citysdk/shared/config'
-    ssh "${host}" mkdir --parents "${dst}"
-    scp "${src}" "${host}:${dst}/config.json"
+    ssh "${hostname}" mkdir --parents "${dst}"
+    scp "${src}" "${hostname}:${dst}/config.json"
 }
 
 
@@ -88,10 +106,10 @@ function config-cp()
 # =============================================================================
 
 all_tasks=(
-    cap-config
-    cap-setup
-    cap-check
-    cap-deploy
+    deploy-config-all
+    cap-setup-all
+    cap-check-all
+    cap-deploy-all
     config-cp
 )
 
@@ -108,10 +126,10 @@ usage() {
 		Task:
 
 		    ID  Name
-		    1   cap-config
-		    2   cap-setup
-		    3   cap-check
-		    4   cap-deploy
+		    1   deploy-config-all
+		    2   cap-setup-all
+		    3   cap-check-all
+		    4   cap-deploy-all
 		    5   config-cp
 	EOF
     exit 1

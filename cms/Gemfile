@@ -1,16 +1,24 @@
-source "https://rubygems.org"
+source 'https://rubygems.org'
 
-gem "sinatra", :require => "sinatra/base"
-gem "sinatra-sequel"
-gem 'citysdk'
-gem 'pony'
-gem "sequel"
-gem "rgeo"
-gem "rgeo-geojson"
-gem "i18n"
-gem "active_support"
-gem "pg"
-gem "logger"
-gem "faraday"
-gem "passenger"
-gem "sinatra-session"
+ruby '1.9.3'
+
+gem 'active_support', '~>3.0.0'
+gem 'citysdk', '~>0.1.2.1'
+gem 'faraday', '~>0.8.8'
+gem 'i18n', '~>0.6.5'
+gem 'logger', '~>1.2.8'
+gem 'pg', '~>0.16.0'
+gem 'pony', '~>1.5'
+gem 'rgeo', '~>0.3.20'
+gem 'rgeo-geojson', '~>0.2.3'
+gem 'sequel', '~>4.1.1'
+gem 'sinatra', :require => 'sinatra/base'
+gem 'sinatra-sequel', '~>0.9.0'
+gem 'sinatra-session', '~>1.0.0'
+
+group :development do
+  gem 'capistrano', '~>2.14.1'
+  gem 'capistrano-ext', '~>1.2.1'
+  gem 'passenger', '~>4.0.23'
+end
+
