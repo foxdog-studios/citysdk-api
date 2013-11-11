@@ -48,7 +48,12 @@ function cap()
 
 function cap-setup()
 {
-    cap deploy:setup deploy:check
+    cap deploy:setup
+}
+
+function cap-check()
+{
+   cap deploy:check
 }
 
 function cap-deploy()
@@ -63,6 +68,7 @@ function cap-deploy()
 
 all_tasks=(
     cap-setup
+    cap-check
     cap-deploy
 )
 
@@ -80,7 +86,8 @@ usage() {
 
 		    ID  Name
 		    1   cap-setup
-		    2   cap-deploy
+		    2   cap-check
+		    3   cap-deploy
 	EOF
     exit 1
 }
@@ -104,7 +111,7 @@ else
         usage
     fi
     for task in "${@}"; do
-        if [[ "${task}" =~ '^[0-9]+$' ]]; then
+        if [[ "${task}" =~ ^[0-9]+$ ]]; then
             tasks+=( "${all_tasks[$[ task - 1 ]]}" )
         else
             tasks+=( "${task}" )

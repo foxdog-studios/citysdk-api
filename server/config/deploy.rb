@@ -12,7 +12,7 @@ set :repository,  "."
 set :scm, :none
 set :stages, %w(production testing opt istb lamia)
 set :use_sudo, false
-set :user, 'citysdk'
+set :user, 'deploy'
 
 default_run_options[:shell] = '/bin/bash'
 
@@ -23,11 +23,10 @@ default_run_options[:shell] = '/bin/bash'
 
 # XXX: Hack to make Blunder's Capistrano tasks see the RVM. Is there a
 #      better way of doing this?
-set :bundle_cmd, '/home/citysdk/.rvm/bin/rvm 1.9.3 do bundle'
+set :bundle_cmd, '/usr/local/rvm/bin/rvm 1.9.3 do bundle'
+
+# Without verbose it hangs for ages without any output.
 set :bundle_flags, '--deployment --verbose'
-set :rvm_ruby_string, '1.9.3'
-before 'deploy', 'rvm:install_rvm'
-before 'deploy', 'rvm:install_ruby'
 
 
 # =============================================================================
@@ -54,5 +53,4 @@ namespace :deploy do
 
   end
 end
-
 

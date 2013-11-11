@@ -29,17 +29,27 @@ Deployment
 
 To deploy CitySDK to a clean installation of Ubuntu 12.04 LTS (64-bit):
 
-1.  Create a `citysdk` user on the target machine and add the user to the
-    `wheel` group.
+1.  Create yourself an administrative account (i.e., the user is a member of
+    the `wheel` group) on the target machine.
 
-2.  Copy `scripts/deploy/server.sh` to the target machine as `citysdk`, e.g.,
-    `scp scripts/deplpoy/server.sh citysdk@target:`.
+2.  From your local CitySDK repository, copy the `scripts/deploy/server.sh`
+    script to the target machine, e.g.,
+    `scp scripts/deplpoy/server.sh user@target:`.
 
-3.  Run `server.sh` on the target machine as the `citypsdk` user.
+3.  Run `server.sh` on the target machine. You may be prompted for your
+    password by `sudo`.
+
+5.  Note `deploy`'s password print just before the script completes.
 
 4.  Delete the `server.sh` script from the target machine.
 
-5.  Remove the `citysdk` user from the `wheel` group.
-
 6.  Reboot the system to allow all upgrades to take effect.
+
+7.  Set up passwordless log in between your local user and the `deploy` user on
+    the target machine (e.g., using `ssh-copy-id`).
+
+8.  Using your account on the target machine, delete `deploy`'s password, e.g.,
+    `sudo passwd --delete deploy`.
+
+9.  From your local repository, run `scripts/deploy/local.sh`.
 

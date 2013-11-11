@@ -81,15 +81,7 @@ aptitude=(
 citysdk_root=/var/www/citysdk
 citysdk_current=${citysdk_root}/current
 citysdk_public=${citysdk_current}/public
-citysdk_releases=${citysdk_root}/releases
-citysdk_shared=${citysdk_root}/shared
-citysdk_paths=(
-    "${citysdk_root}"
-    "${citysdk_current}"
-    "${citysdk_public}"
-    "${citysdk_releases}"
-    "${citysdk_shared}"
-)
+
 
 # This should be the same as the default prefix suggested by the
 # interactive Passenger installation.
@@ -239,7 +231,6 @@ function user-ensure-deploy()
         sudo useradd                                                          \
             --create-home                                                     \
             --gid "${group}"                                                  \
-            --groups rvm                                                      \
             "${deploy_name}"
 
         # Generate, set and print deploy's password
@@ -254,8 +245,8 @@ function user-ensure-deploy()
 
 function citysdk-root()
 {
-    sudo mkdir --parents "${citysdk_paths[@]}"
-    sudo chown --recursive "${deploy_name}:${group}" "${citysdk_root}"
+    sudo mkdir --parents "${citysdk_root}"
+    sudo chown "${deploy_name}:${group}" "${citysdk_root}"
 }
 
 
