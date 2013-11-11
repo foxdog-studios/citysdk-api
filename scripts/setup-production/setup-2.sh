@@ -17,25 +17,18 @@
 set -o errexit
 set -o nounset
 
+# Load common config
+source "$(dirname "$(readlink -f -- "${BASH_SOURCE[0]}")")/config.sh"
 
 # =============================================================================
 # = Configuration                                                             =
 # =============================================================================
 
 deploy_name=deploy
-osm_data_url=https://github.com/ibigroup/JourneyPlanner/blob/master/Ibi.JourneyPlanner.Web/App_Data/Manchester.osm.pbf?raw=true
 osm_data_pbf=/var/tmp/osm-data.pbf
 
 citysdk_current=/var/www/citysdk/current/
 citysdk_db_root="${citysdk_current}/db/"
-
-db_name=citysdk
-db_user=postgres
-db_host=localhost
-
-cache_size_mb=800
-
-admin_password='password'
 
 # =============================================================================
 # = Tasks                                                                     =
@@ -72,7 +65,7 @@ function osm-data()
     fi
     cd /var/tmp
     osm2pgsql                                                                 \
-        --cache "${cache_size_mb}"                                            \
+        --cache "${osm2pgsql_cache_size_mb}"                                  \
         --database "${db_name}"                                               \
         --host "${db_host}"                                                   \
         --hstore-all                                                          \
@@ -106,7 +99,7 @@ function set-admin-password()
     /bin/bash --login -s <<-EOF
 		rvm use 1.9.3
 		cd ${citysdk_current}
-		racksh "o = Owner[0]; o.createPW('${admin_password}')"
+		racksh "o = Owner[0]; o.createPW('${citysdk_app_admin_password}')"
 	EOF
 }
 

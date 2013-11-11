@@ -2,12 +2,12 @@ require 'csv'
 require 'geo_ruby'
 require 'geo_ruby/geojson'
 require 'charlock_holmes'
-require '/var/www/csdk_cms/current/utils/citysdk_api.rb'
+require 'utils/citysdk_api.rb'
 
 $cdkpw = '/var/www/citysdk/shared/config/cdkpw.json'
 
   # parameters:
-  # 
+  #
   # required:
   #   email
   #   passw
@@ -19,12 +19,12 @@ $cdkpw = '/var/www/citysdk/shared/config/cdkpw.json'
   #   geometry: name of geometry column, if exists.
   #   x: name of lon column, if exists.
   #   y: name of lat column, if exists.
-  #   srid: 
-  
+  #   srid:
+
 
 class CsvImporter
   attr_accessor :params
-  
+
   def bailWithError(excpt,l)
     file = File.basename( @params['originalfile'] ? @params['originalfile'] : @params['filepath'])
     message = "#{Time.now.strftime("%b %M %Y, %H:%M")}\nCsvImporter: exception in #{File.basename(__FILE__)}, #{l}:\nProcessing file: #{file}\n#{excpt.message}"
@@ -33,7 +33,7 @@ class CsvImporter
     $stderr.puts JSON.pretty_generate(@params)
     exit!(-1)
   end
-  
+
   def setLayerStatus(m)
     # puts "CsvImporter setLayerStatus #{m}"
     begin
@@ -47,30 +47,30 @@ class CsvImporter
 
   def initialize(p)
     begin
-      
+
       @params = p
       @params.each_key do |k|
         @params[k] = nil if @params[k] == ''
       end
-      
+
        @signed_in = false
 
       bailWithError(Exception.new('No file supplied'), __LINE__) if not @params['filepath']
       bailWithError(Exception.new('No layer supplied'), __LINE__) if not @params['layername']
       bailWithError(Exception.new('No host supplied'), __LINE__) if not @params['host']
-      
+
       @params['email'] = @params['email'] || 'citysdk@waag.org'
       if @params['passw'].nil?
         pw = File.exists?($cdkpw) ? JSON.parse(File.read($cdkpw)) : nil
         @params['passw'] = (pw ? pw[@email] : '')
       end
-      
+
       geFileContents
-      
+
       @params['colsep'] = findColSep(StringIO.new(@content)) if !@params['colsep']
-      
+
       getHeaders
-      
+
       guessName if not @params['name']
 
       if not ((@params['x'] and @params['y']) or @params['geometry'])
@@ -89,7 +89,7 @@ class CsvImporter
           end
         end
       end
-      
+
       return if not ((@params['x'] and @params['y']) or @params['geometry'])
 
       findUniqueColumn if @params['unique_id'].nil?
@@ -100,8 +100,8 @@ class CsvImporter
       bailWithError(excpt, __LINE__)
     end
   end
-  
-  
+
+
   def guessName
     @params['headers'].each do |h|
       if(h =~ /^(title|titel|naam|name)/i)
@@ -109,19 +109,19 @@ class CsvImporter
       end
     end
   end
-  
+
   def guessSRID(lon,lat)
     begin
       comma = lat =~ /,/  # comma as decimal point? -- could be dutch
       lat = lat.gsub(',','.').to_f
       lon = lon.gsub(',','.').to_f
-      return 4326 if lon > -180.0 and lon < 180.0 and lat > -90.0 and lat < 90.0 
+      return 4326 if lon > -180.0 and lon < 180.0 and lat > -90.0 and lat < 90.0
       return 28992 if lon > -7000.0 and lon < 300000.0 and lat > 289000.0 and lat < 629000.0
     rescue => excpt
     end
     nil
   end
-  
+
   def findColSep(f)
     begin
       a = f.gets
@@ -136,7 +136,7 @@ class CsvImporter
     end
     ','
   end
-  
+
   def getHeaders
     @params['headers'] = []
     begin
@@ -193,7 +193,7 @@ class CsvImporter
       bailWithError(excpt, __LINE__)
     end
   end
-    
+
   def findXYColumns
     x = y = nil
     xs = ys = true
@@ -253,7 +253,7 @@ class CsvImporter
       bailWithError(excpt, __LINE__)
     end
   end
-  
+
   def writeFileContents(f=nil)
     begin
       f = @params['filepath'] if f.nil?
@@ -264,11 +264,11 @@ class CsvImporter
       bailWithError(excpt, __LINE__)
     end
   end
-  
+
   def sign_in
     begin
       sign_out if @signed_in
-      
+
       @api = CitySDK_API.new(@params['email'],@params['passw'])
       @api.set_host(@params['host'])
       @api.set_layer(@params['layername'])
@@ -280,22 +280,22 @@ class CsvImporter
       puts e.message
     end
   end
-  
+
   def sign_out
     @signed_in = false
     return @api.release
   end
-  
+
   def add_to_address()
     failed = []
     sign_in
-    
+
     begin
       qres={}
       csv = CSV.new(@content, :col_sep => @params['colsep'], :headers => true, :skip_blanks =>true)
       csv.each do |row|
-      
-        if block_given? 
+
+        if block_given?
           yielded = yield(row.to_hash)
           pc = yielded[0]
           hn = yielded[1]
@@ -303,7 +303,7 @@ class CsvImporter
           pc = @params['postcode'] ? row[@params['postcode']] : nil
           hn = @params['housenumber'] ? row[@params['housenumber']] : nil
         end
-        
+
         if not (pc.empty? or hn.empty?)
           hn.scan(/\d+/).reverse.each { |n|
             qres = @api.get("/nodes?bag.vbo::postcode_huisnummer=#{(pc + n).downcase}")
@@ -312,7 +312,7 @@ class CsvImporter
         else
           qres['status']='nix'
         end
-        
+
         if qres['status']=='success' and qres['results'] and qres['results'][0]
           url = '/' + qres['results'][0]['cdk_id'] + '/' + @params['layername']
           data = yielded[2]
@@ -331,13 +331,13 @@ class CsvImporter
     end
 
     return failed
-    
+
   end
-  
+
   def do_import
-    
+
     sign_in
-    
+
     @api.set_createTemplate(
       {
         :create => {
@@ -348,10 +348,10 @@ class CsvImporter
         }
       }
     )
-    
+
     csv = CSV.new(@content, :col_sep => @params['colsep'], :headers => true, :skip_blanks =>true)
     csv.each do |row|
-      
+
       if @params['geometry']
         geom = row.delete(@params['geometry'])
         node = {
@@ -360,14 +360,14 @@ class CsvImporter
             :wkb => geom[1]
           }
         }
-      
+
       else
 
         lon = row.delete(@params['x'])
         lat = row.delete(@params['y'])
-      
+
         next if lon[1].nil? or lat[1].nil?
-      
+
         lon = lon[1].gsub(',','.')
         lat = lat[1].gsub(',','.')
 
@@ -381,18 +381,18 @@ class CsvImporter
           }
         }
       end
-      
+
       data = row.to_hash
       data = yield(data) if defined? yield
-        
+
       node[:id]   = row[@params['unique_id']]
       node[:data] = data
       node[:name] = data[@params['name']] if @params['name'] and data[@params['name']]
-            
+
       @api.create_node(node)
 
     end
-    
+
     return sign_out
 
   end
