@@ -26,7 +26,8 @@ deploy_name=deploy
 osm_data_url=https://github.com/ibigroup/JourneyPlanner/blob/master/Ibi.JourneyPlanner.Web/App_Data/Manchester.osm.pbf?raw=true
 osm_data_pbf=/var/tmp/osm-data.pbf
 
-citysdk_db_root=/var/www/citysdk/current/db
+citysdk_current=/var/www/citysdk/current/
+citysdk_db_root="${citysdk_current}/db/"
 
 db_name=citysdk
 db_user=postgres
@@ -87,11 +88,23 @@ function osm-schema()
 )}
 
 function run-migrations()
-{(
-    cd ${citysdk_db_root}
-    rvm 1.9.3 do ./run_migrations.rb 0
-    rvm 1.9.3 do ./run_migrations.rb
-)}
+{
+    /bin/bash --login -s <<-EOF
+		rvm use 1.9.3
+		cd ${citysdk_db_root}
+		rvm 1.9.3 do ./run_migrations.rb 0
+		rvm 1.9.3 do ./run_migrations.rb
+	EOF
+}
+
+function set-admin-password()
+{
+    /bin/bash --login -s <<-EOF
+		rvm use 1.9.3
+		cd ${citysdk_current}
+		racksh "o = Owner[0]; o.createPW('password')"
+	EOF
+}
 
 # =============================================================================
 # = Command line interface                                                    =
@@ -104,6 +117,7 @@ all_tasks=(
     osm-data
     osm-schema
     run-migrations
+    set-admin-password
 )
 
 function usage()
@@ -126,6 +140,7 @@ function usage()
 		    4   osm-data
 		    5   osm-schema
 		    6   run-migrations
+		    7   set-admin-password
 	EOF
     exit 1
 }
