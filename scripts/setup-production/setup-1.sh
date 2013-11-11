@@ -22,8 +22,6 @@ set -o nounset
 # = Configuration                                                             =
 # =============================================================================
 
-db_name=citysdk
-
 deploy_name=deploy
 nginx_name=www-data
 group=www-data
@@ -38,9 +36,6 @@ ruby_version=1.9.3
 # = Site specific configuration ===============================================
 
 source "$(dirname "$(readlink -f -- "${BASH_SOURCE[0]}")")/config.sh"
-# XXX: Move this to config.sh
-
-server_name=citysdk
 
 
 # = Packages ==================================================================
@@ -121,12 +116,6 @@ rvm_bin=${rvm_root}/bin/rvm
 function aptgetwrap()
 {
     sudo apt-get --assume-yes --no-install-recommends "${@}"
-}
-
-function generate-password()
-{
-    tr --delete --complement 'a-z' < /dev/urandom                             \
-        | head --bytes=12
 }
 
 function pg()
@@ -245,11 +234,7 @@ function deploy-ensure()
     fi
 
     sudo useradd --create-home --gid "${group}" "${deploy_name}"
-
-    # Generate, set and print deploy's password
-    local password=$(generate-password)
-    trap "echo deploy password: ${password}" EXIT
-    sudo chpasswd <<< "${deploy_name}:${password}"
+    sudo chpasswd <<< "${deploy_name}:${server_deploy_password}"
 }
 
 

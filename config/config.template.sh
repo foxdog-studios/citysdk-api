@@ -1,6 +1,8 @@
 # =============================================================================
-# = postgres                                                                  =
+# = config.json fields                                                        =
 # =============================================================================
+
+# = postgres ==================================================================
 
 db_host=''
 db_name=''
@@ -8,9 +10,7 @@ db_user=''
 db_pass=''
 
 
-# =============================================================================
-# = osm                                                                       =
-# =============================================================================
+# = osm =======================================================================
 
 # Cache size for osm2pgsql tool, the larger this is, the less time it should
 # take. Change it based on the amount of RAM on the target machine.
@@ -23,9 +23,7 @@ osm2pgsql_cache_size_mb=800
 osm_data_url=''
 
 
-# =============================================================================
-# = citysdk                                                                   =
-# =============================================================================
+# = citysdk ===================================================================
 
 # Admin user password in CitySDK app is bootstrapped with this password.
 citysdk_app_admin_password=''
@@ -39,4 +37,17 @@ ep_services_url=''
 ep_tileserver_url=''
 ep_maintainer_email=''
 ep_mapxyz=''
+
+
+# =============================================================================
+# = Server fields                                                             =
+# =============================================================================
+
+# The domain name used to access this machine. For example, if the API
+# should be at http://citysdk.com/, then server_name should be citysdk.
+server_name=''
+
+# A temporary password to give assign to the deploy use before
+# password-less authentication is set up.
+server_deploy_password=''
 
