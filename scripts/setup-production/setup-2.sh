@@ -32,7 +32,10 @@ citysdk_db_root="${citysdk_current}/db/"
 db_name=citysdk
 db_user=postgres
 db_host=localhost
+
 cache_size_mb=800
+
+admin_password='password'
 
 # =============================================================================
 # = Tasks                                                                     =
@@ -103,7 +106,7 @@ function set-admin-password()
     /bin/bash --login -s <<-EOF
 		rvm use 1.9.3
 		cd ${citysdk_current}
-		racksh "o = Owner[0]; o.createPW('password')"
+		racksh "o = Owner[0]; o.createPW('${admin_password}')"
 	EOF
 }
 
