@@ -1,34 +1,38 @@
-set :stages, %w(production testing opt)
-set :default_stage, "testing"
+# XXX: Most for this is cut 'n' paste from server's deploy.rb. Should be
+#      centralised.
+
+require 'bundler/capistrano'
 require 'capistrano/ext/multistage'
-#require "bundler/capistrano"
 
-
-set :application, "CSDKRdf"
-set :repository,  "."
-set :scm, :none
-
-
-set :branch, "master"
-
-set :deploy_to, "/var/www/rdf.citysdk"
-
+set :application, 'citysdk-rdf'
+set :deploy_to, '/var/www/citysdk-rdf'
 set :deploy_via, :copy
-
+set :repository,  '.'
 set :use_sudo, false
-set :user, "citysdk"
+set :user, 'deploy'
 
-default_run_options[:shell] = '/bin/bash'
+
+# =============================================================================
+# = Gem installation                                                          =
+# =============================================================================
+
+# XXX: Hack to make Blunder's Capistrano tasks see the RVM. Is there a
+#      better way of doing this?
+set :bundle_cmd, '/usr/local/rvm/bin/rvm 1.9.3 do bundle'
+
+# Without verbose it hangs for ages without any output.
+set :bundle_flags, '--deployment --verbose'
+
+
+# =============================================================================
 
 
 namespace :deploy do
-  task :start do ; end
-  task :stop do ; end
-  # Assumes you are using Passenger
+  # Restart Passenger
   task :restart, :roles => :app, :except => { :no_release => true } do
-    run "touch #{File.join(current_path,'tmp','restart.txt')}"
+    run "touch #{File.join(current_path, 'tmp', 'restart.txt')}"
   end
- 
+
   task :finalize_update, :except => { :no_release => true } do
     run <<-CMD
       rm -rf #{latest_release}/log &&
@@ -36,6 +40,5 @@ namespace :deploy do
       ln -s #{shared_path}/log #{latest_release}/log
     CMD
   end
-end  
-
+end
 

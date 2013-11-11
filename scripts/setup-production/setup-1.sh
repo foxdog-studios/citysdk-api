@@ -85,6 +85,10 @@ cms_root=/var/www/citysdk-cms
 cms_current="${cms_root}/current"
 cms_public="${cms_current}/public"
 
+rdf_root=/var/www/citysdk-rdf
+rdf_current=${rdf_root}/current
+rdf_public=${rdf_current}/public
+
 # This should be the same as the default prefix suggested by the
 # interactive Passenger installation.
 nginx_prefix=/opt/nginx
@@ -93,13 +97,17 @@ nginx_log=/var/log/nginx
 
 log_access_citysdk=${nginx_log}/citysdk-access.log
 log_access_cms=${nginx_log}/cms-access.log
+log_access_rdf=${nginx_log}/rdf-access.log
 log_error_citysdk=${nginx_log}/citysdk-error.log
 log_error_cms=${nginx_log}/cms-error.log
+log_error_rdf=${nginx_log}/rdf-error.log
 logs=(
     "${log_access_citysdk}"
     "${log_access_cms}"
+    "${log_access_rdf}"
     "${log_error_citysdk}"
     "${log_error_cms}"
+    "${log_error_rdf}"
 )
 
 osm2pgsql_name=osm2pgsql
@@ -242,7 +250,12 @@ function deploy-ensure()
 
 function apps-roots()
 {
-    local roots=( "${citysdk_root}" "${cms_root}" )
+    local roots=(
+        "${citysdk_root}"
+        "${cms_root}"
+        "${rdf_root}"
+    )
+
     local root
     for root in "${roots[@]}"; do
         sudo mkdir --parents "${root}"
@@ -307,6 +320,18 @@ function nginx-conf()
 
 		        access_log ${log_access_cms};
 		        error_log ${log_error_cms};
+
+		        passenger_enabled on;
+		    }
+
+		    # RDF
+		    server {
+		        listen 80;
+		        server_name rdf.${server_name};
+		        root ${rdf_public};
+
+		        access_log ${log_access_rdf};
+		        error_log ${log_error_rdf};
 
 		        passenger_enabled on;
 		    }

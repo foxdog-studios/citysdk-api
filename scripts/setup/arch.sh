@@ -10,6 +10,17 @@ set -o nounset
 
 repo=$(realpath "$(dirname "$(realpath -- "${BASH_SOURCE[0]}")")/../..")
 
+applications=(
+    server
+    cms
+    rdf
+)
+
+config_applications=(
+    server
+    cms
+)
+
 ruby_version=1.9.3
 
 packages=(
@@ -46,7 +57,8 @@ function ruby-rvm()
 
 function ruby-gems()
 {
-    for app in cms server; do
+    local app
+    for app in "${applications[@]}"; do
         rvmdo bundle install "--gemfile=${repo}/${app}/Gemfile"
     done
 }
@@ -64,9 +76,9 @@ function config-init()
 
 function config-ln()
 {
-    local dir
-    for dir in cms server; do
-        local dst="${repo}/${dir}/config.json"
+    local app
+    for app in "${config_applications[@]}"; do
+        local dst="${repo}/${app}/config.json"
         if [[ ! -h "${dst}" ]]; then
             ln -s ../config/local/development.json "${dst}"
         fi

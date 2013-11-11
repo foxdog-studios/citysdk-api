@@ -9,6 +9,7 @@
 /discovery/log/
 /discovery/tmp/
 /discovery/tmp/
+/rdf/config/deploy/
 /server/config.json
 /server/config/deploy/
 /server/log/
