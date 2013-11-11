@@ -1,5 +1,6 @@
-require 'rubygems'
 require 'bundler'
+require 'i18n'
+require 'rubygems'
 
 Bundler.require
 
