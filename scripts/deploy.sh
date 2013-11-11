@@ -22,13 +22,15 @@ set -o nounset
 # = Configration                                                              =
 # =============================================================================
 
-repo=$(realpath "$(dirname "$(realpath -- "${BASH_SOURCE[0]}")")/../..")
+repo="$(realpath "$(dirname "$(realpath -- "${BASH_SOURCE[0]}")")/..")"
+
+config_path="${repo}/config/local"
 
 ruby_version=1.9.3
 
-rvm_root=${HOME}/.rvm
+rvm_root="${HOME}/.rvm"
 
-rvm_bin=${rvm_root}/bin/rvm
+rvm_bin="${rvm_root}/bin/rvm"
 
 
 # =============================================================================
@@ -61,6 +63,15 @@ function cap-deploy()
     cap deploy
 }
 
+function config-cp()
+{
+    local host="deploy@$(cat "${config_path}/production_hostname.txt")"
+    local src="${config_path}/production.json"
+    local dst='/var/www/citysdk/shared/config'
+    ssh "${host}" mkdir --parents "${dst}"
+    scp "${src}" "${host}:${dst}/config.json"
+}
+
 
 # =============================================================================
 # = Command line interface                                                    =
@@ -70,6 +81,7 @@ all_tasks=(
     cap-setup
     cap-check
     cap-deploy
+    config-cp
 )
 
 usage() {
@@ -88,6 +100,7 @@ usage() {
 		    1   cap-setup
 		    2   cap-check
 		    3   cap-deploy
+		    4   config-cp
 	EOF
     exit 1
 }

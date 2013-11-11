@@ -1,13 +1,13 @@
 require 'bundler/capistrano'
 require 'capistrano/ext/multistage'
 
-set :application, "citysdk-api"
-set :branch, "master"
-set :copy_exclude, ['config.json','tmp']
-set :default_stage, "testing"
+set :application, 'citysdk-api'
+set :branch, 'master'
+set :copy_exclude, ['config.json', 'log', 'tmp']
+set :default_stage, 'testing'
 set :deploy_to, '/var/www/citysdk'
 set :deploy_via, :copy
-set :repository,  "."
+set :repository,  '.'
 set :scm, :none
 set :stages, %w(production testing opt istb lamia)
 set :use_sudo, false
@@ -35,7 +35,7 @@ namespace :deploy do
   task :stop do ; end
   # Assumes you are using Passenger
   task :restart, :roles => :app, :except => { :no_release => true } do
-    run "touch #{File.join(current_path,'tmp','restart.txt')}"
+    run "touch #{File.join(current_path, 'tmp', 'restart.txt')}"
   end
 
   task :finalize_update, :except => { :no_release => true } do
@@ -48,7 +48,7 @@ namespace :deploy do
       mkdir -p #{latest_release}/public
     CMD
 
-    top.upload("../importers/periodic", "#{shared_path}", :via => :scp, :recursive => true)
+    top.upload('../importers/periodic', shared_path, :via => :scp, :recursive => true)
 
   end
 end
