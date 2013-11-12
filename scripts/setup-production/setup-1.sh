@@ -303,6 +303,9 @@ function nginx-conf()
 		    passenger_root $(rvmdo-passenger-root);
 		    passenger_ruby $(rvmdo-passenger-ruby);
 
+		    include mime.types;
+		    default_type application/octet-stream;
+
 		    # API
 		    server {
 		        listen 80;
