@@ -28,6 +28,7 @@ repo="$(realpath "$(dirname "$(realpath -- "${BASH_SOURCE[0]}")")/..")"
 applications=(
     server
     cms
+    devsite
     rdf
 )
 
@@ -81,8 +82,9 @@ function config-create()
 
 function deploy-config-all()
 {
-    deploy-config server
+    deploy-config server api
     deploy-config cms cms
+    deploy-config devsite dev
     deploy-config rdf rdf
 }
 

@@ -82,11 +82,14 @@ aptitude=(
 citysdk_root=/var/www/citysdk
 citysdk_current=${citysdk_root}/current
 citysdk_public=${citysdk_current}/public
-citysdk_log_access=
 
 cms_root=/var/www/citysdk-cms
 cms_current="${cms_root}/current"
 cms_public="${cms_current}/public"
+
+devsite_root=/var/www/citysdk-dev
+devsite_current="${devsite_root}/current"
+devsite_public="${devsite_current}/public"
 
 rdf_root=/var/www/citysdk-rdf
 rdf_current=${rdf_root}/current
@@ -100,16 +103,20 @@ nginx_log=/var/log/nginx
 
 log_access_citysdk=${nginx_log}/citysdk-access.log
 log_access_cms=${nginx_log}/cms-access.log
+log_access_devsite=${nginx_log}/devsite-access.log
 log_access_rdf=${nginx_log}/rdf-access.log
 log_error_citysdk=${nginx_log}/citysdk-error.log
 log_error_cms=${nginx_log}/cms-error.log
+log_error_devsite=${nginx_log}/devsite-error.log
 log_error_rdf=${nginx_log}/rdf-error.log
 logs=(
     "${log_access_citysdk}"
     "${log_access_cms}"
+    "${log_access_devsite}"
     "${log_access_rdf}"
     "${log_error_citysdk}"
     "${log_error_cms}"
+    "${log_error_devsite}"
     "${log_error_rdf}"
 )
 
@@ -256,6 +263,7 @@ function apps-roots()
     local roots=(
         "${citysdk_root}"
         "${cms_root}"
+        "${devsite_root}"
         "${rdf_root}"
     )
 
@@ -326,6 +334,18 @@ function nginx-conf()
 
 		        access_log ${log_access_cms};
 		        error_log ${log_error_cms};
+
+		        passenger_enabled on;
+		    }
+
+		    # devsite/root server
+		    server {
+		        listen 80;
+		        server_name dev.${server_name} ${server_name};
+		        root ${devsite_public};
+
+		        access_log ${log_access_devsite};
+		        error_log ${log_error_devsite};
 
 		        passenger_enabled on;
 		    }
