@@ -21,8 +21,12 @@ osm_data_url=''
 
 # = CitySDK ===================================================================
 
-# Admin user password in CitySDK app is bootstrapped with this password.
+# Admin user password in CitySDK app is bootstrapped information
 citysdk_app_admin_password=''
+citysdk_app_admin_name=''
+citysdk_app_admin_email=''
+citysdk_app_admin_organization=''
+citysdk_app_admin_domains=''
 
 ep_code=''
 ep_description=''

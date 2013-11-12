@@ -124,7 +124,13 @@ function set-admin-password()
 {(
     cd -- "${citysdk_current}"
     /usr/local/rvm/bin/rvm "${ruby_version}" 'do' bundle exec "${@}" racksh   \
-        "Owner[0].createPW('${citysdk_app_admin_password}')"
+        "owner = Owner[0]
+         owner.createPW('${citysdk_app_admin_password}')
+         owner.name='${citysdk_app_admin_name}'
+         owner.email='${citysdk_app_admin_email}'
+         owner.organization='${citysdk_app_admin_organization}'
+         owner.domains='${citysdk_app_admin_domains}'
+         owner.save_changes()"
 )}
 
 
