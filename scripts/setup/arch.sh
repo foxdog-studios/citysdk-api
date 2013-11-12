@@ -51,7 +51,7 @@ function packages-install()
 function ruby-rvm()
 {
     sudo sed -i '/gem: --user-install/d' /etc/gemrc
-    curl --location  https://get.rvm.io                                       \
+    curl --location https://get.rvm.io                                        \
         | bash -s stable "--ruby=${ruby_version}"
 }
 
@@ -69,9 +69,18 @@ function config-init()
     local template=${config}/config.template.sh
     local config_local=${config}/local
     mkdir --parent "${config_local}"
-    cp "${template}" "${config_local}/development.sh"
-    cp "${template}" "${config_local}/production.sh"
-    touch "${config_local}/production_hostname.txt"
+    local development="${config_local}/development.sh"
+    if [[ ! -f "${development}" ]]; then
+        cp "${template}" "${development}"
+    else
+        echo "${development} already exists, skipping"
+    fi
+    local production="${config_local}/production.sh"
+    if [[ ! -f "${production}" ]]; then
+        cp "${template}" "${production}"
+    else
+        echo "${production} already exists, skipping"
+    fi
 }
 
 function config-ln()

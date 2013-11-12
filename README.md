@@ -28,16 +28,13 @@ To set up a development environment, Arch Linux users should run;
 Configuration
 -------------
 
-1. Complete the `development.sh` and `production.sh` configurations in the
-   `config/local` directory.
+1.  Complete the `development.sh` and `production.sh` configurations in the
+    `config/local` directory.
 
-2. To generate JSON versions of the development and production configurations
-   run
+2.  To generate JSON versions of the development and production configurations
+    run
 
-    [local]$ ./scripts/create_config.sh
-
-3. Enter the host name of the production machine into
-   `config/local/production_hostname.txt`.
+        [local]$ ./scripts/create_config.sh
 
 
 Deployment
@@ -63,18 +60,16 @@ CitySDK to a clean installation of Ubuntu 12.04 LTS (64-bit):
 
     Note: You may be prompted for your password by `sudo`.
 
-4.  Record `deploy`'s password printed just before the script finishes.
+4.  Reboot the target machine to ensure all package upgrades take effect.
 
-5.  Reboot the target machine to ensure all package upgrades take effect.
-
-6.  Set up passwordless log in between your local user and the `deploy` user on
+5.  Set up passwordless log in between your local user and the `deploy` user on
     the target machine, e.g.;
 
         [local]$ ssh-copy-id deploy@target_host
 
-    You'll be prompted from password printed by `setup-1.sh`
+    Note: Check `config/local/production.sh` for deploy's password.
 
-8.  From your local repository, run;
+6.  From your local repository, run;
 
         [local]$ ./scripts/deploy.sh
 
@@ -95,7 +90,7 @@ your `.bashrc` on the target machine.
     function _setup()
     {
         local num=${1}
-        local repo=local_user@path/to/repository
+        local repo=local_user@host_name:path/to/repository
         local setup=${HOME}/setup
 
         mkdir --parent "${setup}"

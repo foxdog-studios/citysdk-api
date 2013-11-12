@@ -26,9 +26,30 @@ source "$(dirname "$(readlink -f -- "${BASH_SOURCE[0]}")")/config.sh"
 
 deploy_name=deploy
 osm_data_pbf=/var/tmp/osm-data.pbf
+ruby_version=1.9.3
 
-citysdk_current=/var/www/citysdk/current/
-citysdk_db_root="${citysdk_current}/db/"
+citysdk_current=/var/www/citysdk/current
+citysdk_db_root="${citysdk_current}/db"
+
+
+# =============================================================================
+# = Helpers                                                                   =
+# =============================================================================
+
+function migration()
+{(
+    cd -- "${citysdk_db_root}"
+    sudo -u postgres /usr/local/rvm/bin/rvm "${ruby_version}" do              \
+        bundle exec ./run_migrations.rb "${@}"
+)}
+
+function psqlwrap()
+{
+    local database="${1}"
+    local cmd="${2}"
+    sudo -u postgres psql "--command=${cmd}" "${database}"
+}
+
 
 # =============================================================================
 # = Tasks                                                                     =
@@ -50,58 +71,60 @@ function nginx-restart()
 
 function ensure-db-user()
 {
-    sudo -u postgres -s <<-EOF
-		psql postgres \
-            -tAc  "SELECT 1 FROM pg_roles WHERE rolname='${db_user}'" \
-            | grep -q 1 \
-        || create_user --pwprompt ${db_user}
-	EOF
+    # Does this user already exist?
+    local query="SELECT 1 FROM pg_roles WHERE rolname='${db_user}'"
+    if psqlwrap postgres "${query}" | grep --quiet 1; then
+        return
+    fi
+
+    psqlwrap "CREATE USER ${db_user} PASSWORD '${db_pass}'"
 }
 
 function osm-data()
-{(
-    if [[ ! -f ${osm_data_pbf} ]]; then
-        curl -L -o ${osm_data_pbf} ${osm_data_url}
+{
+    if [[ ! -f "${osm_data_pbf}" ]]; then
+        curl --location -o "${osm_data_pbf}" "${osm_data_url}"
     fi
-    cd /var/tmp
-    osm2pgsql                                                                 \
-        --cache "${osm2pgsql_cache_size_mb}"                                  \
-        --database "${db_name}"                                               \
-        --host "${db_host}"                                                   \
-        --hstore-all                                                          \
-        --latlong                                                             \
-        --password                                                            \
-        --slim                                                                \
-        --username "${db_user}"                                               \
-        "${osm_data_pbf}"
-)}
+
+    expect -f - <<-EOF
+		set timeout -1
+		spawn osm2pgsql                                                       \
+		    --cache "${osm2pgsql_cache_size_mb}"                              \
+		    --database "${db_name}"                                           \
+		    --host "${db_host}"                                               \
+		    --hstore-all                                                      \
+		    --latlong                                                         \
+		    --password                                                        \
+		    --slim                                                            \
+		    --username "${db_user}"                                           \
+		    "${osm_data_pbf}"
+		expect "Password:"
+		send "${db_pass}\r"
+		expect eof
+	EOF
+}
 
 function osm-schema()
-{(
-    cd ${citysdk_db_root}
-    sudo -u "${db_user}" psql                                                 \
-        -d "${db_name}"                                                       \
-        -U "${db_user}" < osm_schema.sql
-)}
+{
+    # XXX: Instead of always succeeding, make the script idempotent.
+    sudo -u postgres psql "${db_name}" < "${citysdk_db_root}/osm_schema.sql"  \
+        || true
+}
 
 function run-migrations()
 {
-    /bin/bash --login -s <<-EOF
-		rvm use 1.9.3
-		cd ${citysdk_db_root}
-		rvm 1.9.3 do ./run_migrations.rb 0
-		rvm 1.9.3 do ./run_migrations.rb
-	EOF
+    # '0' resets something
+    migration 0
+    migration
 }
 
 function set-admin-password()
-{
-    /bin/bash --login -s <<-EOF
-		rvm use 1.9.3
-		cd ${citysdk_current}
-		racksh "o = Owner[0]; o.createPW('${citysdk_app_admin_password}')"
-	EOF
-}
+{(
+    cd -- "${citysdk_current}"
+    /usr/local/rvm/bin/rvm "${ruby_version}" 'do' bundle exec "${@}" racksh   \
+        "o = Owner[0]; o.createPW('${citysdk_app_admin_password}')"
+)}
+
 
 # =============================================================================
 # = Command line interface                                                    =
