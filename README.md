@@ -17,8 +17,8 @@ A running implementation of the api can be found at
 you'll find additional documentation.
 
 
-Set up
-------
+Set up development environment
+------------------------------
 
 To set up a development environment, Arch Linux users should run;
 
@@ -29,10 +29,11 @@ Configuration
 -------------
 
 1.  Complete the `development.sh` and `production.sh` configurations in the
-    `config/local` directory.
+    `config/local` directory. See the comments in these configuration files for
+    descriptions of what each field represents.
 
 2.  To generate JSON versions of the development and production configurations
-    run
+    (which are used by the apps) run
 
         [local]$ ./scripts/create_config.sh
 
@@ -40,8 +41,17 @@ Configuration
 Deployment
 ----------
 
-Before deploying, ensure you've set up your development environment. To deploy
-CitySDK to a clean installation of Ubuntu 12.04 LTS (64-bit):
+These deployment instructions describe how to deploy CitySDK to a clean
+installation of Ubuntu 12.04 LTS (64-bit) and will install
+
+- the API server,
+- the developer site server,
+- the RDF server,
+- the CMS server.
+
+These instructions do _not_ set up any importers or tile servers.
+
+Before deploying, ensure you've set up your development environment.
 
 1.  Create yourself an administrative account (i.e., the user is a member of
     the `wheel` group) on the target machine.
@@ -117,11 +127,11 @@ your `.bashrc` on the target machine.
 
 Then call
 
-    $ setup-1
+    [target]$ setup-1
 
 or
 
-    $ setup-2
+    [target]$ setup-2
 
 Which will pull over any changes you have made on your local develpoment
 machine and run the setup script.
