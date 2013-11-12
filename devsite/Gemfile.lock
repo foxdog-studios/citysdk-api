@@ -1,9 +1,31 @@
 GEM
   remote: https://rubygems.org/
   specs:
+    capistrano (2.14.2)
+      highline
+      net-scp (>= 1.0.0)
+      net-sftp (>= 2.0.0)
+      net-ssh (>= 2.0.14)
+      net-ssh-gateway (>= 1.1.0)
+    capistrano-ext (1.2.1)
+      capistrano (>= 1.0.0)
+    daemon_controller (1.1.7)
+    highline (1.6.20)
+    net-scp (1.1.2)
+      net-ssh (>= 2.6.5)
+    net-sftp (2.1.2)
+      net-ssh (>= 2.6.5)
+    net-ssh (2.7.0)
+    net-ssh-gateway (1.2.0)
+      net-ssh (>= 2.6.5)
+    passenger (4.0.23)
+      daemon_controller (>= 1.1.0)
+      rack
+      rake (>= 0.8.1)
     rack (1.5.2)
     rack-protection (1.5.0)
       rack
+    rake (10.1.0)
     redcarpet (3.0.0)
     sinatra (1.4.3)
       rack (~> 1.4)
@@ -15,5 +37,8 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  capistrano (~> 2.14.1)
+  capistrano-ext (~> 1.2.1)
+  passenger (~> 4.0.23)
   redcarpet
   sinatra

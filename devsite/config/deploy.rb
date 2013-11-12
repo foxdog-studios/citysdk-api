@@ -1,25 +1,30 @@
-set :stages, %w(production testing opt)
-set :default_stage, "production"
+require 'bundler/capistrano'
 require 'capistrano/ext/multistage'
-#require "bundler/capistrano"
-
 
 set :application, "CSDKDoc"
-set :repository,  "."
-set :scm, :none
-
-set :copy_exclude, ['config.json','tmp']
-
-set :branch, "master"
-
-set :deploy_to, "/var/www/dev.citysdk"
-
+set :copy_exclude, ['config.json', 'log', 'tmp']
+set :deploy_to, "/var/www/citysdk-dev"
 set :deploy_via, :copy
-
+set :repository,  '.'
 set :use_sudo, false
-set :user, "bert"
+set :user, 'deploy'
 
-default_run_options[:shell] = '/bin/bash'
+
+# =============================================================================
+# = Gem installation                                                          =
+# =============================================================================
+
+# XXX: Hack to make Blunder's Capistrano tasks see the RVM. Is there a
+#      better way of doing this?
+set :bundle_cmd, '/usr/local/rvm/bin/rvm 1.9.3 do bundle'
+
+# Without verbose it hangs for ages without any output.
+set :bundle_flags, '--deployment --verbose'
+
+
+# =============================================================================
+
+
 
 namespace :deploy do
   task :start do ; end
@@ -28,7 +33,7 @@ namespace :deploy do
   task :restart, :roles => :app, :except => { :no_release => true } do
     run "touch #{File.join(current_path,'tmp','restart.txt')}"
   end
- 
+
   task :finalize_update, :except => { :no_release => true } do
     run <<-CMD
       rm -rf #{latest_release}/log &&
@@ -37,9 +42,9 @@ namespace :deploy do
       mkdir -p #{latest_release}/tmp &&
       ln -s #{shared_path}/log #{latest_release}/log
     CMD
-    
+
     run "ln -s /var/www/csdk_cms/current/utils/citysdk_api.rb #{release_path}/public/citysdk_api.rb"
   end
-end  
+end
 
 
