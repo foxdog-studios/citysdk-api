@@ -33,13 +33,14 @@ applications=(
 
 config_path="${repo}/config/local"
 
-hostname="deploy@$(cat "${config_path}/production_hostname.txt")"
 
 ruby_version=1.9.3
 
 rvm_root="${HOME}/.rvm"
 
 rvm_bin="${rvm_root}/bin/rvm"
+
+source "${repo}/config/local/production.sh"
 
 
 # =============================================================================
@@ -48,6 +49,8 @@ rvm_bin="${rvm_root}/bin/rvm"
 
 function capall()
 {(
+    set -o errexit
+    set -o nounset
     local app
     for app in "${applications[@]}"; do
         cd -- "${repo}/${app}"
@@ -58,11 +61,11 @@ function capall()
 function deploy-config()
 {
     local app="${1}"
-    local domain="${2:+${2}.}${hostname}"
+    local domain="${2:+${2}.}${host_name}"
     local dir="${repo}/${app}/config/deploy"
     mkdir --parents "${dir}"
     tee "${dir}/production.rb" <<-EOF
-		server '${hostname}', :app, :web, :primary => true
+		server '${host_name}', :app, :web, :primary => true
 	EOF
 }
 
@@ -102,8 +105,8 @@ function config-cp()
 {
     local src="${config_path}/production.json"
     local dst='/var/www/citysdk/shared/config'
-    ssh "${hostname}" mkdir --parents "${dst}"
-    scp "${src}" "${hostname}:${dst}/config.json"
+    ssh "deploy@${host_name}" mkdir --parents "${dst}"
+    scp "${src}" "deploy@${host_name}:${dst}/config.json"
 }
 
 

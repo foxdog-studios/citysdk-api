@@ -71,6 +71,9 @@ aptitude=(
 
     # Memcached
     'memcached'
+
+    # osm-data in setup-2.sh
+    'expect'
 )
 
 
