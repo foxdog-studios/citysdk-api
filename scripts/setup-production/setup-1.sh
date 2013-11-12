@@ -336,6 +336,12 @@ function nginx-conf()
 		    gzip_proxied expired no-cache no-store private auth;
 		    gzip_types text/plain application/xml;
 
+		    # Memcache
+		    upstream memcached {
+		        server localhost:11211 weight=5 max_fails=3 fail_timeout=3s;
+		        keepalive 1024;
+		    }
+
 		    # API
 		    server {
 		        listen 80;
@@ -360,7 +366,7 @@ function nginx-conf()
 		        passenger_enabled on;
 		    }
 
-		    # devsite/root server
+		    # Documentation
 		    server {
 		        listen 80;
 		        server_name dev.${server_name} ${server_name};
