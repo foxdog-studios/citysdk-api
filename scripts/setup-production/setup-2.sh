@@ -77,7 +77,7 @@ function ensure-db-user()
         return
     fi
 
-    psqlwrap "CREATE USER ${db_user} PASSWORD '${db_pass}'"
+    psqlwrap postgres "CREATE USER ${db_user} PASSWORD '${db_pass}'"
 }
 
 function osm-data()
@@ -113,6 +113,8 @@ function osm-schema()
 
 function run-migrations()
 {
+    psqlwrap "${db_name}" "GRANT ALL ON SCHEMA osm TO ${db_user}"
+
     # '0' resets something
     migration 0
     migration
@@ -122,7 +124,7 @@ function set-admin-password()
 {(
     cd -- "${citysdk_current}"
     /usr/local/rvm/bin/rvm "${ruby_version}" 'do' bundle exec "${@}" racksh   \
-        "o = Owner[0]; o.createPW('${citysdk_app_admin_password}')"
+        "Owner[0].createPW('${citysdk_app_admin_password}')"
 )}
 
 
