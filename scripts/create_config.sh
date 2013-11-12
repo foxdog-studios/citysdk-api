@@ -71,7 +71,7 @@ function make_config()
     for key in "${keys[@]::$[ ${#keys[@]} - 1]}"; do
         make_entry "${key}"
     done
-    make_entry_last "${keys[${#keys}]}"
+    make_entry_last "${keys[${#keys[@]} - 1]}"
     echo '}'
 }
 
