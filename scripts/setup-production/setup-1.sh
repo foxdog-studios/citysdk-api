@@ -98,16 +98,20 @@ nginx_prefix=/opt/nginx
 nginx_conf=${nginx_prefix}/conf/nginx.conf
 nginx_log=/var/log/nginx
 
+log_access_nginx=${nginx_log}/access.log
 log_access_citysdk=${nginx_log}/citysdk-access.log
 log_access_cms=${nginx_log}/cms-access.log
 log_access_rdf=${nginx_log}/rdf-access.log
+log_error_nginx=${nginx_log}/error.log
 log_error_citysdk=${nginx_log}/citysdk-error.log
 log_error_cms=${nginx_log}/cms-error.log
 log_error_rdf=${nginx_log}/rdf-error.log
 logs=(
+    "${log_access_nginx}"
     "${log_access_citysdk}"
     "${log_access_cms}"
     "${log_access_rdf}"
+    "${log_error_nginx}"
     "${log_error_citysdk}"
     "${log_error_cms}"
     "${log_error_rdf}"
@@ -300,11 +304,29 @@ function nginx-conf()
 		}
 
 		http {
+		    access_log ${log_access_nginx};
+		    error_log ${log_error_nginx};
+
 		    passenger_root $(rvmdo-passenger-root);
 		    passenger_ruby $(rvmdo-passenger-ruby);
 
+		    # Hide some information, slightly more secure.
+		    server_tokens off;
+		    passenger_show_version_in_header off;
+
+		    # Send files (e.g., CSS) with the correct MIME type.
 		    include mime.types;
 		    default_type application/octet-stream;
+
+		    # Copy data between file descriptors in kernal space. This is more
+		    # efficient than moving it through user space.
+		    sendfile on;
+
+		    # GZip
+		    gzip on;
+		    gzip_min_length 1000;
+		    gzip_proxied expired no-cache no-store private auth;
+		    gzip_types text/plain application/xml;
 
 		    # API
 		    server {
