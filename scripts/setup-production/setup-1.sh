@@ -306,7 +306,7 @@ function nginx-conf()
 		    # API
 		    server {
 		        listen 80;
-		        server_name ${server_name};
+		        server_name api.${server_name};
 		        root ${citysdk_public};
 
 		        access_log ${log_access_citysdk};
