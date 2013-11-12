@@ -14,11 +14,13 @@ applications=(
     server
     cms
     rdf
+    devsite
 )
 
 config_applications=(
     server
     cms
+    devsite
 )
 
 ruby_version=1.9.3
@@ -59,6 +61,7 @@ function ruby-gems()
 {
     local app
     for app in "${applications[@]}"; do
+        echo "bundling: ${app}"
         rvmdo bundle install "--gemfile=${repo}/${app}/Gemfile"
     done
 }
@@ -87,6 +90,7 @@ function config-ln()
 {
     local app
     for app in "${config_applications[@]}"; do
+        echo "soft-linking config for: ${app}"
         local dst="${repo}/${app}/config.json"
         if [[ ! -h "${dst}" ]]; then
             ln -s ../config/local/development.json "${dst}"
