@@ -1,7 +1,7 @@
 CitySDK
 =======
 
-The CitySDK Mobility API, developed by [Waag Society](http://waag.org/) is a
+.comThe CitySDK Mobility API, developed by [Waag Society](http://waag.org/) is a
 layer-based data distribution and service kit. Part of
 [CitySDK](http://citysdk.eu), a European project in which eight cities
 (Manchester, Rome, Lamia, Amsterdam, Helsinki, Barcelona, Lisbon and Istanbul)
@@ -54,7 +54,7 @@ These instructions do _not_ set up any importers or tile servers.
 Before deploying, ensure you've set up your development environment.
 
 1.  Create yourself an administrative account (i.e., the user is a member of
-    the `wheel` group) on the target machine.
+    the `sudo` group) on the target machine.
 
 2.  From your local repository, copy the `scripts/setup-production` directory
     and the production configuration to the target machine, e.g.;
