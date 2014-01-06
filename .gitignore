@@ -3,6 +3,7 @@
 /cms/log/
 /cms/tmp/
 /config/local/
+/devsite/config.json
 /devsite/config/deploy/
 /devsite/log/
 /devsite/tmp/
