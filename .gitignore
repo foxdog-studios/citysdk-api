@@ -1,8 +1,10 @@
+/cms/.bundle/
 /cms/config.json
 /cms/config/deploy/
 /cms/log/
 /cms/tmp/
 /config/local/
+/devsite/.bundle/
 /devsite/config.json
 /devsite/config/deploy/
 /devsite/log/
@@ -11,7 +13,9 @@
 /discovery/log/
 /discovery/tmp/
 /discovery/tmp/
+/rdf/.bundle/
 /rdf/config/deploy/
+/server/.bundle/
 /server/config.json
 /server/config/deploy/
 /server/log/

@@ -29,6 +29,9 @@ packages=(
 
 repo=$(realpath "$(dirname "$(realpath -- "${BASH_SOURCE[0]}")")/..")
 
+rvm_bin=~/.rvm/bin/rvm
+rvm_gemset=citysdk
+
 ruby_version=1.9.3
 
 
@@ -51,10 +54,16 @@ function ensure_line()
 }
 
 
+function rvm()
+{
+    "$rvm_bin" "$ruby_version@$rvm_gemset" "$@"
+}
+
+
 function rvmdo()
 {
     # Leave 'do' quoted. Without, VIM gets confused.
-    ~/.rvm/bin/rvm "$ruby_version" 'do' "$@"
+    rvm 'do' "$@"
 }
 
 
@@ -68,15 +77,14 @@ function packages-install()
 }
 
 
-function ruby-rvm()
+function rvm-install()
 {
     # /etc/gemrc is part of Arch Linux's Ruby package
     if [[ -f /etc/gemrc ]]; then
         sudo sed -i '/gem: --user-install/d' /etc/gemrc
     fi
 
-    curl --location https://get.rvm.io          \
-        | bash -s stable "--ruby=$ruby_version"
+    curl --location https://get.rvm.io | bash -s stable
 
     local path=~/.bash_profile
     if [[ -f "$path" ]]; then
@@ -85,9 +93,17 @@ function ruby-rvm()
 }
 
 
-function ruby-gems()
+function rvm-ruby()
+{
+    rvm install "ruby-$ruby_version"
+}
+
+
+function rvm-gemset()
 {
     local app
+
+    rvm gemset create "$rvm_gemset"
 
     for app in "${applications[@]}"; do
         echo Bundling: $app
@@ -146,8 +162,9 @@ function manual()
 
 all_tasks=(
     packages-install
-    ruby-rvm
-    ruby-gems
+    rvm-install
+    rvm-ruby
+    rvm-gemset
     config-init
     config-ln
     manual
@@ -165,8 +182,9 @@ function usage()
 		Tasks:
 
 		    packages-install
-		    ruby-rvm
-		    ruby-gems
+		    rvm-install
+		    rvm-ruby
+		    rvm-gemset
 		    config-init
 		    config-ln
 		    manual
