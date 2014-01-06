@@ -13,6 +13,7 @@
 /discovery/log/
 /discovery/tmp/
 /discovery/tmp/
+/local/
 /rdf/.bundle/
 /rdf/config/deploy/
 /server/.bundle/

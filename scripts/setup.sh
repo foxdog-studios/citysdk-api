@@ -8,6 +8,8 @@ set -o nounset
 # = Configuration                                                              =
 # ==============================================================================
 
+repo=$(realpath "$(dirname "$(realpath -- "${BASH_SOURCE[0]}")")/..")
+
 applications=(
     server
     cms
@@ -21,13 +23,27 @@ config_applications=(
     devsite
 )
 
-packages=(
-    git
-    libyaml
-    postgresql-libs
+data_dir=$repo/local
+data_path=$data_dir/osm.pbf
+data_url='https://github.com/ibigroup/JourneyPlanner/blob/master/'
+data_url+='Ibi.JourneyPlanner.Web/App_Data/Manchester.osm.pbf?raw=true'
+
+db_host=localhost
+db_name=citysdk
+db_user=citysdk
+db_password=citysdk
+
+packages_aur=(
+    osm2pgsql-git
 )
 
-repo=$(realpath "$(dirname "$(realpath -- "${BASH_SOURCE[0]}")")/..")
+packages_official=(
+    expect
+    git
+    libyaml
+    postgresql
+    yaourt
+)
 
 rvm_bin=~/.rvm/bin/rvm
 rvm_gemset=citysdk
@@ -54,6 +70,19 @@ function ensure_line()
 }
 
 
+function pdo()
+{
+    sudo --login --user=postgres -- "$@"
+
+}
+
+
+function psql()
+{
+    pdo psql --command="$1" "${2:-$db_name}"
+}
+
+
 function rvm()
 {
     "$rvm_bin" "$ruby_version@$rvm_gemset" "$@"
@@ -62,7 +91,6 @@ function rvm()
 
 function rvmdo()
 {
-    # Leave 'do' quoted. Without, VIM gets confused.
     rvm 'do' "$@"
 }
 
@@ -71,13 +99,130 @@ function rvmdo()
 # = Tasks                                                                      =
 # ==============================================================================
 
-function packages-install()
+function add_archlinuxfr_repo()
 {
-    sudo pacman --noconfirm --sync --needed --refresh "${packages[@]}"
+    if ! grep --quiet '\[archlinuxfr\]' /etc/pacman.conf; then
+        sudo tee --append /etc/pacman.conf <<-'EOF'
+			[archlinuxfr]
+			Server = http://repo.archlinux.fr/$arch
+			SigLevel = Never
+		EOF
+    fi
 }
 
 
-function rvm-install()
+function packages_official_install()
+{
+    sudo pacman --noconfirm               \
+                --sync                    \
+                --needed                  \
+                --refresh                 \
+                "${packages_official[@]}"
+}
+
+
+function packages_aur_install()
+{
+    yaourt --noconfirm --sync --needed --refresh "${packages_aur[@]}"
+}
+
+
+function postgresql_config()
+{
+    sudo systemd-tmpfiles --create postgresql.conf
+
+    local data=/var/lib/postgres/data
+    if [[ "$(pdo ls -1 "$data" | wc -l)" -eq 0 ]]; then
+        pdo initdb --locale en_GB.UTF-8 -D "$data"
+    fi
+
+    sudo systemctl enable postgresql.service
+    sudo systemctl start postgresql.service
+}
+
+
+function postgresql_create()
+{
+    pdo createdb "$db_name"
+}
+
+
+function postgresql_extensions()
+{
+    psql 'CREATE EXTENSION IF NOT EXISTS hstore;
+          CREATE EXTENSION IF NOT EXISTS pg_trgm;
+          CREATE EXTENSION IF NOT EXISTS postgis;'
+}
+
+
+function postgresql_data()
+{
+    mkdir --parent "$data_dir"
+
+    if [[ ! -f "$data_path" ]]; then
+        curl --location --output "$data_path" "$data_url"
+    fi
+}
+
+
+function postgresql_user()
+{
+    local query="SELECT 1 FROM pg_roles WHERE rolname='$db_user'"
+
+    # Does this user already exist?
+    if psql "$query" postgres | grep --quiet 1; then
+        return
+    fi
+
+    psql "CREATE USER $db_user PASSWORD '$db_password'" postgres
+}
+
+
+function postgresql_import()
+{
+    expect -f - <<-EOF
+		set timeout -1
+		spawn osm2pgsql           \
+		    --cache 800           \
+		    --database "$db_name" \
+		    --host "$db_host"     \
+		    --hstore-all          \
+		    --latlong             \
+		    --password            \
+		    --slim                \
+		    --username "$db_user" \
+		    "$data_path"
+		expect "Password:"
+		send "$db_password\r"
+		expect eof
+	EOF
+}
+
+
+function postgresql_schema()
+{
+    # TODO: Instead of always succeeding, make the script idempotent.
+    pdo psql "$db_name" < "$repo/server/db/osm_schema.sql" || true
+}
+
+
+function postgresql_migrations()
+{
+    psql "GRANT ALL ON SCHEMA osm TO $db_user"
+
+    function migration()
+    {(
+        cd "$repo/server/db"
+        rvmdo bundle exec ./run_migrations.rb "$@"
+    )}
+
+    # '0' resets something
+    migration 0
+    migration
+}
+
+
+function rvm_install()
 {
     # /etc/gemrc is part of Arch Linux's Ruby package
     if [[ -f /etc/gemrc ]]; then
@@ -93,18 +238,17 @@ function rvm-install()
 }
 
 
-function rvm-ruby()
+function rvm_ruby()
 {
     rvm install "ruby-$ruby_version"
 }
 
 
-function rvm-gemset()
+function rvm_gemset()
 {
-    local app
-
     rvm gemset create "$rvm_gemset"
 
+    local app
     for app in "${applications[@]}"; do
         echo Bundling: $app
         rvmdo bundle install "--gemfile=$repo/$app/Gemfile"
@@ -112,7 +256,7 @@ function rvm-gemset()
 }
 
 
-function config-init()
+function config_init()
 {
     local config=$repo/config
     local template=$config/config.template.sh
@@ -138,7 +282,7 @@ function config-init()
 }
 
 
-function config-ln()
+function config_ln()
 {
     local app
 
@@ -156,17 +300,28 @@ function manual()
 	EOF
 }
 
+
 # ==============================================================================
 # = Command line interface                                                     =
 # ==============================================================================
 
 all_tasks=(
-    packages-install
-    rvm-install
-    rvm-ruby
-    rvm-gemset
-    config-init
-    config-ln
+    add_archlinuxfr_repo
+    packages_official_install
+    packages_aur_install
+    postgresql_config
+    postgresql_create
+    postgresql_extensions
+    postgresql_user
+    postgresql_data
+    postgresql_import
+    postgresql_schema
+    postgresql_migrations
+    rvm_install
+    rvm_ruby
+    rvm_gemset
+    config_init
+    config_ln
     manual
 )
 
@@ -177,16 +332,26 @@ function usage()
 
 		Usage:
 
-		    setup.sh TASK
+		    setup.sh [TASK... ]
 
 		Tasks:
 
-		    packages-install
-		    rvm-install
-		    rvm-ruby
-		    rvm-gemset
-		    config-init
-		    config-ln
+		    add_archlinuxfr_repo
+		    packages_official_install
+		    packages_aur_install
+		    postgresql_config
+		    postgresql_create
+		    postgresql_extensions
+		    postgresql_user
+		    postgresql_data
+		    postgresql_import
+		    postgresql_schema
+		    postgresql_migrations
+		    rvm_install
+		    rvm_ruby
+		    rvm_gemset
+		    config_init
+		    config_ln
 		    manual
 	EOF
     exit 1
