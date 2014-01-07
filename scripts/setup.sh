@@ -221,7 +221,6 @@ function postgresql_migrations()
     migration
 }
 
-
 function rvm_install()
 {
     # /etc/gemrc is part of Arch Linux's Ruby package
@@ -292,6 +291,21 @@ function config_ln()
     done
 }
 
+function cms_set_admin_details()
+{(
+    cd "$repo/server"
+    rvmdo bundle exec racksh   \
+        "owner = Owner[0]
+         owner.createPW('citysdk')
+         owner.name='citysdk'
+         owner.email='citysdk@example.com'
+         owner.organization='citysdk'
+         owner.domains='test'
+         owner.save_changes()"
+
+)}
+
+
 
 function manual()
 {
@@ -322,6 +336,7 @@ all_tasks=(
     rvm_gemset
     config_init
     config_ln
+    cms_set_admin_details
     manual
 )
 
@@ -352,6 +367,7 @@ function usage()
 		    rvm_gemset
 		    config_init
 		    config_ln
+		    cms_set_admin_details
 		    manual
 	EOF
     exit 1
