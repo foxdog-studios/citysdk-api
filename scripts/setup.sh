@@ -41,6 +41,7 @@ packages_official=(
     expect
     git
     libyaml
+    memcached
     postgresql
     yaourt
 )
@@ -252,6 +253,13 @@ function postgresql_migrations()
 }
 
 
+function memcached_config()
+{
+    sudo systemctl enable memcached.service
+    sudo systemctl start memcached.service
+}
+
+
 function config_init()
 {
     function cp_config()
@@ -292,15 +300,14 @@ function config_ln()
 function cms_set_admin_details()
 {(
     cd "$repo/server"
-    bundle exec racksh \
-        "owner = Owner[0]
-         owner.createPW('citysdk')
-         owner.name='citysdk'
-         owner.email='citysdk@example.com'
-         owner.organization='citysdk'
-         owner.domains='test'
-         owner.save_changes()"
-
+    bundle exec racksh "
+        owner = Owner[0]
+        owner.createPW('citysdk')
+        owner.name='citysdk'
+        owner.email='citysdk@example.com'
+        owner.organization='citysdk'
+        owner.domains='test'
+        owner.save_changes()"
 )}
 
 
@@ -331,6 +338,7 @@ all_tasks=(
     postgresql_import
     postgresql_schema
     postgresql_migrations
+    memcached_config
     config_init
     config_ln
     cms_set_admin_details
@@ -362,6 +370,7 @@ function usage()
 		    postgresql_import
 		    postgresql_schema
 		    postgresql_migrations
+		    memcached_config
 		    config_init
 		    config_ln
 		    cms_set_admin_details
