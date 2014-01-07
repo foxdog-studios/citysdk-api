@@ -1,6 +1,7 @@
 source 'https://rubygems.org'
 
 ruby '1.9.3'
+#ruby-gemset=citysdk
 
 gem 'active_support', '~>3.0.0'
 gem 'citysdk', '~>0.1.2.1'
