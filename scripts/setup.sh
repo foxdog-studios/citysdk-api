@@ -55,18 +55,9 @@ ruby_version=1.9.3
 # = Helpers                                                                    =
 # ==============================================================================
 
-function ensure_line()
+function bundle()
 {
-    local line=$1
-    local path=$2
-
-    if ! grep --fixed-strings  \
-              --line-regexp    \
-              --quiet          \
-              "--regexp=$line" \
-              "$path"; then
-        printf '%s\n' "$line" >> "$path"
-    fi
+    rvmdo bundle "$@"
 }
 
 
@@ -127,6 +118,35 @@ function packages_aur_install()
 }
 
 
+function rvm_install()
+{
+    # /etc/gemrc is part of Arch Linux's Ruby package
+    if [[ -f /etc/gemrc ]]; then
+        sudo sed -i '/gem: --user-install/d' /etc/gemrc
+    fi
+
+    curl --location https://get.rvm.io | bash -s stable
+}
+
+
+function rvm_ruby()
+{
+    rvm install "ruby-$ruby_version"
+}
+
+
+function rvm_gemset()
+{
+    rvm gemset create "$rvm_gemset"
+
+    local app
+    for app in "${applications[@]}"; do
+        echo Bundling: $app
+        bundle install "--gemfile=$repo/$app/Gemfile"
+    done
+}
+
+
 function postgresql_config()
 {
     sudo systemd-tmpfiles --create postgresql.conf
@@ -143,6 +163,13 @@ function postgresql_config()
 
 function postgresql_create()
 {
+    local query="SELECT 1 FROM pg_database WHERE datname = '$db_name';"
+
+    # Return is the database already exists
+    if psql "$query" postgres | grep --quiet 1; then
+        return
+    fi
+
     pdo createdb "$db_name"
 }
 
@@ -167,7 +194,7 @@ function postgresql_data()
 
 function postgresql_user()
 {
-    local query="SELECT 1 FROM pg_roles WHERE rolname='$db_user'"
+    local query="SELECT 1 FROM pg_roles WHERE rolname='$db_user';"
 
     # Does this user already exist?
     if psql "$query" postgres | grep --quiet 1; then
@@ -175,6 +202,7 @@ function postgresql_user()
     fi
 
     psql "CREATE USER $db_user PASSWORD '$db_password'" postgres
+    psql "GRANT ALL ON DATABASE $db_name TO $db_user"
 }
 
 
@@ -208,76 +236,46 @@ function postgresql_schema()
 
 function postgresql_migrations()
 {
-    psql "GRANT ALL ON SCHEMA osm TO $db_user"
+    psql "GRANT ALL ON SCHEMA osm TO $db_name;"
 
     function migration()
     {(
         cd "$repo/server/db"
-        rvmdo bundle exec ./run_migrations.rb "$@"
+        bundle exec ./run_migrations.rb "$@"
     )}
 
     # '0' resets something
     migration 0
     migration
-}
 
-function rvm_install()
-{
-    # /etc/gemrc is part of Arch Linux's Ruby package
-    if [[ -f /etc/gemrc ]]; then
-        sudo sed -i '/gem: --user-install/d' /etc/gemrc
-    fi
-
-    curl --location https://get.rvm.io | bash -s stable
-
-    local path=~/.bash_profile
-    if [[ -f "$path" ]]; then
-        ensure_line 'source ~/.profile' "$path"
-    fi
-}
-
-
-function rvm_ruby()
-{
-    rvm install "ruby-$ruby_version"
-}
-
-
-function rvm_gemset()
-{
-    rvm gemset create "$rvm_gemset"
-
-    local app
-    for app in "${applications[@]}"; do
-        echo Bundling: $app
-        rvmdo bundle install "--gemfile=$repo/$app/Gemfile"
-    done
+    unset -f migration
 }
 
 
 function config_init()
 {
-    local config=$repo/config
-    local template=$config/config.template.sh
-    local config_local=$config/local
+    function cp_config()
+    {
+        local name=$1
 
-    mkdir --parent "$config_local"
+        local config=$repo/config
+        local template=$config/config.template.sh
+        local config_local=$config/local
+        local path=$config_local/$name
 
-    local development=$config_local/development.sh
+        mkdir --parent "$config_local"
 
-    if [[ ! -f "$development" ]]; then
-        cp "$template" "$development"
-    else
-        echo $development already exists, skipping
-    fi
+        if [[ ! -f "$path" ]]; then
+            cp "$template" "$path"
+        else
+            echo $name already exists, skipping
+        fi
+    }
 
-    local production=$config_local/production.sh
+    cp_config development
+    cp_config production
 
-    if [[ ! -f "$production" ]]; then
-        cp "$template" "$production"
-    else
-        echo $production already exists, skipping
-    fi
+    unset -f cp_config
 }
 
 
@@ -294,7 +292,7 @@ function config_ln()
 function cms_set_admin_details()
 {(
     cd "$repo/server"
-    rvmdo bundle exec racksh   \
+    bundle exec racksh \
         "owner = Owner[0]
          owner.createPW('citysdk')
          owner.name='citysdk'
@@ -304,7 +302,6 @@ function cms_set_admin_details()
          owner.save_changes()"
 
 )}
-
 
 
 function manual()
@@ -323,6 +320,9 @@ all_tasks=(
     add_archlinuxfr_repo
     packages_official_install
     packages_aur_install
+    rvm_install
+    rvm_ruby
+    rvm_gemset
     postgresql_config
     postgresql_create
     postgresql_extensions
@@ -331,9 +331,6 @@ all_tasks=(
     postgresql_import
     postgresql_schema
     postgresql_migrations
-    rvm_install
-    rvm_ruby
-    rvm_gemset
     config_init
     config_ln
     cms_set_admin_details
@@ -354,6 +351,9 @@ function usage()
 		    add_archlinuxfr_repo
 		    packages_official_install
 		    packages_aur_install
+		    rvm_install
+		    rvm_ruby
+		    rvm_gemset
 		    postgresql_config
 		    postgresql_create
 		    postgresql_extensions
@@ -362,9 +362,6 @@ function usage()
 		    postgresql_import
 		    postgresql_schema
 		    postgresql_migrations
-		    rvm_install
-		    rvm_ruby
-		    rvm_gemset
 		    config_init
 		    config_ln
 		    cms_set_admin_details
