@@ -8,11 +8,11 @@ require './gtfs_util.rb'
 @yamlFile = 'feed_dlds.yaml'
 
 Agencies = [
-  ['govi.','http://gtfs.ovapi.nl/govi/gtfs-kv7-latest.zip', '2010-01-01'], #netherlands
+  # ['govi.','http://gtfs.ovapi.nl/govi/gtfs-kv7-latest.zip', '2010-01-01'], #netherlands
   ['gbmc.','http://store.datagm.org.uk/sets/tfgm/tfgmgtfs.zip', '2010-01-01'], # manchester
-  ['fitp.','http://files.itsfactory.fi/google_transit.zip', '2010-01-01'], #tampere
-  ['fihk.','http://tomdemeyer:c09f48618dc1cd262ebec1f601255383c46f3256dd7fbff81da6da410e681799@api.reittiopas.fi/data/google_transit.zip','2010-01-01']  #helsinki
-] 
+  # ['fitp.','http://files.itsfactory.fi/google_transit.zip', '2010-01-01'], #tampere
+  # ['fihk.','http://tomdemeyer:c09f48618dc1cd262ebec1f601255383c46f3256dd7fbff81da6da410e681799@api.reittiopas.fi/data/google_transit.zip','2010-01-01']  #helsinki
+]
 
 def do_one_feed(feed)
   $stderr.puts "Updating: #{feed[0]}\n\n"
@@ -36,7 +36,7 @@ def do_one_feed(feed)
   false
 end
 
-GTFS_Import::do_log('Checking for updates..')        
+GTFS_Import::do_log('Checking for updates..')
 
 @agencies = YAML.load_file(@yamlFile) if File.exists?(@yamlFile)
 @agencies = Agencies if(@agencies.nil?)
