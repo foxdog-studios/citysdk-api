@@ -196,7 +196,7 @@ function postgresql_user()
 {
     local query="SELECT 1 FROM pg_roles WHERE rolname='$db_user';"
 
-    # Does this user already exist?
+    # Stop this the user already exists
     if psql "$query" postgres | grep --quiet 1; then
         return
     fi
