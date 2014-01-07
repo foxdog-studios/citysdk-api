@@ -4,7 +4,7 @@ Sequel.migration do
 
     $stderr.puts("Creating schemas...")
     
-    run = <<-SQL
+    run <<-SQL
       DROP SCHEMA IF EXISTS gtfs CASCADE;
       CREATE SCHEMA gtfs;
     SQL
@@ -12,7 +12,9 @@ Sequel.migration do
   end
 
   down do
-    # remove schemas
+    run <<-SQL
+      DROP SCHEMA IF EXISTS gtfs CASCADE;
+    SQL
   end
 end
 

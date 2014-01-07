@@ -369,7 +369,12 @@ def one_file(f)
       ca << "#{c} #{$c_types[f][c] || 'text'}"
     end
     $pg_csdk.exec "create table igtfs.#{f} (#{ca.join(',')})"
-    $pg_csdk.exec "copy igtfs.#{f} from '#{$newDir}/#{f}.txt' QUOTE '#{$quote}' CSV HEADER"
+    
+    $pg_csdk.exec "copy igtfs.#{f} from stdin QUOTE '#{$quote}' CSV HEADER"
+    File.open("#{$newDir}/#{f}.txt", "r").each_line do |line|
+       fail unless $pg_csdk.put_copy_data line
+    end
+    fail unless $pg_csdk.put_copy_end
     columns
   end
 end

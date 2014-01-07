@@ -25,7 +25,7 @@ Sequel.migration do
 			String :url, :null => false
       integer :owner_id, :null => false     
     end
-    run = <<-SQL
+    run <<-SQL
       ALTER TABLE ldprefix ADD CONSTRAINT constraint_prefix_unique UNIQUE(prefix);
     SQL
 
@@ -113,7 +113,7 @@ Sequel.migration do
       
     end
 
-    run = <<-SQL
+    run <<-SQL
       SELECT AddGeometryColumn('layers', 'bbox', 4326, 'GEOMETRY', 2 );
     
       ALTER TABLE layers ADD CONSTRAINT constraint_layer_name_unique UNIQUE(name);
