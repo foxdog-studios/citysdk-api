@@ -1,9 +1,7 @@
 source 'https://rubygems.org'
 
-# Specify your gem's dependencies in citysdk.gemspec
-gemspec
+ruby '1.9.3'
+#ruby-gemset=citysdk
 
-gem 'georuby'
-gem 'faraday'
-gem 'charlock_holmes'
+gemspec
 
