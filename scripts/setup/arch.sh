@@ -52,8 +52,11 @@ function packages-install()
 
 function ruby-rvm()
 {
-    sudo sed -i '/gem: --user-install/d' /etc/gemrc
-    curl --location https://get.rvm.io                                        \
+    if [[ -f /etc/gemrc ]]; then
+        sudo sed -i '/gem: --user-install/d' /etc/gemrc
+    fi
+
+    curl --location https://get.rvm.io            \
         | bash -s stable "--ruby=${ruby_version}"
 }
 

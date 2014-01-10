@@ -345,7 +345,7 @@ function nginx-conf()
 		    # API
 		    server {
 		        listen 80;
-		        server_name api.${server_name};
+		        server_name ${server_name};
 		        root ${citysdk_public};
 
 		        access_log ${log_access_citysdk};
@@ -369,7 +369,7 @@ function nginx-conf()
 		    # Documentation
 		    server {
 		        listen 80;
-		        server_name dev.${server_name} ${server_name};
+		        server_name dev.${server_name};
 		        root ${devsite_public};
 
 		        access_log ${log_access_devsite};
