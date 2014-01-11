@@ -22,7 +22,16 @@ Set up development environment
 
 To set up a development environment, Arch Linux users should run;
 
-    [local]$ ./scripts/setup/arch.sh
+    [local]$ ./scripts/setup.sh
+
+
+Resetting the development database
+----------------------------------
+
+You can reset the local postgresql database in your development environment (the
+one created by `./scripts/setup.sh`)
+
+    [local]$ ./scripts/reset-db.sh
 
 
 Configuration
