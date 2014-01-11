@@ -1,7 +1,7 @@
 CitySDK
 =======
 
-The CitySDK Mobility API, developed by [Waag Society](http://waag.org/) is a
+.comThe CitySDK Mobility API, developed by [Waag Society](http://waag.org/) is a
 layer-based data distribution and service kit. Part of
 [CitySDK](http://citysdk.eu), a European project in which eight cities
 (Manchester, Rome, Lamia, Amsterdam, Helsinki, Barcelona, Lisbon and Istanbul)

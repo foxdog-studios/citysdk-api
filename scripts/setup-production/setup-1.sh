@@ -342,6 +342,11 @@ function nginx-conf()
 		        keepalive 1024;
 		    }
 
+		    # Default
+		    server {
+		        return 404;
+		    }
+
 		    # API
 		    server {
 		        listen 80;
@@ -369,7 +374,7 @@ function nginx-conf()
 		    # Documentation
 		    server {
 		        listen 80;
-		        server_name dev.${server_name} ${server_name};
+		        server_name dev.${server_name};
 		        root ${devsite_public};
 
 		        access_log ${log_access_devsite};

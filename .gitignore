@@ -10,8 +10,6 @@
 /devsite/log/
 /devsite/tmp/
 /discovery/log/
-/discovery/log/
-/discovery/tmp/
 /discovery/tmp/
 /local/
 /rdf/.bundle/
@@ -21,5 +19,3 @@
 /server/config/deploy/
 /server/log/
 /server/tmp/
-/services/log/
-/services/tmp/
