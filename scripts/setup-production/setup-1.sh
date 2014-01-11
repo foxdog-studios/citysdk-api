@@ -342,6 +342,11 @@ function nginx-conf()
 		        keepalive 1024;
 		    }
 
+		    # Default
+		    server {
+		        return 404;
+		    }
+
 		    # API
 		    server {
 		        listen 80;
