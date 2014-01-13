@@ -57,6 +57,9 @@ keys=(
     ep_tileserver_url
     ep_maintainer_email
     ep_mapxyz
+
+    cms_import_log_path
+    cms_tmp_file_dir
 )
 
 function write_config()

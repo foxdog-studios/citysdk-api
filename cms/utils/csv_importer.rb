@@ -55,6 +55,8 @@ class CsvImporter
 
        @signed_in = false
 
+      $stderr.puts(@params)
+
       bailWithError(Exception.new('No file supplied'), __LINE__) if not @params['filepath']
       bailWithError(Exception.new('No layer supplied'), __LINE__) if not @params['layername']
       bailWithError(Exception.new('No host supplied'), __LINE__) if not @params['host']

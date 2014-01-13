@@ -41,6 +41,12 @@ ep_tileserver_url=''
 ep_maintainer_email=''
 ep_mapxyz=''
 
+# Path to where import logs from the cms will be written to.
+cms_import_log_path=''
+# Path to the directory where the cms will write the uploaded data to before
+# it is inserted into the database, e.g., processed uploaded CSV files
+cms_tmp_file_dir=''
+
 
 # = Server ====================================================================
 
