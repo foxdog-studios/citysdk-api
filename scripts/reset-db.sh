@@ -56,7 +56,8 @@ function postgres_run_all()
         postgresql_data \
         postgresql_import \
         postgresql_schema \
-        postgresql_migrations
+        postgresql_migrations \
+        cms_set_admin_details
 }
 
 

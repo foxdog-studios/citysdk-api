@@ -45,6 +45,9 @@ keys=(
     db_user
     db_pass
 
+    ep_api_port
+    ep_cms_port
+
     ep_code
     ep_description
     ep_api_url

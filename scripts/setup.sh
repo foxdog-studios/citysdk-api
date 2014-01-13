@@ -42,6 +42,7 @@ packages_official=(
     git
     libyaml
     memcached
+    nodejs
     postgresql
     yaourt
 )
@@ -118,6 +119,10 @@ function packages_aur_install()
     yaourt --noconfirm --sync --needed --refresh "${packages_aur[@]}"
 }
 
+function npm_global_install()
+{
+    sudo npm install -g underscore-cli
+}
 
 function rvm_install()
 {
@@ -327,6 +332,7 @@ all_tasks=(
     add_archlinuxfr_repo
     packages_official_install
     packages_aur_install
+    npm_global_install
     rvm_install
     rvm_ruby
     rvm_gemset
@@ -359,6 +365,7 @@ function usage()
 		    add_archlinuxfr_repo
 		    packages_official_install
 		    packages_aur_install
+		    npm_global_install
 		    rvm_install
 		    rvm_ruby
 		    rvm_gemset

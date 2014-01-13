@@ -28,9 +28,12 @@ citysdk_app_admin_email=''
 citysdk_app_admin_organization=''
 citysdk_app_admin_domains=''
 
+# EP is end point, each instance of citysdk is an end point
 ep_code=''
 ep_description=''
+# Api URL e.g. api.citysdk.example.com
 ep_api_url=''
+# CMS URL e.g. cms.citysdk.example.com
 ep_cms_url=''
 ep_info_url=''
 ep_services_url=''

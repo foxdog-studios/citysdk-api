@@ -4,5 +4,8 @@ set -o errexit
 set -o nounset
 
 cd "$(dirname "$(realpath -- "${BASH_SOURCE[0]}")")/.."
-exec rvm 1.9.3@citysdk do bundle exec rackup
+
+port=$(underscore extract 'ep_api_port' --outfmt text < config.json)
+
+exec rvm 1.9.3@citysdk do bundle exec rackup -p $port
 
