@@ -165,7 +165,9 @@ Uploading data to the CitySDK through the CMS involves
 
 2.  Manual labelling of special semantics of headers in the CMS
 
-3.  Importing of the data using the labels
+3.  Importing of the data using the labels. It uses the headers that were
+    manually set by the user to call `$repo/utils/import_file.rb` and import
+    the data.
 
 You can check the output of the importer in the import log file set in the
 config by `cms_import_log_path`.
