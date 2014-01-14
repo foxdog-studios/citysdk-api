@@ -551,26 +551,14 @@ class CSDK_CMS < Sinatra::Base
   end
 
 
-  post '/csvheader' do
+  post '/uploaded_file_headers' do
 
     if params['add']
 
-      parameters = JSON.parse(Base64.decode64(params['parameters']),{:symbolize_names => true})
-
-      # puts "csvheader parameters: #{parameters}"
-      #
-      # puts ""
-      #
+      parameters = JSON.parse(Base64.decode64(params['parameters']),
+                              {:symbolize_names => true})
       params.delete('parameters')
-
-      # puts "csvheader params: #{params}"
-      #
-      # puts ""
-      #
       parameters = parameters.merge(params)
-      #
-      # puts "csvheader merged: #{parameters}"
-      #
 
       parameters.each do |k,v|
         parameters.delete(k) if v =~ /^<no\s+/
