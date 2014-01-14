@@ -5,7 +5,7 @@ require "base64"
 
 class CSDK_CMS < Sinatra::Base
 
-  def parseCSV(f, l, tmpFileDir)
+  def parseUploadedFile(f, l, tmpFileDir)
     begin
 
       pars = {
@@ -17,9 +17,9 @@ class CSDK_CMS < Sinatra::Base
         :host => @apiServer
       }
 
-      csv = CitySDK::Importer.new(pars)
+      parsedUploadedFile = CitySDK::Importer.new(pars)
 
-      @params = csv.params
+      @params = parsedUploadedFile.params
 
 
       @filename = f.path.gsub(/^\/tmp\//, tmpFileDir)
@@ -91,7 +91,7 @@ class CSDK_CMS < Sinatra::Base
       @parameters = Base64.encode64(@params.to_json)
 
 
-      csv.write(@filename)
+      parsedUploadedFile.write(@filename)
 
       erb :selectheaders, :layout => false
     rescue Exception => e

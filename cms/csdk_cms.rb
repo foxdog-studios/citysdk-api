@@ -522,19 +522,19 @@ class CSDK_CMS < Sinatra::Base
   end
 
 
-  post '/layer/:layer_id/loadcsv' do |l|
+  post '/layer/:layer_id/upload_file' do |l|
 
     if Owner.validSession(session[:auth_key])
       @layer = Layer[l]
       if(@layer && (@oid == @layer.owner_id) or @oid==0)
-        p = params['0'] || params['csv']
+        p = params['0'] || params['file']
         @original_file = p[:filename]
 
         if p && p[:tempfile]
           @layerSelect = Layer.selectTag()
           begin
             tmpFileDir = $config['cms_tmp_file_dir']
-            return parseCSV(p[:tempfile], @layer.name, tmpFileDir)
+            return parseUploadedFile(p[:tempfile], @layer.name, tmpFileDir)
           rescue => e
             return [422,{},e.message]
           end

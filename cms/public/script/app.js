@@ -6,7 +6,7 @@
   //   "Descriptive":  "rdfs:description",
   //   "URI":          "xsd:anyURI",
   // };
-  // 
+  //
   var propertyTypes = {
     "anyURI":       "xsd:anyURI",
     "base64Binary": "xsd:base64Binary",
@@ -19,7 +19,7 @@
     "time":         "xsd:time"
   };
 
-  
+
    optionsForSelect = function(a,addSel) {
      var s = '';
      if(addSel==true) {
@@ -30,7 +30,7 @@
      });
      return s;
    }
-   
+
    addHtml = function(a,ts, i) {
      if( a.length < 25 ) {
        $('#'+ts).parent()
@@ -47,8 +47,8 @@
                   );
      }
    }
-   
-  
+
+
   tagsForLayer = function(l,ts, i) {
     if ( availableTags[l] != null ) {
       addHtml(availableTags[l],ts, i)
@@ -63,13 +63,13 @@
         availableTags[l] = obj[0]["keys_for_layer"]
         addHtml(availableTags[l],ts, i)
       }
-    });  
+    });
   }
-  
-  
+
+
   newTagSelect = function(layers) {
-    
-    var index = '' + $("#tagselectlist").children().length 
+
+    var index = '' + $("#tagselectlist").children().length
 
     var ls = $(layers).attr('name', 'layer_select[' + index + ']').change(function() {
       tagsForLayer( $(this).val(), 'tag_sel_' + index, index )
@@ -78,11 +78,11 @@
     var ts = $('<input></input>').attr({type : 'text', size: '14', id: 'tag_sel_' + index, name: 'tag_select[' + index + ']', placeholder: 'layertag'}).autocomplete({
           source: availableTags['osm']
         });
-        
+
     ts = $('<span></span>').append(ts)
 
     var vs = $('<input></input>').attr({type : 'text', size: '14', name: 'tag_value[' + index + ']', placeholder: 'anything'});
-    
+
     var li = $('<li></li>').append(ls)
     li.append('&nbsp;')
     li.append('&nbsp;')
@@ -93,7 +93,7 @@
 
     $("#tagselectlist").append(li)
   }
-		
+
 	function addParameter(url,key,value) {
 	  var a = url.split('?')
 	  if(a.length>1)
@@ -103,7 +103,7 @@
 	}
 
 	function layerSelect(e) {
-	  document.location = '/layers?category=' + e.value; 
+	  document.location = '/layers?category=' + e.value;
 	}
 
 
@@ -111,36 +111,36 @@
 	  var r=confirm("Are your sure your want to delete this layer? The layer and *all* associated data will be lost...")
 	  if (r==true) {
 	    var nu = url;
-      
-      $('#delurl').html('<img height="18" width="18" src="/css/img/progress.gif">'); 
-      
+
+      $('#delurl').html('<img height="18" width="18" src="/css/img/progress.gif">');
+
       if(params) {
   	    $.each(params, function(index, value) {
   	      nu = addParameter(nu,index,value);
-  	    }); 
+  	    });
       }
-    
+
 	    $.ajax({
 	      url: nu,
 	      type: 'delete',
 	      success: function(data){
 	        $(upd).html(data);
 	      }
-	    });  
+	    });
 	  }
 	}
 
 
 
-	function csvUpload(l,u) {
-	  var data = new FormData();     
+	function fileUpload(l,u) {
+	  var data = new FormData();
 	  jQuery.each($("input[type='file']")[0].files, function(i, file) {
 	      data.append(i, file);
 	  });
 	  $.ajax({
 	      type: 'post',
 	      data: data,
-	      url: '/layer/' + l + '/loadcsv',
+	      url: '/layer/' + l + '/upload_file',
 	      cache: false,
 	      contentType: false,
 	      processData: false,
@@ -152,14 +152,14 @@
 	      }
 	  });
 	}
-  
-  
-  
-  var unloadPrefixes = function() { 
-    $('#prefix').hide(); 
-    $('#mappings').show(); 
+
+
+
+  var unloadPrefixes = function() {
+    $('#prefix').hide();
+    $('#mappings').show();
   }
-  
+
   var loadPrefixes = function() {
     $('#prefix').load('/prefixes', function(){
       $('#mappings').hide();
@@ -172,26 +172,26 @@
       "props": $.layerProperties,
       "type": $("#layer_type").val()
     };
-    
+
     if( $.selectedField != undefined )
       loadFieldDef($.selectedField)
-      
-    $.post( "/layer/" + layerid + "/ldprops", 
-            JSON.stringify(ldata),  
+
+    $.post( "/layer/" + layerid + "/ldprops",
+            JSON.stringify(ldata),
             function(data, textStatus, jqXHR) {
               $("#was_saved").show()
               setTimeout(function(){$("#was_saved").hide()},2000);
             }
           )
   }
-  
+
   var loadFieldDef = function(field) {
-    
+
     if( $.selectedField != undefined ) {
-      
-      if(! $.layerProperties[$.selectedField] ) 
+
+      if(! $.layerProperties[$.selectedField] )
         $.layerProperties[$.selectedField] = {};
-      
+
       $.layerProperties[$.selectedField].descr = $("#relation_desc").val()
       $.layerProperties[$.selectedField].type  = $("#relation_type").val()
       $.layerProperties[$.selectedField].lang  = $("#relation_lang").val()
@@ -200,7 +200,7 @@
     }
 
     $("#pname").html(field)
-    
+
     if($.layerProperties[field] != undefined) {
       $("#relation_desc").val($.layerProperties[field].descr)
       $("#relation_type").val($.layerProperties[field].type)
@@ -217,14 +217,14 @@
       $("#relation_unit").val('Count')
     }
     $.selectedField = field;
-    
+
     if( $.layerProperties[field] && ($.layerProperties[field].type == 'xsd:integer' || $.layerProperties[field].type == 'xsd:float')) {
       $("#relationunit").show()
-      $('#relation_unit').autocomplete({ source: 
+      $('#relation_unit').autocomplete({ source:
         function( request, response ) {
           var matcher = new RegExp( "^" + $.ui.autocomplete.escapeRegex( request.term ), "i" );
           response ( $.grep( $.units, function( item ) { return matcher.test( item ); } ) );
-        }       
+        }
       })
     } else {
       $("#relationunit").hide()
@@ -236,8 +236,8 @@
       $("#relationlang").hide()
     }
   }
-  
-  
+
+
   selectEqProperty = function(s) {
     if(s != 'select...') {
      $("#relation_ep").val(s)
@@ -246,10 +246,10 @@
    } else {
      $("#relation_ep").val('')
    }
-  }  
-  
+  }
+
   selectFieldType = function(s) {
-    
+
     field = $("#pname").val();
 
     if( $.layerProperties[field] && $.layerProperties[field].type && $.layerProperties[field].type != '')
@@ -259,24 +259,24 @@
 
     if(s == 'integer' || s == 'float' ) {
       $("#relationunit").show()
-      $('#relation_unit').autocomplete({ source: 
+      $('#relation_unit').autocomplete({ source:
         function( request, response ) {
           var matcher = new RegExp( "^" + $.ui.autocomplete.escapeRegex( request.term ), "i" );
           response ( $.grep( $.units, function( item ) { return matcher.test( item ); } ) );
-        }       
+        }
       })
     } else {
       $("#relationunit").hide()
     }
-   
+
     if(s=='string') {
       $("#relationlang").show()
     } else {
       $("#relationlang").hide()
     }
  }
- 
- 
+
+
  delPrefix = function(s) {
    $.ajax({
      url: '/prefix/' + s,
@@ -284,20 +284,20 @@
      success: function(data){
        $('#prefix').html(data);
      }
-   });  
+   });
  }
- 
+
  addPrefix = function() {
-   var url = '/prefixes?prefix=' 
+   var url = '/prefixes?prefix='
    url = url + $("#prefix_pfx").val();
    url = url + '&name=';
    url = url + $("#prefix_nme").val();
    url = url + '&uri=';
    url = url + encodeURIComponent($("#prefix_uri").val());
-   
+
    $('#prefix').load(url);
  }
-  
+
   selectFieldTags = function(layer,fieldselect) {
     if ( availableTags[layer] != null ) {
       $('#ldmap')
@@ -308,7 +308,7 @@
       loadFieldDef(availableTags[layer][0])
       return;
     }
-    
+
     $.ajax({
       url: '/get_layer_keys/' + layer,
       type: 'get',
@@ -318,11 +318,11 @@
         // availableTags[layer] = obj[0]["keys_for_layer"]
         return selectFieldTags(layer,fieldselect)
       }
-    });  
-    
-  }
-  
+    });
 
-  
-  
-  
+  }
+
+
+
+
+
