@@ -1,11 +1,11 @@
 module CitySDK
-  
+
   class Importer
     attr_reader :filereader, :api, :params
-    
+
     def initialize(pars)
       @params = pars
-      
+
       raise Exception.new("Missing :host in Importer parameters.") if @params[:host].nil?
       raise Exception.new("Missing :layername in Importer parameters.") if @params[:layername].nil?
       raise Exception.new("Missing :file_path in Importer parameters.") if @params[:file_path].nil?
@@ -19,21 +19,25 @@ module CitySDK
 
       @params[:addresslayer] = 'bag.vbo' if @params[:addressleyer].nil?
       @params[:addressfield] = 'postcode_huisnummer' if @params[:addressfield].nil?
-      
+
       @params[:create_type] = 'create' if @params[:create_type].nil?
-      # CREATE_TYPE_UPDATE = 'update' 
+      # CREATE_TYPE_UPDATE = 'update'
       # CREATE_TYPE_ROUTES = 'routes'
       # CREATE_TYPE_CREATE = 'create'
 
 
       @filereader = FileReader.new(@params)
     end
-    
-    
+
+
     def write(path)
       return @filereader.write(path)
     end
-    
+
+    def clear_nodes
+      @api.clear_nodes
+    end
+
     def setLayerStatus(m)
       begin
         sign_in
@@ -41,9 +45,10 @@ module CitySDK
         sign_out
       rescue Exception => e
         puts "File Importer setLayerStatus Exception #{e.message}"
+        puts e.backtrace
       end
     end
-    
+
     def setParameter(k,v)
       begin
         @params[(k.to_sym rescue k) || k] = v
@@ -56,7 +61,7 @@ module CitySDK
     def setMatchParameter(l,f,v)
       begin
         @params[:match] = [] if @params[:match].nil?
-        @params[:match] << [l,f,v] 
+        @params[:match] << [l,f,v]
         return true
       rescue
       end
@@ -67,7 +72,7 @@ module CitySDK
       if @params[:email].nil?
         raise Exception.new("No credentials provided..")
       end
-        
+
       begin
         sign_out if @signed_in
         @api.set_host(@params[:host])
@@ -87,12 +92,12 @@ module CitySDK
       @signed_in = false
       return @api.release
     end
-  
+
     def filterFields(h)
-      
+
       # puts "h: \n#{h}"
       # puts "@params[:fields]: \n#{@params[:fields]}"
-      
+
       data = {}
       h.each_key do |k|
         k = (k.to_sym rescue k) || k
@@ -101,36 +106,36 @@ module CitySDK
       # puts "data: \n#{data}"
       data
     end
-  
+
     def doImport(dryrun=false)
       result = {
         :updated => 0,
         :created => 0,
         :not_added => 0
       }
-      
+
       failed = nil
-      
+
       if @params[:hasaddress] == 'certain'
         failed = addToAddress(dryrun)
       # elsif @params[:hasaddress] == 'maybe'
       #   failed = addToAddress(dryrun)
       end
-      
+
       # TODO: add possibility to add node to postal code
 
       if failed == []
         result[:updated] += @filereader.content.length
         return result
       end
-      if failed 
+      if failed
         result[:updated] += (@filereader.content.length - failed.length)
       end
-      
+
       nodes = failed || @filereader.content
-      
+
       count = nodes.length
-      
+
       @api.set_createTemplate(
         {
           :create => {
@@ -141,7 +146,7 @@ module CitySDK
           }
         }
       )
-      
+
       match_tpl = {
         :match => {
           :params => {
@@ -171,14 +176,14 @@ module CitySDK
             node[:data] = filterFields(rec[:properties])
 
             # puts JSON.pretty_generate(node)
-            
+
             yield(node) if block_given?
-            
+
             @api.match_create_node(node) if not dryrun
             count -= 1
           end
           @api.match_create_flush
-      
+
         elsif @params[:unique_id] and (@params[:hasgeometry] != 'unknown')
 
           begin

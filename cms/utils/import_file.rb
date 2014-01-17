@@ -13,10 +13,9 @@ if ARGV[0]
 
     puts "\tlayer: #{params[:layername]}\n\tfile: #{params[:originalfile]}"
 
-    # puts "params: #{JSON.pretty_generate(params)}"
-
-
     importData = CitySDK::Importer.new(params)
+
+    puts "beginning import"
 
     importData.setLayerStatus("importing...")
 
@@ -25,11 +24,21 @@ if ARGV[0]
     s = "updated: #{ret[:updated]}; added: #{ret[:created]}; not added: #{ret[:not_added]}"
     puts s
 
-    csv.setLayerStatus(s)
+    importData.setLayerStatus(s)
 
 
   rescue Exception => e
-    importData.setLayerStatus(e.message) if importData
+    puts "Exiting due to exception"
+    begin
+        # XXX: HACK TO GET STOP FLUSH
+        importData.clear_nodes
+        importData.sign_out
+        importData.setLayerStatus(e.message)
+    rescue Exception => e
+        puts "Exception setting layer status"
+        puts e.message
+        puts e.backtrace
+    end
     puts "Exception: #{e.message}"
     puts e.backtrace
   end

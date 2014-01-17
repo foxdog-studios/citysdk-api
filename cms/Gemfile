@@ -4,7 +4,7 @@ ruby '1.9.3'
 #ruby-gemset=citysdk
 
 gem 'active_support', '~>3.0.0'
-gem 'citysdk', '~>0.1.2.1'
+gem 'citysdk', :path => '../gem'
 gem 'faraday', '~>0.8.8'
 gem 'i18n', '~>0.6.5'
 gem 'logger', '~>1.2.8'
