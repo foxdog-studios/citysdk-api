@@ -9,6 +9,6 @@
   },
   "dev": {
     "port": 9294,
-    "url": "http://localhostt:9294/"
+    "url": "http://localhost:9294/"
   }
 }
