@@ -5,7 +5,7 @@ require "base64"
 
 class CSDK_CMS < Sinatra::Base
 
-  def parseUploadedFile(f, l, tmpFileDir)
+  def parseUploadedFile(f, l, tmp_file_dir)
     begin
 
       pars = {
@@ -22,7 +22,7 @@ class CSDK_CMS < Sinatra::Base
       @params = parsedUploadedFile.params
 
 
-      @filename = f.path.gsub(/^\/tmp\//, tmpFileDir)
+      @filename = File.join(tmp_file_dir, File.basename(f.path))
       @params[:file_path] = @filename + '.csdk'
       @params[:utf8_fixed] = true
 
