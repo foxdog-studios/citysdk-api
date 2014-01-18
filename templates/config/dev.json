@@ -3,7 +3,7 @@
     "port": 9292,
     "url": "http://localhost:9292/"
   },
-  "csm": {
+  "cms": {
     "port": 9293,
     "url": "http://localhost:9293/"
   },
