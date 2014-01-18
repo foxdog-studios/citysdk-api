@@ -1,7 +1,7 @@
 CitySDK
 =======
 
-.comThe CitySDK Mobility API, developed by [Waag Society](http://waag.org/) is a
+The CitySDK Mobility API, developed by [Waag Society](http://waag.org/) is a
 layer-based data distribution and service kit. Part of
 [CitySDK](http://citysdk.eu), a European project in which eight cities
 (Manchester, Rome, Lamia, Amsterdam, Helsinki, Barcelona, Lisbon and Istanbul)
@@ -155,4 +155,53 @@ or
 
 Which will pull over any changes you have made on your local develpoment
 machine and run the setup script.
+
+
+CMS
+---
+
+The content management system (CMS) is located in `$repo/cms/`.
+
+The CMS allows users to
+
+- Create new layers
+- Add data to layers by uploading files in csv, json and zipped shape formats.
+
+## File uploading through the CMS
+
+Uploading data to the CitySDK through the CMS involves
+
+1.  An initial uploading of the file, where the headers will be extracted from
+    the file.
+
+2.  Manual labelling of special semantics of headers in the CMS
+
+3.  Importing of the data using the labels. It uses the headers that were
+    manually set by the user to call `$repo/utils/import_file.rb` and import
+    the data.
+
+You can check the output of the importer in the import log file set in the
+config by `cms_import_log_path`.
+
+### Uploading a CSV
+
+To upload a CSV through the CMS
+
+1.  Check the CSV headers, special column names are matched by the regular
+    expressions that can be found in `$repo/gem/lib/citysdk/file_reader.rb`. You
+    may need to rename your headers if the data in the column does not represent
+    what the file expects.
+
+2.  On the data screen of a layer, select the `csv` file to upload.
+
+3.  After uploading you can set what columns have specific semantic meaning.
+
+4.  Click `add data` and the importer will try and import the data.
+
+
+### Uploading a zipped shape file
+
+Very much the same as uploading a CSV. An example that works is the
+[Manchester Bus Routes data](http://www.infotrafford.org.uk/custom/resources/BusRoutes_SHP-format.zip).
+
 

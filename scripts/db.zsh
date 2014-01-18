@@ -15,8 +15,7 @@ db_name=$(config-server db_name)
 db_user=$(config-server db_user)
 db_password=$(config-server db_pass)
 
-data_sets=$repo/local/data_sets
-data_path=$data_sets/osm.pbf
+data_path=$repo/local/data_sets/osm.pbf
 data_url=$(config-setup osm2pgsql.data_url)
 
 
@@ -68,7 +67,7 @@ function create_user()
 
 function download_data()
 {
-    mkdir --parent $data_sets
+    mkdir --parent $data_path:h
 
     if [[ ! -f $data_path ]]; then
         curl --location --output $data_path $data_url

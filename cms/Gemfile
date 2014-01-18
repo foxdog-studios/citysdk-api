@@ -4,7 +4,6 @@ ruby '1.9.3'
 #ruby-gemset=citysdk
 
 gem 'active_support', '~>3.0.0'
-gem 'citysdk', '~>0.1.2.1'
 gem 'faraday', '~>0.8.8'
 gem 'i18n', '~>0.6.5'
 gem 'logger', '~>1.2.8'
@@ -16,6 +15,8 @@ gem 'sequel', '~>4.1.1'
 gem 'sinatra', :require => 'sinatra/base'
 gem 'sinatra-sequel', '~>0.9.0'
 gem 'sinatra-session', '~>1.0.0'
+
+gem 'citysdk', :path => './vendor/citysdk'
 
 group :development do
   gem 'capistrano', '~>2.14.1'

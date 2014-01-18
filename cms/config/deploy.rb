@@ -6,7 +6,6 @@ require 'capistrano/ext/multistage'
 
 set :application, 'citysdk-cms'
 set :copy_exclude, ['config.json', 'log', 'tmp']
-set :deploy_to, '/var/www/citysdk-cms'
 set :deploy_via, :copy
 set :repository,  '.'
 set :use_sudo, false
@@ -19,7 +18,7 @@ set :user, 'deploy'
 
 # XXX: Hack to make Blunder's Capistrano tasks see the RVM. Is there a
 #      better way of doing this?
-set :bundle_cmd, '/usr/local/rvm/bin/rvm 1.9.3 do bundle'
+set :bundle_cmd, '/usr/local/rvm/bin/rvm 1.9.3@citysdk do bundle'
 
 # Without verbose it hangs for ages without any output.
 set :bundle_flags, '--deployment --verbose'
@@ -42,7 +41,7 @@ namespace :deploy do
       ln -s #{shared_path}/filetmp #{latest_release}/filetmp
     CMD
 
-    # XXX: This is break if :deploy_to in server is changed.
+    # XXX: This breaks if we deploy somewhere else.
     run "ln -s /var/www/citysdk/shared/config/config.json #{release_path}"
   end
 end

@@ -18,7 +18,7 @@ if (( ! $+CITYSDK_CONFIG_DIR )); then
 fi
 
 if [[ ! -d $CITYSDK_CONFIG_DIR ]]; then
-    print -- 'No configuration!'
+    print -P -- '%F{red}No configuration!%f'
     unset CITYSDK_CONFIG_DIR
 else
     CITYSDK_CONFIG_DIR=$(realpath -- $CITYSDK_CONFIG_DIR)

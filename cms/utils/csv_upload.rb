@@ -5,9 +5,9 @@ require "base64"
 
 class CSDK_CMS < Sinatra::Base
 
-  def parseCSV(f,l)
+  def parseUploadedFile(f, l, tmpFileDir)
     begin
-      
+
       pars = {
         :file_path      => f.path,
         :layername      => l,
@@ -16,16 +16,16 @@ class CSDK_CMS < Sinatra::Base
         :originalfile   => @original_file,
         :host => @apiServer
       }
-      
-      csv = CitySDK::Importer.new(pars)
-      
-      @params = csv.params
-      
-      
-      @filename = f.path.gsub(/^\/tmp\//,'./filetmp/')
+
+      parsedUploadedFile = CitySDK::Importer.new(pars)
+
+      @params = parsedUploadedFile.params
+
+
+      @filename = f.path.gsub(/^\/tmp\//, tmpFileDir)
       @params[:file_path] = @filename + '.csdk'
       @params[:utf8_fixed] = true
-      
+
       @unique_id = "<select name='unique_id'><option>&lt;no unique id&gt;</option> "
       @name = "<select name='name'><option>&lt;no name&gt;</option> "
 
@@ -52,28 +52,28 @@ class CSDK_CMS < Sinatra::Base
         else
           @unique_id += "<option>#{h}</option>"
         end
-        
+
         if h == @params[:name]
           @name += "<option selected='selected'>#{h}</option>"
         else
           @name += "<option>#{h}</option>"
         end
       end
-      
+
       @name += "</select>"
       @unique_id += "</select>"
-      
-      if @params[:hasgeometry] == 'unknown' or @params[:hasgeometry]=='maybe' 
+
+      if @params[:hasgeometry] == 'unknown' or @params[:hasgeometry]=='maybe'
         @sel_x = "<select name='x'><option>&lt;no longtitude&gt;</option> "
         @sel_y = "<select name='y'><option>&lt;no latitude&gt;</option> "
-        
+
         @params[:fields].each do |h|
           if h == @params[:x]
             @sel_x += "<option selected value='#{h}' >#{h}</option>"
           else
             @sel_x += "<option value='#{h}' >#{h}</option>"
           end
-  
+
           if h == @params[:y]
             @sel_y += "<option selected value='#{h}' >#{h}</option>"
           else
@@ -83,15 +83,15 @@ class CSDK_CMS < Sinatra::Base
         @sel_x += "</select>"
         @sel_y += "</select>"
       end
-      
+
       @srid = @params[:srid]
       @layername = @params[:layername]
       @colsep = @params[:colsep]
 
       @parameters = Base64.encode64(@params.to_json)
-       
 
-      csv.write(@filename)
+
+      parsedUploadedFile.write(@filename)
 
       erb :selectheaders, :layout => false
     rescue Exception => e
@@ -100,6 +100,6 @@ class CSDK_CMS < Sinatra::Base
       raise e
     end
   end
-  
-  
+
+
 end

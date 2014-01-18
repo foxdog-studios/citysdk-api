@@ -5,10 +5,14 @@ Adds utility functions to database.
 
 (In NL download gtfs comes from http://gtfs.ovapi.nl)
 
-* import_gtfs.rb 
+* clear.rb
 
-Can be used to import or update a single, locally stored feed. 
-Reads database info from the locally running citysdk api, the local dev directory or the command line. 
+_Run this first_ Clears all gtfs info from the database and creates the schema.
+
+* import_gtfs.rb
+
+Can be used to import or update a single, locally stored feed.
+Reads database info from the locally running citysdk api, the local dev directory or the command line.
 
     usage: import_gtfs [-p prefix] <gtfs directory>
            Imports or updates gtfs database from gtfs directory
@@ -20,11 +24,6 @@ Reads database info from the locally running citysdk api, the local dev director
 
 Used by the importer.
 
-* clear.rb
-
-Clears all gtfs info from the database.
-
-
 * update_feeds
 
 Designed to run periodically and check feeds online.
@@ -33,7 +32,7 @@ Updates local database when new versions are available.
 * feed_dlds.yaml
 
 Is created by update_feeds, keeps track of updates.
-Can be edited to add feeds. 
+Can be edited to add feeds.
 When not found, a default set is written from the update_feeds script.
 Edit the update_feeds.rb script to store the feeds to your citysdk endpoint permanently (and delete the yaml file).
 

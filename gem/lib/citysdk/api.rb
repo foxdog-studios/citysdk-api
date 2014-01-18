@@ -2,14 +2,14 @@ require 'json'
 require 'faraday'
 
 module CitySDK
-  
+
   class HostException < ::Exception
   end
 
   class API
     attr_reader :error
     attr_accessor :batch_size
-  
+
     @@match_tpl = {
       :match => {
         :params => {}
@@ -32,17 +32,17 @@ module CitySDK
       @updated = @created = 0;
       set_host(host,port)
     end
-    
+
     def authenticate(e,p)
       @email = e;
       @passw = p;
       if !( @host == 'api.dev' or @host == 'localhost' or @host == '127.0.0.1' or @host == '0.0.0.0')
         auth_connection = Faraday.new :url => "https://#{@host}", :ssl => {:verify => false}
         resp = auth_connection.get '/get_session', { :e => @email, :p => @passw }
-      else 
+      else
         resp = @connection.get '/get_session', { :e => @email, :p => @passw }
       end
-      if resp.status == 200 
+      if resp.status == 200
         resp = CitySDK::parseJson(resp.body)
         if resp[:status] == 'success'
           @connection.headers['X-Auth'] = resp[:results][0]
@@ -52,7 +52,7 @@ module CitySDK
       else
         raise Exception.new(resp.body)
       end
-      
+
       if block_given?
         yield
         return self.release
@@ -63,7 +63,7 @@ module CitySDK
     def set_host(host,port=nil)
       @host = host
       @port = port
-      
+
       if port.nil?
         if host =~ /^(.*):(\d+)$/
           @port = $2
@@ -72,13 +72,13 @@ module CitySDK
           @port = 80
         end
       end
-      
+
       @connection = Faraday.new :url => "http://#{@host}:#{@port}"
       @connection.headers = {
         :user_agent => 'CitySDK_API GEM ' + CitySDK::VERSION,
         :content_type => 'application/json'
       }
-      begin 
+      begin
         get('/')
       rescue Exception => e
         raise CitySDK::Exception.new("Trouble connecting to api @ #{host}")
@@ -87,12 +87,12 @@ module CitySDK
       @match = @@match_tpl
     end
 
-    def set_matchTemplate(mtpl) 
+    def set_matchTemplate(mtpl)
       mtpl[:nodes] = []
       @match = @@match_tpl = mtpl
     end
 
-    def set_createTemplate(ctpl) 
+    def set_createTemplate(ctpl)
       ctpl[:nodes] = []
       @create = @@create_tpl = ctpl
     end
@@ -100,11 +100,11 @@ module CitySDK
     def set_layer(l)
       @layer = l
     end
-  
+
     def set_layer_status(status)
       put("/layer/#{@layer}/status",{:data => status})
     end
-  
+
     def match_node(n)
       @match[:nodes] << n
       return match_flush if @match[:nodes].length >= @batch_size
@@ -120,7 +120,7 @@ module CitySDK
       @create[:nodes] << n
       create_flush if @create[:nodes].length >= @batch_size
     end
-  
+
     def authorized?
       @connection.headers['X-Auth']
     end
@@ -140,21 +140,21 @@ module CitySDK
       end
       return [@updated, @created]
     end
-  
+
     def delete(path)
-      if authorized? 
+      if authorized?
         resp = @connection.delete(path)
         if resp.status == 200
-          return CitySDK::parseJson(resp.body) 
+          return CitySDK::parseJson(resp.body)
         end
         @error = CitySDK::parseJson(resp.body)[:message]
         raise HostException.new(@error)
       end
       raise CitySDK::Exception.new("DEL needs authorization.")
     end
-  
+
     def post(path,data)
-      if authorized? 
+      if authorized?
         resp = @connection.post(path,data.to_json)
         return CitySDK::parseJson(resp.body) if resp.status == 200
         @error = CitySDK::parseJson(resp.body)[:message]
@@ -164,7 +164,7 @@ module CitySDK
     end
 
     def put(path,data)
-      if authorized? 
+      if authorized?
         resp = @connection.put(path,data.to_json)
         return CitySDK::parseJson(resp.body) if resp.status == 200
         @error = CitySDK::parseJson(resp.body)[:message]
@@ -181,16 +181,16 @@ module CitySDK
     end
 
     def match_create_flush
-      
+
       if @match[:nodes].length > 0
         resp = post('util/match',@match)
-        if resp[:nodes].length > 0 
+        if resp[:nodes].length > 0
           @create[:nodes] = resp[:nodes]
           res = put("/nodes/#{@layer}",@create)
           tally(res)
-          @create[:nodes] = []
+          clear_create_nodes
         end
-        @match[:nodes] = []
+        clear_match_nodes
         res
       end
       nil
@@ -199,16 +199,16 @@ module CitySDK
     def match_flush
       if @match[:nodes].length > 0
         resp = post('util/match',@match)
-        @match[:nodes] = []
+        clear_match_nodes
         return resp
       end
     end
-  
-  
+
+
     def create_flush
       if @create[:nodes].length > 0
         tally put("/nodes/#{@layer}",@create)
-        @create[:nodes] = []
+        clear_create_nodes
       end
     end
 
@@ -219,7 +219,20 @@ module CitySDK
         @created += res[:create][:results][:totals][:created]
       end
     end
-    
+
+    def clear_nodes
+      clear_create_nodes
+      clear_match_nodes
+    end
+
+    def clear_match_nodes
+      @match[:nodes] = []
+    end
+
+    def clear_create_nodes
+      @create[:nodes] = []
+    end
+
   end
 
 end

@@ -1,16 +1,16 @@
 <div id='csvconf'>
-  <form name="input" id="csvconf_f" action="/csvheader" method="post">
+  <form name="input" id="csvconf_f" action="/uploaded_file_headers" method="post">
     <input type="hidden" name="parameters" value="<%= @parameters %>" />
 
     <div >file: <span style="font-size:120%"><em><%= @originalfile %></em></span></div>
-      
+
     <div id='csvconfout'>
-      
+
       <table border="0" cellspacing="5" cellpadding="5">
-      
+
         <tr>
           <!-- left side -->
-          <td> 
+          <td>
             <table>
               <tr> <td class='tdlabel'>name:</td> <td><%= @name %></td> </tr>
               <tr> <td class='tdlabel'>unique key:</td> <td><%= @unique_id %></td> </tr>
@@ -23,24 +23,24 @@
               <% end %>
             </table>
           </td>
-        
+
           <!-- right side -->
-          <td valign="bottom"> 
+          <td valign="bottom">
             <ul id='tagselectlist'>
             </ul>
             <% nts = "newTagSelect('" + @layerSelect + "')" %>
             <p><a href='#' onclick="<%= nts %>" >add match term</a></p>
           </td>
-        
+
         </tr>
       </table>
       <input class='submitb' type="submit" name='match' disabled value="show match"/>
-      <input class='submitb' type="submit" name='add' value="add data"/> 
-      
+      <input class='submitb' type="submit" name='add' value="add data"/>
+
     </div>
   </form>
   <div id='showres'/>
-  
+
 </div>
 
 <script type="text/javascript" charset="utf-8">
@@ -48,12 +48,12 @@
 </script>
 
 <script type="text/javascript" charset="utf-8">
-  $(document).ready(function() { 
+  $(document).ready(function() {
 
     $('#csvconf_f').click(function(event) {
       $(this).data('clicked',$(event.target))
     });
-    
+
     function submit_add(responseText, statusText, xhr, $form) {
       $('#stats').html(responseText)
       $('#fupl').load("/fupl/<%= @layer.id %>")
@@ -63,24 +63,24 @@
       $('#showres').html(responseText)
     }
 
-    $('#csvconf_f').submit(function() { 
+    $('#csvconf_f').submit(function() {
         $('#showres').html('')
         if( $( $('#csvconf_f').data().clicked).attr('name') == 'add' ) {
           $(this).ajaxSubmit({
-            url: '/csvheader?add=true',
+            url: '/uploaded_file_headers?add=true',
             success: submit_add,
     	      error: function(jqXHR,textStatus,errorThrown ){
     	        $('#fupl').html(errorThrown + '<br/>' + jqXHR.responseText)
     	      }
-          }); 
+          });
         } else {
           $(this).ajaxSubmit({
-            success: submit_show 
-          }); 
+            success: submit_show
+          });
         }
-        return false; 
-    }); 
-  }); 
+        return false;
+    });
+  });
 
 </script>
 

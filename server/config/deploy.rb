@@ -3,7 +3,6 @@ require 'capistrano/ext/multistage'
 
 set :application, 'citysdk-api'
 set :copy_exclude, ['config.json', 'log', 'tmp']
-set :deploy_to, '/var/www/citysdk'
 set :deploy_via, :copy
 set :repository,  '.'
 set :use_sudo, false

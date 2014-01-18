@@ -93,7 +93,7 @@ function install_ruby()
 
 function install_gemset()
 {
-    rvm gemset create $rvm_gemset
+    rvm gemset create $ruby_gemset
 
     local app
     for app in $applications; do
