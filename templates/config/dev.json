@@ -1,14 +1,11 @@
 {
   "api": {
-    "port": 9292,
-    "url": "http://localhost:9292/"
+    "port": 9292
   },
   "cms": {
-    "port": 9293,
-    "url": "http://localhost:9293/"
+    "port": 9293
   },
   "dev": {
-    "port": 9294,
-    "url": "http://localhost:9294/"
+    "port": 9294
   }
 }
