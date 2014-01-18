@@ -1,0 +1,14 @@
+{
+  "api": {
+    "port": 9292,
+    "url": "http://localhost:9292/"
+  },
+  "csm": {
+    "port": 9293,
+    "url": "http://localhost:9293/"
+  },
+  "dev": {
+    "port": 9294,
+    "url": "http://localhostt:9294/"
+  }
+}

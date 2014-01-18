@@ -1,8 +1,6 @@
 #!/usr/bin/env zsh
 
-setopt ERR_EXIT
-setopt NO_UNSET
-
+setopt err_exit
 source ${0:h}/library.zsh
 
 

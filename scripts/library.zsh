@@ -34,14 +34,19 @@ function config()
                extract $key
 }
 
+function config-dev()
+{
+    config dev $@
+}
+
 function config-server()
 {
-    config server "$@"
+    config server $@
 }
 
 function config-setup()
 {
-    config setup "$@"
+    config setup $@
 }
 
 
@@ -61,26 +66,28 @@ function psql()
 
 
 # ==============================================================================
+# = Rackup                                                                     =
+# ==============================================================================
+
+function serve()
+{
+    local dirname=$1
+    local app=${2:-$dirname}
+
+    cd $repo/$dirname
+    bundle exec rackup --port $(config-dev $app.port)
+}
+
+
+# ==============================================================================
 # = Ruby                                                                       =
 # ==============================================================================
 
+source ~/.rvm/scripts/rvm
+
 ruby_version=1.9.3
 ruby_gemset=citysdk
-
-function bundle()
-{
-    rvmdo bundle $@
-}
-
-function rvm()
-{
-    ~/.rvm/bin/rvm $ruby_version@$ruby_gemset $@
-}
-
-function rvmdo()
-{
-    rvm 'do' $@
-}
+rvm use $ruby_version@$ruby_gemset
 
 
 # ==============================================================================
@@ -99,6 +106,5 @@ if [[ -d $env ]]; then
     active_virtual_env
     unfunction active_virtual_env
 fi
-
 
 # vi: ft=zsh
