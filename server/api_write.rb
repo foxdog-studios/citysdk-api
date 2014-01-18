@@ -548,7 +548,6 @@ class CitySDK_API < Sinatra::Base
 
 
   put '/layer/:layer/status' do |layer|
-    puts "WHAAAAT"
     puts layer
     Layer.getLayerHashes
 

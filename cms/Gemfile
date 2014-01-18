@@ -3,24 +3,24 @@ source 'https://rubygems.org'
 ruby '1.9.3'
 #ruby-gemset=citysdk
 
-gem 'active_support', '~>3.0.0'
-gem 'faraday', '~>0.8.8'
-gem 'i18n', '~>0.6.5'
-gem 'logger', '~>1.2.8'
-gem 'pg', '~>0.16.0'
-gem 'pony', '~>1.5'
-gem 'rgeo', '~>0.3.20'
-gem 'rgeo-geojson', '~>0.2.3'
-gem 'sequel', '~>4.1.1'
+gem 'active_support'
+gem 'faraday'
+gem 'i18n'
+gem 'logger'
+gem 'multipart-post'
+gem 'pg'
+gem 'pony'
+gem 'rgeo'
+gem 'rgeo-geojson'
+gem 'sequel'
 gem 'sinatra', :require => 'sinatra/base'
-gem 'sinatra-sequel', '~>0.9.0'
-gem 'sinatra-session', '~>1.0.0'
+gem 'sinatra-sequel'
+gem 'sinatra-session'
 
 gem 'citysdk', :path => './vendor/citysdk'
 
 group :development do
-  gem 'capistrano', '~>2.14.1'
-  gem 'capistrano-ext', '~>1.2.1'
-  gem 'passenger', '~>4.0.23'
+  gem 'capistrano'
+  gem 'capistrano-ext'
 end
 

@@ -13,6 +13,8 @@ if ARGV[0]
 
     puts "\tlayer: #{params[:layername]}\n\tfile: #{params[:originalfile]}"
 
+    puts params
+
     importData = CitySDK::Importer.new(params)
 
     puts "beginning import"

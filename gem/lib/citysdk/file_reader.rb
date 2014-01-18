@@ -7,15 +7,16 @@ require 'tmpdir'
 
 module CitySDK
 
+  # Reads a file and tries to guess the semantics of the columns.
 
   class FileReader
-    
+
     RE_Y = /lat|(y.*coord)|(y.*loc(atie|ation)?)/i
     RE_X = /lon|lng|(x.*coord)|(x.*loc(atie|ation)?)/i
     RE_GEO = /^geom(etry)?|location|locatie$/i
     RE_NAME = /(title|titel|naam|name)/i
     RE_A_NAME = /^(naam|name|title|titel)$/i
-    
+
     attr_reader :file, :content,:params
 
     def initialize(pars)
@@ -40,7 +41,7 @@ module CitySDK
             raise "Unknown or unsupported file type: #{ext}."
         end
       end
-      
+
 
       @params[:rowcount] = @content.length
       getFields if not @params[:fields]
@@ -50,7 +51,7 @@ module CitySDK
       getAddress if not @params[:hasaddress]
       @params[:hasgeometry] = 'unknown' if @params[:hasgeometry].nil?
     end
-    
+
     def getAddress
       pd = pc = hn = ad = false
       @params[:fields].reverse.each do |f|
@@ -61,7 +62,7 @@ module CitySDK
       end
       @params[:hasaddress] = 'unknown'
       if (ad or hn)
-        if pc 
+        if pc
           @params[:hasaddress] = 'certain'
           @params[:postcode] = pc
         elsif pd
@@ -120,10 +121,10 @@ module CitySDK
         @params[:fields] << (k.to_sym rescue k) || k
       end
     end
-    
+
     def guessSRID
       return if @content[0][:geometry].nil?
-      @params[:srid] = 4326 
+      @params[:srid] = 4326
       g = @content[0][:geometry][:coordinates]
       if(g)
         while g[0].is_a?(Array)
@@ -131,8 +132,8 @@ module CitySDK
         end
         lon = g[0]
         lat = g[1]
-        # if lon > -180.0 and lon < 180.0 and lat > -90.0 and lat < 90.0 
-        #   @params[:srid] = 4326 
+        # if lon > -180.0 and lon < 180.0 and lat > -90.0 and lat < 90.0
+        #   @params[:srid] = 4326
         # els
         if lon > -7000.0 and lon < 300000.0 and lat > 289000.0 and lat < 629000.0
           # Dutch new rd system
@@ -140,7 +141,7 @@ module CitySDK
         end
       end
     end
-    
+
     def findColSep(f)
       a = f.gets
       b = f.gets
@@ -176,8 +177,8 @@ module CitySDK
       end
       nil
     end
-    
-    
+
+
     def findGeometry
       xfield = nil; xs = true
       yfield = nil; ys = true
@@ -196,7 +197,7 @@ module CitySDK
             @params[:hasgeometry] = 'certain'
             return true
           end
-          
+
           srid,g_type = isGeoJSON(v)
           if(srid)
             @params[:srid] = srid
@@ -208,7 +209,7 @@ module CitySDK
             @params[:hasgeometry] = 'certain'
             return true
           end
-          
+
           @content.each do |h|
             h[:geometry] = h[:properties][k]
             h[:properties].delete(k)
@@ -216,7 +217,7 @@ module CitySDK
           @params[:hasgeometry] = 'maybe'
           return
         end
-        
+
         hdc = k.to_sym.downcase
         if hdc == 'longitude' or hdc == 'lon'
           xfield=k; xs=false
@@ -224,7 +225,7 @@ module CitySDK
         if hdc == 'latitude' or hdc == 'lat'
           yfield=k; ys=false
         end
-        xfield = k if xs and (hdc =~ RE_X) 
+        xfield = k if xs and (hdc =~ RE_X)
         yfield = k if ys and (hdc =~ RE_Y)
       end
 
@@ -240,8 +241,8 @@ module CitySDK
       end
       false
     end
-    
-    
+
+
     def readCsv(path)
       @file = path
       c=''
@@ -296,7 +297,7 @@ module CitySDK
             end
           end
         end
-        
+
         if val
           val.each do |h|
             @content << {:properties => h}
@@ -311,7 +312,7 @@ module CitySDK
       begin
         connection = Faraday.new :url => "http://prj2epsg.org"
         resp = connection.get('/search.json', {:mode => 'wkt', :terms => str})
-        if resp.status == 200 
+        if resp.status == 200
           resp = CitySDK::parseJson resp.body
           @params[:srid] = resp[:codes][0][:code].to_i
         end
@@ -322,14 +323,14 @@ module CitySDK
     def readShape(path)
       @content = []
       @file = path
-      
+
       prj = path.gsub(/.shp$/i,"") + '.prj'
       prj = File.exists?(prj) ? File.read(prj) : nil
       sridFromPrj(prj) if (prj and @params[:srid].nil?)
-      
+
       @params[:hasgeometry] = 'certain'
-      
-      
+
+
       GeoRuby::Shp4r::ShpFile.open(path) do |shp|
         shp.each do |shape|
           h = {}
@@ -343,16 +344,16 @@ module CitySDK
         end
       end
     end
-    
+
     def readCsdk(path)
       h = Marshal.load(File.read(path))
       @params = h[:config]
       @content = h[:content]
-    end    
-    
+    end
+
     def readZip(path)
-      begin 
-        Dir.mktmpdir("cdkfi_#{File.basename(path).gsub(/\A/,'')}") do |dir| 
+      begin
+        Dir.mktmpdir("cdkfi_#{File.basename(path).gsub(/\A/,'')}") do |dir|
           raise "Error unzipping #{path}." if not system "unzip '#{path}' -d '#{dir}' > /dev/null 2>&1"
           Dir.foreach(dir) do |f|
             next if f =~ /^\./
@@ -388,7 +389,7 @@ module CitySDK
     end
 
   end
-  
+
 end
 
 
