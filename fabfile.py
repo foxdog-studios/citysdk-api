@@ -191,15 +191,16 @@ def setup(start='1'):
         #
 
         # Deploy
-        copy_config,                    # 27
-        deploy,                         # 28
+        update_gem_dependants,          # 27
+        copy_config,                    # 28
+        deploy,                         # 29
 
         # Import data
-        modify_osm_schema,              # 29
-        run_migrations,                 # 30
-        create_admin,                   # 31
+        modify_osm_schema,              # 30
+        run_migrations,                 # 31
+        create_admin,                   # 32
 
-        restart_nginx,                  # 32
+        restart_nginx,                  # 33
 
     ]
 
@@ -655,6 +656,11 @@ def check_deploy_directories():
 # =============================================================================
 # = Deploy                                                                    =
 # =============================================================================
+
+@task
+def update_gem_dependants():
+    local(resolve('gem/update_dependants.zsh'))
+
 
 @task
 def copy_config():
