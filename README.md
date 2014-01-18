@@ -16,6 +16,17 @@ A running implementation of the api can be found at
 [http://dev.citysdk.waag.org](http://dev.citysdk.waag.org); this is also where
 you'll find additional documentation.
 
+Requirements
+------------
+
+Supported development environments:
+
+    * Arch Linux (64-bit)
+
+Supported production environments:
+
+    * Ubuntu 12.04 LTS Server (64-bit)
+
 
 Set up development environment
 ------------------------------

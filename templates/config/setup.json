@@ -1,0 +1,24 @@
+{
+  "administrator": {
+    "email": "",
+    "password": "",
+    "name": "",
+    "organization": "",
+    "domains": ""
+  },
+  "osm2pgsql": {
+    "data_url": ""
+  },
+  "server": {
+    "domain_name": "",
+    "host_name": "",
+    "administrator": {
+      "username": "",
+      "password": ""
+    },
+    "deploy_user": {
+      "username": "",
+      "local_key_path": ""
+    }
+  }
+}

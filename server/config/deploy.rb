@@ -7,7 +7,6 @@ set :deploy_to, '/var/www/citysdk'
 set :deploy_via, :copy
 set :repository,  '.'
 set :use_sudo, false
-set :user, 'deploy'
 
 
 # =============================================================================
@@ -16,7 +15,7 @@ set :user, 'deploy'
 
 # XXX: Hack to make Blunder's Capistrano tasks see the RVM. Is there a
 #      better way of doing this?
-set :bundle_cmd, '/usr/local/rvm/bin/rvm 1.9.3 do bundle'
+set :bundle_cmd, '/usr/local/rvm/bin/rvm 1.9.3@citysdk do bundle'
 
 # Without verbose it hangs for ages without any output.
 set :bundle_flags, '--deployment --verbose'

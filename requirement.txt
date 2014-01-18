@@ -1,0 +1,9 @@
+# Project dependencies
+Fabric==1.8.1
+
+# Package dependencies
+ecdsa==0.10
+paramiko==1.12.1
+pycrypto==2.6.1
+wsgiref==0.1.2
+

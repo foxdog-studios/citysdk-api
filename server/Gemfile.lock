@@ -15,7 +15,6 @@ GEM
       net-ssh-gateway (>= 1.1.0)
     capistrano-ext (1.2.1)
       capistrano (>= 1.0.0)
-    daemon_controller (1.1.7)
     dalli (2.6.4)
     faraday (0.8.8)
       multipart-post (~> 1.2.0)
@@ -30,10 +29,6 @@ GEM
     net-ssh (2.7.0)
     net-ssh-gateway (1.2.0)
       net-ssh (>= 2.6.5)
-    passenger (4.0.23)
-      daemon_controller (>= 1.1.0)
-      rack
-      rake (>= 0.8.1)
     pg (0.17.0)
     rack (1.5.2)
     rack-protection (1.5.1)
@@ -43,7 +38,6 @@ GEM
     racksh (1.0.0)
       rack (>= 1.0)
       rack-test (>= 0.5)
-    rake (10.1.0)
     rgeo (0.3.20)
     rgeo-geojson (0.2.3)
       rgeo (>= 0.3.7)
@@ -67,13 +61,12 @@ DEPENDENCIES
   active_support
   amatch
   base62
-  capistrano (~> 2.14.1)
-  capistrano-ext (~> 1.2.1)
+  capistrano
+  capistrano-ext
   dalli
   faraday
-  i18n (~> 0.6.4)
+  i18n
   logger
-  passenger (~> 4.0.23)
   pg
   racksh
   rgeo
