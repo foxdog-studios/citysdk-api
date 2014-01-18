@@ -21,7 +21,7 @@ gem 'stringex'
 gem 'yajl-ruby'
 
 group :development do
-  gem 'capistrano'
+  gem 'capistrano', '~>2'
   gem 'capistrano-ext'
 end
 
