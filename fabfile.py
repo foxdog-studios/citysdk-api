@@ -254,6 +254,9 @@ def install_packages():
             # Nginx
             'nginx-extras',
 
+            # NTP
+            'ntp',
+
             # osm2pgsql (build)
             'automake',
             'g++',
