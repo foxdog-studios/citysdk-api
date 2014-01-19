@@ -75,7 +75,7 @@ function serve()
     local app=${2:-$dirname}
 
     cd $repo/$dirname
-    bundle exec rackup --port $(config-dev $app.port)
+    bundle exec rackup --port $(config-dev $app.port) --server thin
 }
 
 

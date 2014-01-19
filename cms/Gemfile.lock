@@ -22,8 +22,10 @@ GEM
     capistrano-ext (1.2.1)
       capistrano (>= 1.0.0)
     charlock_holmes (0.6.9.4)
+    daemons (1.1.9)
     dbf (2.0.7)
       fastercsv (~> 1.5.4)
+    eventmachine (1.0.3)
     faraday (0.9.0)
       multipart-post (>= 1.2, < 3)
     fastercsv (1.5.5)
@@ -63,6 +65,10 @@ GEM
       sinatra (>= 0.9.4)
     sinatra-session (1.0.0)
       sinatra (>= 1.0)
+    thin (1.6.1)
+      daemons (>= 1.0.9)
+      eventmachine (>= 1.0.0)
+      rack (>= 1.0.0)
     tilt (1.4.1)
     treetop (1.4.15)
       polyglot
@@ -88,3 +94,4 @@ DEPENDENCIES
   sinatra
   sinatra-sequel
   sinatra-session
+  thin

@@ -22,5 +22,6 @@ gem 'citysdk', :path => './vendor/citysdk'
 group :development do
   gem 'capistrano', '~>2'
   gem 'capistrano-ext'
+  gem 'thin'
 end
 
