@@ -662,8 +662,25 @@ def make_deploy_directories():
     # themselves.
     sudo('chmod +t {}'.format(quote(env.deploy_to)))
 
+    # A directory for passenger to compile and store it's native
+    # extensions.
+    dirpath = path.join(env.deploy_to, '.passenger')
+    sudo('mkdir --parents {}'.format(quote(dirpath)))
+
+    #        Read Write Execute
+    # Owner: X    X     X
+    # Group:
+    # Other:
+    sudo('chmod 700 {}'.format(quote(dirpath)))
+    sudo('chown {}:{} {}'.format(
+        quote(env.passenger_user),
+        quote(env.passenger_group),
+        quote(dirpath),
+    ))
+
+    # Create directories to deploy each of the apps to.
     for app in env.apps.itervalues():
-        # Ensure the application's root deploy directories exists
+        # Ensure the application's root deploy directories exists.
         sudo('mkdir --parents {}'.format(quote(app.server_root)))
 
         #        Read Write Execute
@@ -674,7 +691,7 @@ def make_deploy_directories():
 
         sudo('chown {}:{} {}'.format(
             quote(env.deploy_user),
-            quote(env.deploy_group),
+            quote(env.passenger_group),
             quote(app.server_root),
         ))
 
