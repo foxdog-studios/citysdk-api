@@ -77,7 +77,7 @@ env.nginx_log = '/var/log/nginx'
 env.nginx_sites_enabled = path.join(env.nginx_conf, 'sites-enabled')
 env.nginx_sites_available = path.join(env.nginx_conf, 'sites-available')
 
-env.osm_data = '/var/tmp/osm-data.pbf'
+env.osm_data = 'osm.pbf'
 env.osm_data_url = config['osm2pgsql']['data_url']
 
 env.osm2pgsql_tag = '0.84.0'
@@ -129,7 +129,7 @@ ensure('user', 'user')
 # =============================================================================
 
 @task
-def setup(start='1'):
+def setup(start=1):
     def restart_nginx():
         return reload_nginx(action='restart')
 
@@ -157,7 +157,6 @@ def setup(start='1'):
         compile_osm2pgsql,              # 12
         install_osm2pgsql,              # 13
 
-
         #
         # Configuration
         #
@@ -170,38 +169,37 @@ def setup(start='1'):
         # OSM Data
         ensure_osm_data,                # 17
         run_osm2pgsql,                  # 18
+        copy_database_scripts,          # 19
+        create_osm_schema,              # 20
+        run_migrations,                 # 21
 
         # Nginx
-        configure_nginx,                # 19
-        configure_default_nginx_server, # 20
-        configure_nginx_servers,        # 21
+        configure_nginx,                # 22
+        configure_default_nginx_server, # 23
+        configure_nginx_servers,        # 24
 
         # Deploy user
-        ensure_deploy_user,             # 22
+        ensure_deploy_user,             # 25
 
         # Deploy directories
-        write_deploy_scripts,           # 23
-        make_deploy_directories,        # 24
-        setup_deploy_directories,       # 25
-        check_deploy_directories,       # 26
-
+        write_deploy_scripts,           # 26
+        make_deploy_directories,        # 27
+        setup_deploy_directories,       # 28
+        check_deploy_directories,       # 29
 
         #
         # Deploy
         #
 
         # Deploy
-        update_gem_dependants,          # 27
-        copy_config,                    # 28
-        deploy,                         # 29
+        update_gem_dependants,          # 30
+        copy_config,                    # 31
+        deploy,                         # 32
 
-        # Import data
-        modify_osm_schema,              # 30
-        run_migrations,                 # 31
-        create_admin,                   # 32
+        # Configure CMS
+        create_admin,                   # 33
 
-        restart_nginx,                  # 33
-
+        restart_nginx,                  # 34
     ]
 
     for task in tasks[int(start) - 1:]:
@@ -479,6 +477,46 @@ def run_osm2pgsql():
     ))
 
 
+@task
+def copy_database_scripts():
+    # Copy the database script to the target machine
+    put(local_path='database')
+
+    # Install the gems required by the scripts
+    with cd('database'):
+        rvmsudo('bundle')
+
+
+@task
+def create_osm_schema():
+    command = 'psql {} < {}'.format(env.postgres_database, 'osm_schema.sql')
+    with cd('database'):
+        return sudo(command, user='postgres')
+
+
+@task
+def run_migrations():
+    psql(env.postgres_database,
+         'GRANT ALL ON SCHEMA osm TO {}'.format(env.postgres_user))
+
+    # Create the PostgreSQL connection string
+    conn = 'postgres://{user}:{password}@localhost/{name}'.format(
+        user=env.postgres_user,
+        password=env.postgres_password,
+        name=env.postgres_database,
+    )
+
+    def migration(*args):
+        with cd('database'):
+            rvmdo('bundle exec sequel -m migrations {} {}'.format(
+                ' '.join(quote(arg) for arg in args),
+                conn,
+            ))
+
+    migration('-M', '0')
+    migration()
+
+
 # =============================================================================
 # = Nginx                                                                     =
 # =============================================================================
@@ -695,42 +733,8 @@ def deploy():
 
 
 # =============================================================================
-# = Import data and modify schema                                             =
+# = Configure CMS                                                             =
 # =============================================================================
-
-@task
-def modify_osm_schema():
-    db_src = path.join(env.app_server.server_current, 'db')
-    db_dst = '/home/{}/db'.format(env.user)
-
-    # Copy the directory containing the SQL
-    sudo('rm --force --recursive {}'.format(quote(db_dst)))
-    sudo('cp --recursive {} {}'.format(quote(db_src), quote(db_dst)))
-    sudo('chown -R postgres:postgres {}'.format(quote(db_dst)))
-
-    return sudo(
-        'psql {} < {}'.format(
-            env.postgres_database,
-            path.join(db_dst, 'osm_schema.sql'),
-        ),
-        user='postgres',
-    )
-
-
-@task
-def run_migrations():
-    psql(env.postgres_database,
-         'GRANT ALL ON SCHEMA osm TO {}'.format(env.postgres_user))
-
-    sudo('chmod -R o+rwx /var/www')
-
-    for arg in ['0', '']:
-        with cd(env.app_server.server_current + '/db'):
-            rvmsudo(
-                'bundle exec ./run_migrations.rb {}'.format(arg),
-                user='postgres'
-            )
-
 
 CREATE_ADMIN_TEMPLATE = r"""
 bundle exec racksh "
@@ -747,13 +751,16 @@ bundle exec racksh "
 @task
 def create_admin():
     with cd(env.app_server.server_current):
-        return rvmsudo(CREATE_ADMIN_TEMPLATE.format(
-            domains=env.admin_domains,
-            email=env.admin_email,
-            name=env.admin_name,
-            organization=env.admin_organization,
-            password=env.admin_password,
-        ))
+        return rvmsudo(
+            CREATE_ADMIN_TEMPLATE.format(
+                domains=env.admin_domains,
+                email=env.admin_email,
+                name=env.admin_name,
+                organization=env.admin_organization,
+                password=env.admin_password,
+            ),
+            user=env.deploy_user,
+        )
 
 
 # =============================================================================

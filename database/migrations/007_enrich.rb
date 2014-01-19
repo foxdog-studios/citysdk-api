@@ -1,12 +1,12 @@
 Sequel.migration do
 
   up do
-    
+
     $stderr.puts("Running enrichers...")
 
     # Find all members for all relations
     osm_relation_members = <<-SQL
-      UPDATE nodes 
+      UPDATE nodes
         SET members = osm_rel_members_id(rels.members)
         FROM osm.planet_osm_rels AS rels
       WHERE nodes.cdk_id = 'r' || rels.id::text
@@ -20,15 +20,15 @@ Sequel.migration do
     # TODO: type=boundary, type=multipolygon (, type=? , type=? find more types!!!)
     # Add geometry data from planet_osm_polygon met id = -rel_id to node
     osm_enrich_polygons = <<-SQL
-      UPDATE nodes 
+      UPDATE nodes
       SET geom = way FROM (
         SELECT m.cdk_id, way FROM osm.planet_osm_polygon p, (
           SELECT
-            nodes.cdk_id, 
-            -substring(nodes.cdk_id from 2 for length(nodes.cdk_id))::integer AS id 
+            nodes.cdk_id,
+            -substring(nodes.cdk_id from 2 for length(nodes.cdk_id))::integer AS id
           FROM node_data, nodes
           WHERE
-            node_data.node_id = nodes.id AND 
+            node_data.node_id = nodes.id AND
             (data @> '"type"=>"boundary"'::hstore OR data @> '"type"=>"multipolygon"'::hstore)
         ) AS m
         WHERE m.id = p.osm_id
@@ -49,7 +49,7 @@ Sequel.migration do
       SET node_type = 1 FROM (
         SELECT DISTINCT nodes.cdk_id FROM node_data, nodes
         WHERE
-          node_data.node_id = nodes.id AND 
+          node_data.node_id = nodes.id AND
           data @> '"type"=>"route"'::hstore
       ) AS n
       WHERE nodes.cdk_id = n.cdk_id
@@ -58,10 +58,10 @@ Sequel.migration do
     $stderr.puts("\tosm_routes...")
     run osm_routes
 
-    # OSM provides data about route modalities. We can use those to 
+    # OSM provides data about route modalities. We can use those to
     # set the modality of the nodes we've just converted to routes.
     #
-    # SQL to get all route types that occur in OSM db: 
+    # SQL to get all route types that occur in OSM db:
     #
     # SELECT string_agg(route, ', ') FROM (
     #      SELECT data->'route' AS route
@@ -90,12 +90,12 @@ Sequel.migration do
     # [114, 'Car'])
     # [115, 'Truck'])
     # [200, 'Any'])
-    
+
     # Array to map most important modalities from OSM to CitySDK
     # Contains tuples [from OSM, to CitySDK]
     modalities = [
       [
-        [ 
+        [
           'tracks',
           'walking',
           'foot',
@@ -143,7 +143,7 @@ Sequel.migration do
         ],
         [1] # subway
       ],
-      [      
+      [
         [
           'light_rail',
           'tram'
@@ -161,11 +161,11 @@ Sequel.migration do
           'road'
         ],
         [114] # car
-      ]      
+      ]
     ]
-      
+
     set_nodes_modalities = <<-SQL
-      UPDATE nodes SET modalities = %s 
+      UPDATE nodes SET modalities = %s
       FROM node_data
        WHERE nodes.id = node_data.node_id AND (%s);
     SQL
@@ -173,44 +173,44 @@ Sequel.migration do
     set_node_data_modalities = <<-SQL
       UPDATE node_data SET modalities = %s WHERE %s;
     SQL
-      
+
     $stderr.puts("\tosm_modalities...")
-   
+
     # Loop modalities array, run UPDATE for each entry
-    modalities.each { |modality| 
+    modalities.each { |modality|
       from = modality[0]
       to = modality[1]
-  
+
       array = "ARRAY[%s]" % [to.join(",")]
-      hstores = from.map { |type|    
+      hstores = from.map { |type|
         "data @> '\"route\"=>\"#{type}\"'::hstore"
       }.join(" OR ")
-  
+
       run sprintf(set_nodes_modalities % [array, hstores])
       run sprintf(set_node_data_modalities % [array, hstores])
     }
-    
+
     ################################################################################################
     ####    Routes need a geometry too!    #########################################################
     ################################################################################################
-    
+
     $stderr.puts("\troute_geometries...")
-    
+
     route_geometries = <<-SQL
       UPDATE nodes
       SET geom = route_geometry(members)
       WHERE members IS NOT NULL AND members != '{}' AND node_type IN (1, 3) AND geom IS NULL;
     SQL
-    
+
     run route_geometries
 
     ########################################################################################
     ########################################################################################
- 
-    run <<-SQL 
+
+    run <<-SQL
       UPDATE layers SET imported_at = now() WHERE name = 'osm'
     SQL
- 
+
   end
 
   down do

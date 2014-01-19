@@ -1,7 +1,7 @@
 #encoding: utf-8
 
 Sequel.migration do
-	up do
+  up do
 
     # Insert modalities
     self[:modalities].insert(:id =>   0, :name => 'tram')       # Tram, Streetcar, Light rail
@@ -12,7 +12,7 @@ Sequel.migration do
     self[:modalities].insert(:id =>   5, :name => 'cable_car') # Cable car
     self[:modalities].insert(:id =>   6, :name => 'gondola')   # Gondola, Suspended cable car
     self[:modalities].insert(:id =>   7, :name => 'funicular') # Funicular
-    self[:modalities].insert(:id => 109, :name => 'airplane ') # Airplane 
+    self[:modalities].insert(:id => 109, :name => 'airplane ') # Airplane
     self[:modalities].insert(:id => 110, :name => 'foot')      # Foot, walking
     self[:modalities].insert(:id => 111, :name => 'bicycle')   # Bicycle
     self[:modalities].insert(:id => 112, :name => 'moped')     # Light motorbike, moped
@@ -20,14 +20,14 @@ Sequel.migration do
     self[:modalities].insert(:id => 114, :name => 'car')       # Car
     self[:modalities].insert(:id => 115, :name => 'truck')     # Truck
     self[:modalities].insert(:id => 116, :name => 'horse')     # Horse
-    self[:modalities].insert(:id => 200, :name => 'any')       # Any    
+    self[:modalities].insert(:id => 200, :name => 'any')       # Any
 
     # Insert node types
     self[:node_types].insert(:id => 0, :name => 'node')
     self[:node_types].insert(:id => 1, :name => 'route')
     self[:node_types].insert(:id => 2, :name => 'ptstop')
     self[:node_types].insert(:id => 3, :name => 'ptline')
-   
+
     self[:categories].insert(:name => 'natural')
     self[:categories].insert(:name => 'cultural')
     self[:categories].insert(:name => 'civic')
@@ -39,11 +39,11 @@ Sequel.migration do
     self[:categories].insert(:name => 'education')
     self[:categories].insert(:name => 'security')
     self[:categories].insert(:name => 'commercial')
-   
+
     # Insert node_data types
     self[:node_data_types].insert([0, 'layer_data'])
     self[:node_data_types].insert([1, 'comment'])
-    
+
     # Insert ontology prefixes
     self[:ldprefix].insert(:name => 'ArtsHolland', :prefix => 'ah:', :url => 'http://purl.org/artsholland/1.0#', :owner_id => 0)
     self[:ldprefix].insert(:name => 'DC-Elements', :prefix => 'dc:', :url => 'http://purl.org/dc/elements/1.1/', :owner_id => 0)
@@ -64,49 +64,49 @@ Sequel.migration do
     self[:ldprefix].insert(:name => 'Unit', :prefix => 'unit:', :url => 'http://qudt.org/vocab/unit#', :owner_id => 0)
     self[:ldprefix].insert(:name => 'LinkedGeoData', :prefix => 'lgdo:', :url => 'http://linkedgeodata.org/ontology/', :owner_id => 0)
     self[:ldprefix].insert(:name => 'CitySDK', :prefix => 'csdk:', :url => 'http://purl.org/citysdk/1.0/', :owner_id => 0)
-        
-        
-        
-    # Insert default layers 
+
+
+
+    # Insert default layers
     # TODO: categories for default layers!!
-    
+
     self[:layers].insert(
-      :id => 0, 
-      :name => 'osm', 
+      :id => 0,
+      :name => 'osm',
       :organization=> 'CitySDK',
       :category => 'base.geography',
-      :title => 'OpenStreetMap', 
-      :description => 'Base geograpy layer.', 
+      :title => 'OpenStreetMap',
+      :description => 'Base geograpy layer.',
       :data_sources => '{"Data from OpenstreetMap; openstreetmap.org © OpenStreetMap contributors"}'
-      #:validity => 
+      #:validity =>
       #:categories =>
     )
-    
+
     self[:layers].insert(
-      :id => 1, 
-      :name => 'gtfs', 
+      :id => 1,
+      :name => 'gtfs',
       :organization=> 'CitySDK',
       :category => 'mobility.public_transport',
-      :title => 'Public transport', 
-      :description => 'Layer representing GTFS public transport information.', 
+      :title => 'Public transport',
+      :description => 'Layer representing GTFS public transport information.',
       :data_sources => '{"OpenOV/GOVI import through gtfs.ovapi.nl"}'
-      #:validity => 
+      #:validity =>
       #:categories =>
     )
-    
+
     self[:layers].insert(
-      :id => 2, 
-      :name => 'admr', 
+      :id => 2,
+      :name => 'admr',
       :organization=> 'CitySDK',
       :category => 'administrative.regions',
-      :title => 'Administrative borders', 
-      :description => 'Administrative borders.', 
+      :title => 'Administrative borders',
+      :description => 'Administrative borders.',
       :data_sources => '{"Bron: © 2012, Centraal Bureau voor de Statistiek / Kadaster, Zwolle, 2012"}'
-      #:validity => 
+      #:validity =>
       #:categories =>
     )
-        
-    # Insert default owners   
+
+    # Insert default owners
     self[:owners].insert(:id => 0, :name => 'CitySDK', :organization => 'Waag Society', :domains => 'test', :email => 'citysdk@waag.org')
     # self[:owners].insert([1,'tom','tom@waag.org'])
     # self[:owners].insert([2,'bert','bert@waag.org'])
@@ -121,5 +121,5 @@ Sequel.migration do
     DB[:layers].truncate
     DB[:owners].truncate
   end
-  
+
 end
