@@ -28,6 +28,8 @@ Supported production environments:
     * Ubuntu 12.04 LTS Server (64-bit)
 
 
+# WARNING THESE DEVELOPMENT AND DEPLOYMENT INSTRUCTIONS NEED UPDATED
+
 Set up development environment
 ------------------------------
 
