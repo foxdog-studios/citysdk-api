@@ -8,6 +8,9 @@ require 'trollop'
 
 require 'citysdk'
 
+IMPORT_PERIODS = ['hourly', 'daily', 'weekly', 'monthly']
+
+
 opts = Trollop::options do
   banner <<-EOS
 	Imports periodic data. These are URLs that have been set through the CMS that
@@ -25,11 +28,20 @@ opts = Trollop::options do
       'File path to CitySDK Database config',
       :type => :string,
       :required => true)
+  opt(:period,
+      'Import data for layers at this period. Accepted values:' \
+      " #{IMPORT_PERIODS.join(', ')}.",
+      :type => :string,
+      :required => true)
 end
 
 unless File.exists?(opts[:dbconfig])
   Trollop::die(:dbconfig,
                "db config file does not exist at #{opts[:dbconfig]}")
+end
+
+unless IMPORT_PERIODS.include? opts[:period]
+  Trollop::die(:period, "Must be one of: #{IMPORT_PERIODS.join(', ')}")
 end
 
 
@@ -38,6 +50,7 @@ $logger = Logger.new(STDOUT)
 $email = opts[:email]
 $passw = opts[:password]
 $host  = opts[:host]
+$import_period = opts[:period]
 
 
 def import_file(file_path, params)
@@ -55,11 +68,9 @@ def import_file(file_path, params)
 
   $logger.info("Importing layer: #{params[:layername]} file: #{file_path}")
   importer = CitySDK::Importer.new(params)
-  importer.setLayerStatus('importing...')
+  # TODO: Set the layer status
   importResults = importer.doImport
   $logger.info importResults
-  # Setting the layer status does not seem to work
-  importer.setLayerStatus('done')
 end
 
 
@@ -95,15 +106,14 @@ class Layer < Sequel::Model
 end
 
 
-layers = Layer.where(:import_period => 'daily').all
+layers = Layer.where(:import_period => $import_period).all
+$logger.info "Number of #{$import_period} layers: #{layers.count}"
 
-layers.each do |l|
-  next if l.import_config.nil? or l.import_url.nil?
+layers.each do |layer|
+  next if layer.import_config.nil? or layer.import_url.nil?
 
-  l.imported_at = nil
-  l.save
-
-  lastModified = `curl --silent --head '#{l.import_url}' | grep Last-Modified`
+  import_url = layer.import_url
+  lastModified = `curl --silent --head '#{import_url}' | grep Last-Modified`
 
   # Match string in the format
   # "Last-Modified: Mon, 13 Jan 2014 14:33:41 GMT"
@@ -113,16 +123,16 @@ layers.each do |l|
     lastModified = $1
     requireUpdate = true
     lastModifiedDateTime = DateTime.parse(lastModified)
-    if l.imported_at
-      lastImportedDateTime = DateTime.parse(l.imported_at.to_s)
+    if layer.imported_at
+      lastImportedDateTime = DateTime.parse(layer.imported_at.to_s)
       if lastModifiedDateTime <= lastImportedDateTime
         requireUpdate = false
       end
     end
     if requireUpdate
-      if import_layer_periodic_data(l)
-        l.imported_at = $1
-        l.save
+      if import_layer_periodic_data(layer)
+        layer.imported_at = $1
+        layer.save
       end
     else
       $logger.info 'Last-modified not changed. No update occured'
