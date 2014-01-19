@@ -14,6 +14,8 @@ db_name=$(config-server db_name)
 db_user=$(config-server db_user)
 db_password=$(config-server db_pass)
 
+conn=postgres://$db_user:$db_password@$db_host/$db_name
+
 data_path=$repo/local/data_sets/osm.pbf
 data_url=$(config-setup osm2pgsql.data_url)
 
@@ -96,7 +98,7 @@ function import_data()
 function create_schema()
 {
     # TODO: Instead of always succeeding, make the script idempotent.
-    pdo psql "$db_name" < $repo/server/db/osm_schema.sql || true
+    pdo psql $db_name < $repo/database/osm_schema.sql || true
 }
 
 function migrations()
@@ -105,12 +107,12 @@ function migrations()
 
     function migration()
     {(
-        cd $repo/server/db
-        bundle exec ./run_migrations.rb $@
+        cd $repo/database
+        bundle exec sequel -m migrations $@ $conn
     )}
 
-    # '0' resets something
-    migration 0
+    # 0 resets something
+    migration -M 0
     migration
 
     unfunction migration
@@ -155,7 +157,7 @@ function usage()
 
 		Usage:
 
-		    db [TASK... ]
+		    database.zsh [TASK... ]
 
 		Tasks:
 

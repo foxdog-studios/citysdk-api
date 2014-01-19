@@ -8,11 +8,12 @@ source ${0:h}/library.zsh
 # = Configuration                                                              =
 # ==============================================================================
 
-applications=(
-    server
+require_bundler=(
     cms
-    rdf
+    database
     devsite
+    rdf
+    server
 )
 
 aur_packages=(
@@ -93,9 +94,9 @@ function install_gemset()
 {
     rvm gemset create $ruby_gemset
 
-    local app
-    for app in $applications; do
-        bundle install --gemfile=$repo/$app/Gemfile
+    local dirname
+    for dirname in $require_bundler; do
+        bundle install --gemfile=$repo/$dirname/Gemfile
     done
 }
 
@@ -213,7 +214,7 @@ function usage()
 
 		Usage:
 
-		    setup [TASK...]
+		    setup.zsh [TASK...]
 
 		Tasks:
 
