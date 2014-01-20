@@ -8,7 +8,7 @@ from cStringIO import StringIO
 from pipes import quote
 import json
 import os
-import posixpath as path
+import posixpath
 import subprocess
 
 from fabric.api import (
@@ -30,101 +30,107 @@ from fabric.contrib.files import (
 
 
 # =============================================================================
-# = Configuratioin                                                            =
+# = Configuration                                                            =
 # =============================================================================
 
-config_path = os.path.join(os.environ['CITYSDK_CONFIG_DIR'], 'setup.json')
-with open(config_path) as config_file:
-    config = json.load(config_file)
-
-setup_config = config
-
-env.setdefault('domain_name', config['server']['domain_name'])
-
-if env.host is None:
-    env.host = config['server']['host_name']
-
-if env.host_string is None:
-    env.host_string = '{}@{}'.format(
-        config['server']['administrator']['username'],
-        config['server']['host_name'],
-    )
-
-if env.password is None:
-    env.password = config['server']['administrator']['password']
-
-env.user = config['server']['administrator']['username']
-
-# (Source directory name, sub-sub-domain name, SSL)
-env.apps = [
-    ('cms'    , 'cms', True),
-    ('devsite', 'dev', False),
-    ('rdf'    , 'rdf', False),
-    ('server' , None , True),
-]
-
-env.codename = 'precise'
-
-env.deploy_to = '/var/www'
-env.setdefault('deploy_user', config['server']['deploy_user']['username'])
-env.deploy_group = 'www-data'
-
-env.setdefault(
-    'deploy_key',
-    os.path.expanduser(config['server']['deploy_user']['local_key_path']),
-)
-
-env.nginx_conf = '/etc/nginx'
-env.nginx_log = '/var/log/nginx'
-
-env.nginx_sites_enabled = path.join(env.nginx_conf, 'sites-enabled')
-env.nginx_sites_available = path.join(env.nginx_conf, 'sites-available')
-
-env.osm_data = 'osm.pbf'
-env.osm_data_url = config['osm2pgsql']['data_url']
-
-env.osm2pgsql_tag = '0.84.0'
-env.osm2pgsql_path = 'osm2pgsql-{}'.format(env.osm2pgsql_tag)
-
-env.passenger_user = 'www-data'
-env.passenger_group = 'www-data'
-
-env.postgis_version = '2.1'
-
-env.ruby_gemset = 'citysdk'
-env.ruby_version = '1.9.3'
-env.ruby_use = '{}@{}'.format(env.ruby_version, env.ruby_gemset)
+# = Fabric ====================================================================
 
 env.colorize_errors = True
 
 
-def ensure(key):
-    value = config['administrator'][key]
-    env.setdefault('admin_{}'.format(key), value)
+# = External configuration ====================================================
 
-ensure('email')
-ensure('password')
-ensure('name')
-ensure('organization')
-ensure('domains')
+ENV_KEY = 'CITYSDK_CONFIG_DIR'
 
-env.postgres_key = 'http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc'
-env.postgres_ppa = 'http://apt.postgresql.org/pub/repos/apt/'
+def get_config(name, path):
+    value = globals()['config_{}'.format(name)]
+    for key in path.split('.'):
+        value = value[key]
+    return value
+
+
+def load_config(name):
+    file_name = posixpath.extsep.join([name, 'json'])
+    config_path = os.path.join(os.environ[ENV_KEY], file_name)
+    with open(config_path) as config_file:
+        return json.load(config_file)
+
+
+config_dev    = load_config('dev'   )
+config_server = load_config('server')
+config_setup  = load_config('setup' )
+
+
+# = Environment Initialisation ================================================
+
+# Constants
+env.deploy_to        = '/var/www'
+env.distro_codename  = 'precise'
+env.nginx_conf       = '/etc/nginx'
+env.nginx_log        = '/var/log/nginx'
+env.osm2pgsql_tag    = '0.84.0'
+env.osm_data         = 'osm.pbf'
+env.passenger_group  = 'www-data'
+env.passenger_user   = 'www-data'
+env.postgis_version  = '2.1'
+env.postgres_key     = 'http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc'
+env.postgres_ppa     = 'http://apt.postgresql.org/pub/repos/apt/'
 env.postgres_version = '9.3'
+env.ruby_gemset      = 'citysdk'
+env.ruby_version     = '1.9.3'
 
-config_path = os.path.join(os.environ['CITYSDK_CONFIG_DIR'], 'server.json')
-with open(config_path) as config_file:
-    config = json.load(config_file)
+# Applications
+# (Source directory name, sub-sub-domain name, SSL)
+app_templates = [
+    ('cms'    , 'cms', True ),
+    ('devsite', 'dev', False),
+    ('rdf'    , 'rdf', False),
+    ('server' , None , True ),
+]
 
-def ensure(env_key, config_key):
-    env.setdefault(
-        'postgres_{}'.format(env_key),
-        config['db_{}'.format(config_key)],
-    )
+# Environment variables
+env_attr_templates = [
+('setup' , 'admin_domains'       , 'admin.domains'                    , False),
+('setup' , 'admin_email'         , 'admin.email'                      , False),
+('setup' , 'admin_name'          , 'admin.name'                       , False),
+('setup' , 'admin_organization'  , 'admin.organization'               , False),
+('setup' , 'admin_password'      , 'admin.password'                   , False),
+('setup' , 'deploy_key'          , 'server.deploy_user.local_key_path', True ),
+('setup' , 'deploy_user'         , 'server.deploy_user.username'      , False),
+('setup' , 'domain_name'         , 'server.domain_name'               , False),
+('setup' , 'osm_data_url'        , 'osm2pgsql.data_url'               , False),
+('setup' , 'password'            , 'server.admin.password'            , False),
+('server', 'postgres_database'   , 'db_name'                          , False),
+('server', 'postgres_password'   , 'db_pass'                          , False),
+('server', 'postgres_user'       , 'db_user'                          , False),
+('setup' , 'ssl_api_local_bundle', 'ssl.api.local_certificate_bundle' , True ),
+('setup' , 'ssl_api_local_crt'   , 'ssl.api.local_certificate'        , True ),
+('setup' , 'ssl_api_local_key'   , 'ssl.api.local_key'                , True ),
+('setup' , 'ssl_cms_local_bundle', 'ssl.cms.local_certificate_bundle' , True ),
+('setup' , 'ssl_cms_local_crt'   , 'ssl.cms.local_certificate'        , True ),
+('setup' , 'ssl_cms_local_key'   , 'ssl.cms.local_key'                , True ),
+]
 
-ensure('database', 'name')
-ensure('password', 'pass')
-ensure('user', 'user')
+# Ensure that the environment has values for all keys.
+for config_name, name, path, expander_user in env_attr_templates:
+    if getattr(env, name, None) is None:
+        value = get_config(config_name, path)
+        if expander_user:
+            value = os.path.expanduser(value)
+        env[name] = value
+
+# Derived environmental variables
+env.deploy_key            = os.path.expanduser(env.deploy_key)
+env.nginx_sites_available = posixpath.join(env.nginx_conf, 'sites-available')
+env.nginx_sites_enabled   = posixpath.join(env.nginx_conf, 'sites-enabled')
+env.nginx_ssl             = posixpath.join(env.nginx_conf, 'ssl')
+env.osm2pgsql_path        = 'osm2pgsql-{}'.format(env.osm2pgsql_tag)
+env.ruby_use              = '@'.join([env.ruby_version, env.ruby_gemset])
+
+if env.host_string is None:
+    env.host = get_config('setup', 'server.host_name')
+    env.user = get_config('setup', 'server.admin.username')
+    env.host_string = '@'.join([env.user, env.host])
 
 
 # =============================================================================
@@ -177,33 +183,33 @@ def setup(start=1):
         run_migrations,                 # 21
 
         # Nginx
-        copy_ssl_files,
-        configure_nginx,                # 22
-        configure_default_nginx_server, # 23
-        configure_nginx_servers,        # 24
+        copy_ssl_files,                 # 22
+        configure_nginx,                # 23
+        configure_default_nginx_server, # 24
+        configure_nginx_servers,        # 25
 
         # Deploy user
-        ensure_deploy_user,             # 25
+        ensure_deploy_user,             # 26
 
         # Deploy directories
-        write_deploy_scripts,           # 26
-        make_deploy_directories,        # 27
-        setup_deploy_directories,       # 28
-        check_deploy_directories,       # 29
+        write_deploy_scripts,           # 27
+        make_deploy_directories,        # 28
+        setup_deploy_directories,       # 29
+        check_deploy_directories,       # 30
 
         #
         # Deploy
         #
 
         # Deploy
-        update_gem_dependants,          # 30
-        copy_config,                    # 31
-        deploy,                         # 32
+        update_gem_dependants,          # 31
+        copy_config,                    # 32
+        deploy,                         # 33
 
         # Configure CMS
-        create_admin,                   # 33
+        create_admin,                   # 34
 
-        restart_nginx,                  # 34
+        restart_nginx,                  # 35
     ]
 
     for task in tasks[int(start) - 1:]:
@@ -232,10 +238,7 @@ def add_repositories():
     # PostgreSQL
     sudo('curl {} | apt-key add -'.format(quote(env.postgres_key)))
     path = '/etc/apt/sources.list.d/pgdg.list'
-    text = 'deb {} {}-pgdg main'.format(
-        env.postgres_ppa,
-        env.codename,
-    )
+    text = 'deb {} {}-pgdg main'.format(env.postgres_ppa, env.distro_codename)
     append(path, text, use_sudo=True)
     sudo('chmod 600 {}'.format(quote(path)))
 
@@ -531,26 +534,16 @@ def run_migrations():
 @task
 def copy_ssl_files():
     # Create a private directory to store the SSL files.
-    dirpath = path.join(env.nginx_conf, 'ssl')
-    sudo('mkdir --parents {}'.format(quote(dirpath)))
-    sudo('chmod 400 {}'.format(quote(dirpath)))
+    sudo('mkdir --parents {}'.format(quote(env.nginx_ssl)))
+    sudo('chmod 400 {}'.format(quote(env.nginx_ssl)))
 
-    def copy_server_ssl_files(app, config_key):
-        def getpath(path_key):
-            return os.path.expanduser(
-                setup_config['ssl'][config_key][path_key]
-            )
-
-        local_certificate = getpath('local_certificate')
-        local_certificate_bundle = getpath('local_certificate_bundle')
-        local_key = getpath('local_key')
-
+    def copy_server_ssl_files(app, bundle_path, crt_path, key_path):
         # Bundle the site's certificate and the certificate chain.
-        cert = StringIO()
-        with open(local_certificate) as cert_file:
-            cert.write(cert_file.read())
-        with open(local_certificate_bundle) as bundle_file:
-            cert.write(bundle_file.read())
+        crt = StringIO()
+        with open(crt_path) as crt_file:
+            crt.write(crt_file.read())
+        with open(bundle_path) as bundle_file:
+            crt.write(bundle_file.read())
 
         # Copy the certificate bundle and key into the server.
         def put_ssl(local_path, remote_path):
@@ -561,11 +554,22 @@ def copy_ssl_files():
                 use_sudo=True,
             )
 
-        put_ssl(cert, app.ssl_crt)
-        put_ssl(local_key, app.ssl_key)
+        put_ssl(crt, app.ssl_crt)
+        put_ssl(key_path, app.ssl_key)
 
-    copy_server_ssl_files(env.app_server, 'api')
-    copy_server_ssl_files(env.app_cms, 'cms')
+    copy_server_ssl_files(
+        env.app_server,
+        env.ssl_api_local_bundle,
+        env.ssl_api_local_crt,
+        env.ssl_api_local_key,
+    )
+
+    copy_server_ssl_files(
+        env.app_cms,
+        env.ssl_cms_local_bundle,
+        env.ssl_cms_local_crt,
+        env.ssl_cms_local_key,
+    )
 
 
 NGINX_CONF_TEMPLATE = r'''
@@ -594,7 +598,7 @@ ssl_prefer_server_ciphers on;
 
 @task
 def configure_nginx():
-    main_nginx_config = path.join(env.nginx_conf, 'nginx.conf')
+    main_nginx_config = posixpath.join(env.nginx_conf, 'nginx.conf')
 
     # Uncomment the Passenger directives included with the nginx-extra
     # package.
@@ -608,7 +612,7 @@ def configure_nginx():
             passenger_user=env.passenger_user,
             passenger_group=env.passenger_group,
         )),
-        remote_path=path.join(env.nginx_conf, 'conf.d', 'citysdk.conf'),
+        remote_path=posixpath.join(env.nginx_conf, 'conf.d', 'citysdk.conf'),
         mode=0400,
         use_sudo=True,
     )
@@ -618,7 +622,7 @@ def configure_nginx():
 def configure_default_nginx_server():
     # Remove the the nginx-full package's default server
     def join(root):
-        return path.join(root, 'default')
+        return posixpath.join(root, 'default')
 
     sudo('rm --force {} {}'.format(
         quote(join(env.nginx_sites_available)),
@@ -630,8 +634,8 @@ def configure_default_nginx_server():
     name = 'default'
     priority = '00'
 
-    available = path.join(env.nginx_sites_available, name)
-    enabled = path.join(
+    available = posixpath.join(env.nginx_sites_available, name)
+    enabled = posixpath.join(
         env.nginx_sites_enabled,
         '{}-{}'.format(priority, name),
     )
@@ -639,8 +643,8 @@ def configure_default_nginx_server():
     put(config, available, use_sudo=True)
 
     # Enable the default server
-    target = path.join(
-        path.relpath(env.nginx_sites_available, env.nginx_sites_enabled),
+    target = posixpath.join(
+        posixpath.relpath(env.nginx_sites_available, env.nginx_sites_enabled),
         name
     )
 
@@ -725,20 +729,20 @@ def ensure_deploy_user():
     # Create the deploy user if they don't already exists.
     if run('id {}'.format(env.deploy_user), warn_only=True).failed:
         sudo('useradd --gid {} {}'.format(
-            env.deploy_group,
+            env.passenger_group,
             env.deploy_user,
         ))
 
     # Set up password-less access for the deploy user
-    dirpath = path.join('/home', env.deploy_user, '.ssh')
+    dirpath = posixpath.join('/home', env.deploy_user, '.ssh')
     sudo('mkdir --parent {}'.format(dirpath))
     with open(env.deploy_key) as key_file:
         key = key_file.read()
-    keypath = path.join(dirpath, 'authorized_keys')
+    keypath = posixpath.join(dirpath, 'authorized_keys')
     append(keypath, key, use_sudo=True)
     sudo('chown -R {}:{} {}'.format(
         env.deploy_user,
-        env.deploy_group,
+        env.passenger_group,
         dirpath,
     ))
 
@@ -782,7 +786,7 @@ def make_deploy_directories():
 
     # A directory for passenger to compile and store it's native
     # extensions.
-    dirpath = path.join(env.deploy_to, '.passenger')
+    dirpath = posixpath.join(env.deploy_to, '.passenger')
     sudo('mkdir --parents {}'.format(quote(dirpath)))
 
     #        Read Write Execute
@@ -838,19 +842,19 @@ def update_gem_dependants():
 @task
 def copy_config():
     local_path = os.path.join(os.environ['CITYSDK_CONFIG_DIR'], 'server.json')
-    remote_dir = path.join(env.app_server.server_root, 'shared/config')
-    remote_path = path.join(remote_dir, 'config.json')
+    remote_dir = posixpath.join(env.app_server.server_root, 'shared/config')
+    remote_path = posixpath.join(remote_dir, 'config.json')
     sudo('mkdir --parents {}'.format(quote(remote_dir)))
     sudo('chown -R {}:{} {}'.format(
         quote(env.deploy_user),
-        quote(env.deploy_group),
+        quote(env.passenger_group),
         quote(remote_dir),
     ))
     put(local_path=local_path, remote_path=remote_path, use_sudo=True)
 
     sudo('chown {}:{} {}'.format(
         quote(env.deploy_user),
-        quote(env.deploy_group),
+        quote(env.passenger_group),
         quote(remote_path)),
     )
 
@@ -937,24 +941,24 @@ class App(object):
             part for part in [subdomain, env.domain_name] if part
         )
 
-        self.server_root = path.join(env.deploy_to, server_name)
-        self.server_current = path.join(self.server_root, 'current')
-        self.server_public = path.join(self.server_current, 'public')
-        self.server_config = path.join(env.nginx_sites_available, server_name)
+        self.server_root = posixpath.join(env.deploy_to, server_name)
+        self.server_current = posixpath.join(self.server_root, 'current')
+        self.server_public = posixpath.join(self.server_current, 'public')
+        self.server_config = posixpath.join(env.nginx_sites_available, server_name)
 
-        self.server_enabled = path.join(
+        self.server_enabled = posixpath.join(
             env.nginx_sites_enabled,
             '%s-%s' % (priority, server_name),
         )
 
-        self.server_enabled_target = path.join(
-            path.relpath(env.nginx_sites_available, env.nginx_sites_enabled),
+        self.server_enabled_target = posixpath.join(
+            posixpath.relpath(env.nginx_sites_available, env.nginx_sites_enabled),
             self.server_name,
         )
 
         def make_log_path(log_type):
             name = '%s-%s.log' % (self.server_name, log_type)
-            return path.join(env.nginx_log, name)
+            return posixpath.join(env.nginx_log, name)
 
         self.access_log = make_log_path('access')
         self.error_log = make_log_path('error')
@@ -964,10 +968,10 @@ class App(object):
         self.local_deploy_script = os.path.join(self.local_deploy,
                                                 'production.rb')
 
-        self.ssl_crt = path.join(env.nginx_conf, 'ssl', '{}.crt'.format(
+        self.ssl_crt = posixpath.join(env.nginx_conf, 'ssl', '{}.crt'.format(
             self.server_name,
         ))
-        self.ssl_key = path.join(env.nginx_conf, 'ssl', '{}.key'.format(
+        self.ssl_key = posixpath.join(env.nginx_conf, 'ssl', '{}.key'.format(
             self.server_name,
         ))
 
@@ -1036,7 +1040,7 @@ def rvmsudo(rvmsudo_command, **runner_kwargs):
 
 
 apps = OrderedDict()
-for name, subdomain, ssl in env.apps:
+for name, subdomain, ssl in app_templates:
     app = App(name, subdomain=subdomain, ssl=ssl)
     apps[name] = app
     setattr(env, 'app_%s' % (name,), app)
