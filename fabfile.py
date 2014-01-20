@@ -569,8 +569,21 @@ def copy_ssl_files():
 
 
 NGINX_CONF_TEMPLATE = r'''
+# Memcached
+
+upstream memcached {{
+    server localhost:11211 weight=5 max_fails=3 fail_timeout=3s;
+    keepalive 1024;
+}}
+
+
+# Passenger
+
 passenger_user {passenger_user};
 passenger_group {passenger_group};
+
+
+# SSL
 
 # CBC-mode ciphers might be vulnerable to a number of attacks and to
 # cipher, the BEAST attack in particular (see CVE-2011-3389), so
