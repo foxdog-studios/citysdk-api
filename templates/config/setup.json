@@ -21,4 +21,16 @@
       "local_key_path": ""
     }
   }
+  "ssl": {
+    "api": {
+      "local_certificate": "",
+      "local_certificate_bundle": "",
+      "local_key": ""
+    },
+    "cms": {
+      "local_certificate": "",
+      "local_certificate_bundle": "",
+      "local_key": ""
+    }
+  }
 }

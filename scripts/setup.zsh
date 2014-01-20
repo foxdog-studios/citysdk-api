@@ -178,8 +178,8 @@ function manual()
 
 function ve()
 {
-    setopt LOCAL_OPTIONS
-    unsetopt NO_UNSET
+    setopt local_options
+    unsetopt no_unset
 
     source $env/bin/activate
     $@

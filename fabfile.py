@@ -37,6 +37,8 @@ config_path = os.path.join(os.environ['CITYSDK_CONFIG_DIR'], 'setup.json')
 with open(config_path) as config_file:
     config = json.load(config_file)
 
+setup_config = config
+
 env.setdefault('domain_name', config['server']['domain_name'])
 
 if env.host is None:
@@ -53,11 +55,12 @@ if env.password is None:
 
 env.user = config['server']['administrator']['username']
 
+# (Source directory name, sub-sub-domain name, SSL)
 env.apps = [
-    ('cms'    , 'cms'),
-    ('devsite', 'dev'),
-    ('rdf'    , 'rdf'),
-    ('server' , None ),
+    ('cms'    , 'cms', True),
+    ('devsite', 'dev', False),
+    ('rdf'    , 'rdf', False),
+    ('server' , None , True),
 ]
 
 env.codename = 'precise'
@@ -174,6 +177,7 @@ def setup(start=1):
         run_migrations,                 # 21
 
         # Nginx
+        copy_ssl_files,
         configure_nginx,                # 22
         configure_default_nginx_server, # 23
         configure_nginx_servers,        # 24
@@ -525,11 +529,76 @@ def run_migrations():
 # =============================================================================
 
 @task
+def copy_ssl_files():
+    # Create a private directory to store the SSL files.
+    dirpath = path.join(env.nginx_conf, 'ssl')
+    sudo('mkdir --parents {}'.format(quote(dirpath)))
+    sudo('chmod 400 {}'.format(quote(dirpath)))
+
+    def copy_server_ssl_files(app, config_key):
+        def getpath(path_key):
+            return os.path.expanduser(
+                setup_config['ssl'][config_key][path_key]
+            )
+
+        local_certificate = getpath('local_certificate')
+        local_certificate_bundle = getpath('local_certificate_bundle')
+        local_key = getpath('local_key')
+
+        # Bundle the site's certificate and the certificate chain.
+        cert = StringIO()
+        with open(local_certificate) as cert_file:
+            cert.write(cert_file.read())
+        with open(local_certificate_bundle) as bundle_file:
+            cert.write(bundle_file.read())
+
+        # Copy the certificate bundle and key into the server.
+        def put_ssl(local_path, remote_path):
+            return put(
+                local_path=local_path,
+                remote_path=remote_path,
+                mode=0400,
+                use_sudo=True,
+            )
+
+        put_ssl(cert, app.ssl_crt)
+        put_ssl(local_key, app.ssl_key)
+
+    copy_server_ssl_files(env.app_server, 'api')
+    copy_server_ssl_files(env.app_cms, 'cms')
+
+
+NGINX_CONF_TEMPLATE = r'''
+passenger_user {passenger_user};
+passenger_group {passenger_group};
+
+# CBC-mode ciphers might be vulnerable to a number of attacks and to
+# cipher, the BEAST attack in particular (see CVE-2011-3389), so
+# prefer the RC4-SHA.
+ssl_ciphers RC4:HIGH:!aNULL:!MD5;
+ssl_prefer_server_ciphers on;
+'''[1:-1]
+
+@task
 def configure_nginx():
     main_nginx_config = path.join(env.nginx_conf, 'nginx.conf')
+
+    # Uncomment the Passenger directives included with the nginx-extra
+    # package.
     for directive in ['root', 'ruby']:
         regex = 'passenger_{}'.format(directive)
         uncomment(main_nginx_config, regex, use_sudo=True)
+
+    # Write the http-scope Nginx configuration.
+    return put(
+        local_path=StringIO(NGINX_CONF_TEMPLATE.format(
+            passenger_user=env.passenger_user,
+            passenger_group=env.passenger_group,
+        )),
+        remote_path=path.join(env.nginx_conf, 'conf.d', 'citysdk.conf'),
+        mode=0400,
+        use_sudo=True,
+    )
 
 
 @task
@@ -568,6 +637,8 @@ def configure_default_nginx_server():
 SERVER_TEMPLATE = r'''
 server {{
     listen 80;
+    listen [::]80;
+
     server_name {server_name};
     root {root};
 
@@ -575,8 +646,32 @@ server {{
     error_log {error_log};
 
     passenger_enabled on;
-    passenger_user {passenger_user};
-    passenger_group {passenger_group};
+    passenger_ruby {passenger_ruby};
+}}
+'''[1:-1]
+
+SSL_SERVER_TEMPLATE = r'''
+server {{
+    listen 80;
+    listen [::]80;
+
+    server_name {server_name};
+
+    return 301 https://$server_name$request_uri;
+}}
+
+server {{
+    listen 443 ssl;
+    server_name {server_name};
+    root {root};
+
+    access_log {access_log};
+    error_log {error_log};
+
+    ssl_certificate {ssl_certificate};
+    ssl_certificate_key {ssl_certificate_key};
+
+    passenger_enabled on;
     passenger_ruby {passenger_ruby};
 }}
 '''[1:-1]
@@ -584,10 +679,15 @@ server {{
 @task
 def configure_nginx_servers():
     stdout = rvmdo('passenger-config --ruby-command')
-    passenger_ruby = stdout.split('\n')[3].split(' ')[-1]
+    passenger_ruby = stdout.split('\n')[3].split(' ')[-1].strip()
 
     for app in env.apps.itervalues():
-        config = StringIO(SERVER_TEMPLATE.format(
+        if app.ssl:
+            template = SSL_SERVER_TEMPLATE
+        else:
+            template = SERVER_TEMPLATE
+
+        config = StringIO(template.format(
             access_log=app.access_log,
             error_log=app.error_log,
             passenger_group=env.passenger_group,
@@ -595,6 +695,8 @@ def configure_nginx_servers():
             passenger_user=env.passenger_user,
             root=app.server_public,
             server_name=app.server_name,
+            ssl_certificate=app.ssl_crt,
+            ssl_certificate_key=app.ssl_key,
         ))
 
         put(config, app.server_config, use_sudo=True)
@@ -809,13 +911,14 @@ def reload_nginx(action='reload'):
 # =============================================================================
 
 class App(object):
-    def __init__(self, name, priority=None, subdomain=None):
+    def __init__(self, name, priority=None, subdomain=None, ssl=False):
         if priority is None:
             priority = '99'
 
         self.name = name
         self.priority = priority
         self.subdomain = subdomain
+        self.ssl = ssl
 
         self.server_name = server_name = '.'.join(
             part for part in [subdomain, env.domain_name] if part
@@ -847,6 +950,13 @@ class App(object):
         self.local_deploy = os.path.join(self.local_dir, 'config/deploy')
         self.local_deploy_script = os.path.join(self.local_deploy,
                                                 'production.rb')
+
+        self.ssl_crt = path.join(env.nginx_conf, 'ssl', '{}.crt'.format(
+            self.server_name,
+        ))
+        self.ssl_key = path.join(env.nginx_conf, 'ssl', '{}.key'.format(
+            self.server_name,
+        ))
 
 
 def apt_get(apt_get_command):
@@ -913,8 +1023,8 @@ def rvmsudo(rvmsudo_command, **runner_kwargs):
 
 
 apps = OrderedDict()
-for name, subdomain in env.apps:
-    app = App(name, subdomain=subdomain)
+for name, subdomain, ssl in env.apps:
+    app = App(name, subdomain=subdomain, ssl=ssl)
     apps[name] = app
     setattr(env, 'app_%s' % (name,), app)
 env.apps = apps
