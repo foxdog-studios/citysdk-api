@@ -20,7 +20,7 @@
       "username": "",
       "local_key_path": ""
     }
-  }
+  },
   "ssl": {
     "api": {
       "local_certificate": "",

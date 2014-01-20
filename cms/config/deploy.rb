@@ -41,8 +41,7 @@ namespace :deploy do
       ln -s #{shared_path}/filetmp #{latest_release}/filetmp
     CMD
 
-    # XXX: This breaks if we deploy somewhere else.
-    run "ln -s /var/www/citysdk/shared/config/config.json #{release_path}"
+    run "ln -s #{shared_path}/config/config.json #{release_path}"
   end
 end
 

@@ -82,10 +82,10 @@ env.ruby_version     = '1.9.3'
 # Applications
 # (Source directory name, sub-sub-domain name, SSL)
 app_templates = [
-    ('cms'    , 'cms', True ),
+    ('cms'    , 'cms', False),
     ('devsite', 'dev', False),
     ('rdf'    , 'rdf', False),
-    ('server' , None , True ),
+    ('server' , None , False),
 ]
 
 # Environment variables
@@ -148,68 +148,69 @@ def setup(start=1):
         #
 
         # System packages
-        add_repositories,               # 1
-        update_package_lists,           # 2
-        install_packages,               # 3
-        upgrade_distribution,           # 4
-        remove_unused_packages,         # 5
+        install_curl,                   # 1
+        add_repositories,               # 2
+        update_package_lists,           # 3
+        install_packages,               # 4
+        upgrade_distribution,           # 5
+        remove_unused_packages,         # 6
 
         # RVM
-        install_rvm,                    # 6
-        install_rvm_requirements,       # 7
-        install_ruby,                   # 8
-        create_gemset,                  # 9
+        install_rvm,                    # 7
+        install_rvm_requirements,       # 8
+        install_ruby,                   # 9
+        create_gemset,                  # 10
 
         # Build osm2psql
-        ensure_osm2pgsql_source,        # 10
-        configure_osm2pgsql,            # 11
-        compile_osm2pgsql,              # 12
-        install_osm2pgsql,              # 13
+        ensure_osm2pgsql_source,        # 11
+        configure_osm2pgsql,            # 12
+        compile_osm2pgsql,              # 13
+        install_osm2pgsql,              # 14
 
         #
         # Configuration
         #
 
         # Database creation
-        ensure_database,                # 14
-        ensure_database_extensions,     # 15
-        ensure_user,                    # 16
+        ensure_database,                # 15
+        ensure_database_extensions,     # 16
+        ensure_user,                    # 17
 
         # OSM Data
-        ensure_osm_data,                # 17
-        run_osm2pgsql,                  # 18
-        copy_database_scripts,          # 19
-        create_osm_schema,              # 20
-        run_migrations,                 # 21
+        ensure_osm_data,                # 18
+        run_osm2pgsql,                  # 19
+        copy_database_scripts,          # 20
+        create_osm_schema,              # 21
+        run_migrations,                 # 22
 
         # Nginx
-        copy_ssl_files,                 # 22
-        configure_nginx,                # 23
-        configure_default_nginx_server, # 24
-        configure_nginx_servers,        # 25
+        copy_ssl_files,                 # 23
+        configure_nginx,                # 24
+        configure_default_nginx_server, # 25
+        configure_nginx_servers,        # 26
 
         # Deploy user
-        ensure_deploy_user,             # 26
+        ensure_deploy_user,             # 27
 
         # Deploy directories
-        write_deploy_scripts,           # 27
-        make_deploy_directories,        # 28
-        setup_deploy_directories,       # 29
-        check_deploy_directories,       # 30
+        write_deploy_scripts,           # 28
+        make_deploy_directories,        # 29
+        setup_deploy_directories,       # 30
+        check_deploy_directories,       # 31
 
         #
         # Deploy
         #
 
         # Deploy
-        update_gem_dependants,          # 31
-        copy_config,                    # 32
-        deploy,                         # 33
+        update_gem_dependants,          # 32
+        copy_config,                    # 33
+        deploy,                         # 34
 
         # Configure CMS
-        create_admin,                   # 34
+        create_admin,                   # 35
 
-        restart_nginx,                  # 35
+        restart_nginx,                  # 36
     ]
 
     for task in tasks[int(start) - 1:]:
@@ -219,6 +220,11 @@ def setup(start=1):
 # =============================================================================
 # = System packages                                                           =
 # =============================================================================
+
+@task
+def install_curl():
+    apt_get('install curl')
+
 
 @task
 def add_repositories():
@@ -841,28 +847,30 @@ def update_gem_dependants():
 
 @task
 def copy_config():
-    local_path = os.path.join(os.environ['CITYSDK_CONFIG_DIR'], 'server.json')
-    remote_dir = posixpath.join(env.app_server.server_root, 'shared/config')
-    remote_path = posixpath.join(remote_dir, 'config.json')
-    sudo('mkdir --parents {}'.format(quote(remote_dir)))
-    sudo('chown -R {}:{} {}'.format(
-        quote(env.deploy_user),
-        quote(env.passenger_group),
-        quote(remote_dir),
-    ))
-    put(local_path=local_path, remote_path=remote_path, use_sudo=True)
+    local_path = os.path.join(os.environ[ENV_KEY], 'server.json')
 
-    sudo('chown {}:{} {}'.format(
-        quote(env.deploy_user),
-        quote(env.passenger_group),
-        quote(remote_path)),
-    )
+    for app in env.apps.itervalues():
+        remote_dir = posixpath.join(app.server_root, 'shared/config')
+        remote_path = posixpath.join(remote_dir, 'config.json')
+        sudo('mkdir --parents {}'.format(quote(remote_dir)))
+        sudo('chown -R {}:{} {}'.format(
+            quote(env.deploy_user),
+            quote(env.passenger_group),
+            quote(remote_dir),
+        ))
+        put(local_path=local_path, remote_path=remote_path, use_sudo=True)
 
-    #        Read Write Execute
-    # Owner: X
-    # Group: X
-    # Other:
-    sudo('chmod 440 {}'.format(remote_path))
+        sudo('chown {}:{} {}'.format(
+            quote(env.deploy_user),
+            quote(env.passenger_group),
+            quote(remote_path)),
+        )
+
+        #        Read Write Execute
+        # Owner: X
+        # Group: X
+        # Other:
+        sudo('chmod 440 {}'.format(remote_path))
 
 
 @task

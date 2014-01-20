@@ -37,12 +37,13 @@ namespace :deploy do
   task :finalize_update, :except => { :no_release => true } do
     run <<-CMD
       rm -rf #{latest_release}/log &&
-      ln -s /var/www/citysdk/shared/config/config.json #{release_path} &&
+      ln -s #{shared_path}/config/config.json #{release_path} &&
       mkdir -p #{latest_release}/public &&
       mkdir -p #{latest_release}/tmp &&
       ln -s #{shared_path}/log #{latest_release}/log
     CMD
 
+    # XXX: This is broken, /var/www/csdk_cms does not exist.
     run "ln -s /var/www/csdk_cms/current/utils/citysdk_api.rb #{release_path}/public/citysdk_api.rb"
   end
 end
