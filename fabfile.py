@@ -82,10 +82,10 @@ env.ruby_version     = '1.9.3'
 # Applications
 # (Source directory name, sub-sub-domain name, SSL)
 app_templates = [
-    ('cms'    , 'cms', False),
+    ('cms'    , 'cms', True ),
     ('devsite', 'dev', False),
     ('rdf'    , 'rdf', False),
-    ('server' , None , False),
+    ('server' , None , True ),
 ]
 
 # Environment variables
@@ -139,9 +139,6 @@ if env.host_string is None:
 
 @task
 def setup(start=1):
-    def restart_nginx():
-        return reload_nginx(action='restart')
-
     tasks = [
         #
         # Installation
@@ -548,6 +545,7 @@ def copy_ssl_files():
         crt = StringIO()
         with open(crt_path) as crt_file:
             crt.write(crt_file.read())
+        crt.write('\n')
         with open(bundle_path) as bundle_file:
             crt.write(bundle_file.read())
 
@@ -927,8 +925,13 @@ def drop_user():
 
 
 @task
-def reload_nginx(action='reload'):
-    return sudo('service nginx {}'.format(quote(action)))
+def reload_nginx():
+    return sudo('service nginx reload')
+
+
+@task
+def restart_nginx():
+    return sudo('service nginx restart')
 
 
 # =============================================================================
