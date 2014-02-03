@@ -348,7 +348,7 @@ class CitySDK_API < Sinatra::Base
         # TODO: check if data is one-dimensional and unnested
         data = nil
         if node["data"]
-          data = Sequel.pg_json(node["data"])
+          data = Sequel.hstore(node["data"])
         else
           CitySDK_API.do_abort(422,"Node without data encountered.")
         end
@@ -529,7 +529,7 @@ class CitySDK_API < Sinatra::Base
           h = {
             :layer_id=>layer_id,
             :node_id => node.id,
-            :data => Sequel.pg_json(json['data']),
+            :data => Sequel.hstore(json['data']),
             :node_data_type => 0,
             :modalities => json['modalities'] ? Sequel.pg_array(json['modalities'].map{ |m| Modality.idFromText(m)} ) : []
           }
