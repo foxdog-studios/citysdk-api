@@ -1,51 +1,73 @@
 $LOAD_PATH.unshift File.dirname(__FILE__)
 
+require 'base64'
+require 'json'
+require 'open-uri'
+
 require 'sinatra'
 require 'sinatra/sequel'
 require 'sinatra/session'
-require 'json'
-require 'open-uri'
+
 require 'citysdk'
-require 'base64'
+
+
+class Configuration
+  def initialize(path)
+    @config = open(path) { |config_file| JSON.load(config_file) }
+  end # def
+
+  def get(key, prefix = nil)
+    key = "#{ prefix }_#{ key }" unless prefix.nil?
+    @config.fetch(key)
+  end # def
+
+  def get_db(db_key)
+    get(db_key, prefix = 'db')
+  end # def
+
+  def get_ep(ep_key)
+    get(ep_key, prefix = 'ep')
+  end # def
+end # class
+
+CONFIG = Configuration.new('config.json')
+
 
 configure do | app |
-  if defined?(PhusionPassenger)
-      PhusionPassenger.on_event(:starting_worker_process) do |forked|
-          if forked
-              # We're in smart spawning mode.
-              database.disconnect
-          else
-              # We're in direct spawning mode. We don't need to do anything.
-          end
-      end
-  end
+  if defined? PhusionPassenger
+    PhusionPassenger.on_event(:starting_worker_process) do |forked|
+      # Disconnect if we're in smart spawning mode.
+      database.disconnect if forked
+    end # do
+  end # if
 
-  $config = JSON.parse(File.read('./config.json'))
-  app.database = "postgres://#{$config['db_user']}:#{$config['db_pass']}@#{$config['db_host']}/#{$config['db_name']}"
+  user     = CONFIG.get_db('user')
+  password = CONFIG.get_db('pass')
+  host     = CONFIG.get_db('host')
+  database = CONFIG.get_db('name')
+
+  app.database = "postgres://#{ user }:#{ password }@#{ host }/#{ database }"
   app.database.extension :pg_array
   app.database.extension :pg_range
 
+  root_path = Pathname.new(__FILE__).dirname
+  Dir[root_path.join('utils/*.rb')].each { |file| require file }
+  Dir[root_path.join('models/*.rb')].each { |file| require file }
+end # do
 
-  # app.database.logger = Logger.new(STDOUT)
-
-  Dir[File.dirname(__FILE__) + '/utils/*.rb'].each {|file| require file }
-  Dir[File.dirname(__FILE__) + '/models/*.rb'].each {|file| require file }
-
-end
 
 enable :sessions
+
 
 class CSDK_CMS < Sinatra::Base
 
   set :views, Proc.new { File.join(root, "../views") }
 
-  # puts settings.root
-
   use Rack::MethodOverride
   register Sinatra::Session
   set :session_expire, 60 * 60 * 24
   set :session_fail, '/login'
-  set :session_secret, '09989dhlkjh7892%$#%2kljd'
+  set :session_secret, CONFIG.get('session_secret')
 
 
   def self.do_abort(code,message)
@@ -53,32 +75,27 @@ class CSDK_CMS < Sinatra::Base
   end
 
   before do
-
-    @apiServer = $config['ep_api_url'].gsub('http://','')
-    @sampleUrl = $config['ep_info_url'] + "/map#http://#{@apiServer}/"
-
+    @api_server = CONFIG.get_ep('api_url')
+    @sample_url = CONFIG.get_ep('info_url') + "/map#http://#{@api_server}/"
     @oid = session? ? session[:oid] : nil
-    # puts "request: #{request.env['PATH_INFO']}"
-  end
-
-  after do
   end
 
   def getLayers
     @layerSelect = Layer.selectTag()
     @selected = params[:category] || 'administrative'
     if @selected != 'all'
-      ds = Layer.where(Sequel.like(:category, "#{@selected}%"))
+      ds = Layer.where(Sequel.like(:category, "#{ @selected }%"))
     else
       ds = Layer
     end
-    if @oid and @oid != 0
-      ds = ds.where(:owner_id => @oid)
+    if @oid and !@oid.zero?
+      ds = ds.where(owner_id: @oid)
     end
     @layers = ds.order(:name).all
   end
 
   get '/' do
+    redirect '/login' if @oid.nil?
     getLayers
     erb :layers, :layout => @nolayout ? false : true
   end
@@ -96,23 +113,22 @@ class CSDK_CMS < Sinatra::Base
     end
   end
 
-  get '/get_layer_keys/:layer' do |ln|
-    l = Layer.where(:name=>ln).first
-    if(l)
-      keys = Sequel::Model.db.fetch("select keys_for_layer(#{l.id})").all
-      api = CitySDK::API.new(@apiServer)
-      ml = api.get("/nodes?layer=#{ln}&per_page=1")
-      if ml[:status] == 'success' and  ml[:results][0]
-        h = ml[:results][0][:layers][ln.to_sym][:data]
-        h.each_key do |k|
-          puts k
-          keys[0][:keys_for_layer] << k.to_s
-        end
-      end
-      return keys[0][:keys_for_layer].uniq.to_json
-    else
-      return '{}'
-    end
+  get '/get_layer_keys/:layer' do |layer_name|
+    layer = Layer.where(name: layer_name).first
+    return '{}' if layer.nil?
+
+    sql = "select keys_for_layer(#{ layer.id })"
+    keys = Sequel::Model.db.fetch(sql).all
+
+    api = CitySDK::API.new(@api_server)
+    ml = api.get("/nodes?layer=#{ layer_name }&per_page=1")
+
+    if ml[:status] == 'success' && ml[:results][0]
+      h = ml[:results][0][:layers][layer_name.to_sym][:data]
+      h.each_key { |key| keys[0][:keys_for_layer] << key.to_s }
+    end # if
+
+    keys[0][:keys_for_layer].uniq.to_json
   end
 
   get '/get_layer_stats/:layer' do |l|
@@ -132,7 +148,7 @@ class CSDK_CMS < Sinatra::Base
   end
 
   post '/login' do
-    oid,token = Owner.login(params[:email],params[:password])
+    oid, token = Owner.login(params[:email], params[:password])
     session_start!
     session[:auth_key] = token
     session[:oid] = oid
@@ -143,9 +159,8 @@ class CSDK_CMS < Sinatra::Base
     redirect '/'
   end
 
-
   get '/owners' do
-    if Owner.validSession(session[:auth_key])
+    if Owner.valid_session(session[:auth_key])
       if( @oid == 0)
         @owners = Owner.all
         erb :owners
@@ -160,7 +175,7 @@ class CSDK_CMS < Sinatra::Base
   end
 
   post '/profile/create' do
-    if Owner.validSession(session[:auth_key]) and (@oid == 0)
+    if Owner.valid_session(session[:auth_key]) and (@oid == 0)
       @owner = Owner.new
       @owner.email = params['email']
       @owner.name = params['email'].split('@')[0]
@@ -181,7 +196,7 @@ class CSDK_CMS < Sinatra::Base
   end
 
   get '/profile/new' do
-    if Owner.validSession(session[:auth_key]) and (@oid == 0)
+    if Owner.valid_session(session[:auth_key]) and (@oid == 0)
       @owner = Owner.new
     else
       CSDK_CMS.do_abort(401,"not authorized")
@@ -190,7 +205,7 @@ class CSDK_CMS < Sinatra::Base
   end
 
   get '/profile/:o_id' do |o|
-    if Owner.validSession(session[:auth_key])
+    if Owner.valid_session(session[:auth_key])
       if( @oid == 0 or (o.to_i == @oid))
         @owner = Owner[o]
         erb :edit_profile
@@ -203,7 +218,7 @@ class CSDK_CMS < Sinatra::Base
   end
 
   post '/profile/:o_id' do |o|
-    if Owner.validSession(session[:auth_key])
+    if Owner.valid_session(session[:auth_key])
       if( @oid == 0 or (o.to_i == @oid))
         @owner = Owner[o]
         @owner.email = params['email']
@@ -225,7 +240,7 @@ class CSDK_CMS < Sinatra::Base
 
 
   get '/layer/:layer_id/data' do |l|
-    if Owner.validSession(session[:auth_key])
+    if Owner.valid_session(session[:auth_key])
       @layer = Layer[l]
       if(@layer && (@oid == @layer.owner_id) or @oid==0)
         @period = @layer.period_select()
@@ -253,9 +268,9 @@ class CSDK_CMS < Sinatra::Base
   end
 
   post '/layer/:layer_id/ldprops' do |l|
-    if Owner.validSession(session[:auth_key])
+    if Owner.valid_session(session[:auth_key])
       @layer = Layer[l]
-      if(@layer && (@oid == @layer.owner_id) or @oid==0)
+      if @layer && (@oid == @layer.owner_id) or @oid.zero?
         request.body.rewind
         data = JSON.parse(request.body.read, {:symbolize_names => true})
 
@@ -272,16 +287,16 @@ class CSDK_CMS < Sinatra::Base
           p.lang  = dk[:lang]
           p.descr = dk[:descr]
           p.eqprop = dk[:eqprop]
-          if !p.save
-            return [422,{},"error saving property data."]
-          end
-        end
-      end
-    end
-  end
+          unless p.save
+            return [422, {}, 'error saving property data.']
+          end # unless
+        end # do
+      end # if
+    end # if
+  end # do
 
   post '/layer/:layer_id/webservice' do |l|
-    if Owner.validSession(session[:auth_key])
+    if Owner.valid_session(session[:auth_key])
       @layer = Layer[l]
       if(@layer && (@oid == @layer.owner_id) or @oid==0)
         @layer.webservice = params['wsurl']
@@ -298,7 +313,7 @@ class CSDK_CMS < Sinatra::Base
   end
 
   post '/layer/:layer_id/periodic' do |l|
-    if Owner.validSession(session[:auth_key])
+    if Owner.valid_session(session[:auth_key])
       @layer = Layer[l]
       if(@layer && (@oid == @layer.owner_id) or @oid==0)
         @layer.import_url = params['update_url']
@@ -316,7 +331,7 @@ class CSDK_CMS < Sinatra::Base
 
 
   get '/layer/:layer_id/edit' do |l|
-    if Owner.validSession(session[:auth_key])
+    if Owner.valid_session(session[:auth_key])
       @layer = Layer[l]
       if(@layer && (@oid == @layer.owner_id) or @oid==0)
         @layer.data_sources = [] if @layer.data_sources.nil?
@@ -333,7 +348,7 @@ class CSDK_CMS < Sinatra::Base
 
 
   get '/prefixes' do
-    if Owner.validSession(session[:auth_key])
+    if Owner.valid_session(session[:auth_key])
       if params[:prefix] and params[:name] and params[:uri]
         if params[:prefix][-1] != ':'
           params[:prefix] = params[:prefix] + ':'
@@ -355,7 +370,7 @@ class CSDK_CMS < Sinatra::Base
   end
 
   delete '/prefix/:pr' do |p|
-    if Owner.validSession(session[:auth_key])
+    if Owner.valid_session(session[:auth_key])
       LDPrefix.where({:owner_id=>@oid, :prefix=>p}).delete
     end
     @prefixes = LDPrefix.order(:name).all
@@ -364,7 +379,7 @@ class CSDK_CMS < Sinatra::Base
 
   delete '/layer/:layer_id' do |l|
 
-    if Owner.validSession(session[:auth_key])
+    if Owner.valid_session(session[:auth_key])
       @layer = Layer[l]
       if(@layer && (@oid == @layer.owner_id) or @oid==0)
         url = "/layer/#{@layer.name}"
@@ -374,7 +389,7 @@ class CSDK_CMS < Sinatra::Base
         end
         url += "?" + par.join("&") if par.length > 0
         begin
-          api = CitySDK::API.new(@apiServer)
+          api = CitySDK::API.new(@api_server)
           api.authenticate(session[:e],session[:p]) do
             api.delete(url)
           end
@@ -388,12 +403,10 @@ class CSDK_CMS < Sinatra::Base
     end
     getLayers
     redirect "/"
-    # params[:nolayout] = true
-    # redirect "/layer/#{@layer.id}/data?nolayout"
   end
 
   get '/layer/new' do
-    if Owner.validSession(session[:auth_key])
+    if Owner.valid_session(session[:auth_key])
       @owner = Owner[@oid]
       if @oid != 0
         domains = @owner.domains.split(',')
@@ -420,7 +433,7 @@ class CSDK_CMS < Sinatra::Base
   end
 
   post '/layer/create' do
-    if Owner.validSession(session[:auth_key])
+    if Owner.valid_session(session[:auth_key])
 
       puts JSON.pretty_generate(params)
 
@@ -455,16 +468,6 @@ class CSDK_CMS < Sinatra::Base
         @categories = @layer.cat_select
         erb :new_layer
       else
-        # api = CitySDK::API.new(@apiServer)
-        # api.authenticate(session[:e],session[:p]) do
-        #   begin
-        #     d = { :data => @layer.to_hash.to_json }
-        #     puts JSON.pretty_generate(d)
-        #     api.put('/layers',d)
-        #   rescue => e
-        #     puts e.message
-        #   end
-        # end
         @layer.save
         getLayers
         erb :layers
@@ -473,7 +476,7 @@ class CSDK_CMS < Sinatra::Base
   end
 
   post '/layer/edit/:layer_id' do |l|
-    if Owner.validSession(session[:auth_key])
+    if Owner.valid_session(session[:auth_key])
       @layer = Layer[l]
       if(@layer && (@oid == @layer.owner_id) or @oid==0)
         @layer.description = params['description']
@@ -509,7 +512,7 @@ class CSDK_CMS < Sinatra::Base
           erb :edit_layer
         else
           @layer.save
-          api = CitySDK::API.new(@apiServer)
+          api = CitySDK::API.new(@api_server)
           api.get('/layers/reload__')
           redirect '/'
         end
@@ -524,7 +527,7 @@ class CSDK_CMS < Sinatra::Base
 
   post '/layer/:layer_id/upload_file' do |l|
 
-    if Owner.validSession(session[:auth_key])
+    if Owner.valid_session(session[:auth_key])
       @layer = Layer[l]
       if(@layer && (@oid == @layer.owner_id) or @oid==0)
         p = params['0'] || params['file']
@@ -564,7 +567,7 @@ class CSDK_CMS < Sinatra::Base
         parameters.delete(k) if v =~ /^<no\s+/
       end
 
-      parameters[:host] = @apiServer
+      parameters[:host] = @api_server
       parameters[:email] = session[:e]
       parameters[:passw] = session[:p]
 
@@ -580,7 +583,7 @@ class CSDK_CMS < Sinatra::Base
       parameters.delete(:file_path)
       parameters.delete(:originalfile)
 
-      api = CitySDK::API.new(@apiServer)
+      api = CitySDK::API.new(@api_server)
       puts JSON.pretty_generate(parameters)
 
       api.authenticate(session[:e],session[:p]) do

@@ -13,11 +13,11 @@ gem 'pony'
 gem 'rgeo'
 gem 'rgeo-geojson'
 gem 'sequel'
-gem 'sinatra', :require => 'sinatra/base'
+gem 'sinatra', require: 'sinatra/base'
 gem 'sinatra-sequel'
 gem 'sinatra-session'
 
-gem 'citysdk', :path => './vendor/citysdk'
+gem 'citysdk', path: './vendor/citysdk'
 
 group :development do
   gem 'capistrano', '~>2'

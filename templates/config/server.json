@@ -5,6 +5,7 @@
   "db_name": "",
   "db_user": "",
   "db_pass": "",
+  "session_secret": "",
   "ep_code": "",
   "ep_description": "",
   "ep_api_url": "",
