@@ -32,6 +32,7 @@ configure do | sinatraApp |
   sinatraApp.database.extension :pg_array
   sinatraApp.database.extension :pg_range
   sinatraApp.database.extension :pg_hstore
+  sinatraApp.database.extension :pg_json
 
   require File.dirname(__FILE__) + '/api_read.rb'
   require File.dirname(__FILE__) + '/api_write.rb'
@@ -52,6 +53,7 @@ class CitySDK_API < Sinatra::Base
 
   Sequel.extension :pg_hstore_ops
   Sequel.extension :pg_array_ops
+  Sequel.extension :pg_json_ops
 
   Sequel::Model.plugin :json_serializer
   Sequel::Model.db.extension(:pagination)
