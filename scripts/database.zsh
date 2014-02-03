@@ -123,11 +123,11 @@ function set_admin_details()
     cd $repo/server
     bundle exec racksh "
         owner = Owner[0]
-        owner.createPW('$(config-setup administrator.password)')
-        owner.name='$(config-setup administrator.name)'
-        owner.email='$(config-setup administrator.email)'
-        owner.organization='$(config-setup administrator.organization)'
-        owner.domains='$(config-setup administrator.domains)'
+        owner.createPW('$(config-setup admin.password)')
+        owner.name='$(config-setup admin.name)'
+        owner.email='$(config-setup admin.email)'
+        owner.organization='$(config-setup admin.organization)'
+        owner.domains='$(config-setup admin.domains)'
         owner.save_changes()
     "
 )}
