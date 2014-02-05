@@ -9,13 +9,13 @@
 
     <script src="https://code.jquery.com/jquery-1.9.1.min.js"></script>
     <script src="https://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
-	  <script src="/script/jquery.form.min.js"></script>
+    <script src="/script/jquery.form.min.js"></script>
     <script src="/script/app.js"></script>
     <script src="/script/osmtags.js"></script>
     <title>CitySDK CMS</title>
     <!--[if lt IE 9]><script src="https://html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
   </head>
-  
+
   <body>
     <div class="full-width-header">
       <div class="container">
@@ -31,14 +31,7 @@
     <div class="full-width-footer">
       <div class="container">
         <footer class="footer clearfix">
-            <% 
-              if session[:oid] 
-               s = ' signed in as ' + "<a href = /profile/#{session[:oid]}>#{Owner[session[:oid]].email}</a>"
-              else 
-               s = '' 
-              end
-            %>
-            CitySDK - <a href='http://waag.org'>Waag Society</a> 2013; <%= s %>
+            CitySDK - <a href='http://waag.org'>Waag Society</a> 2013;
             <img class = "logo" src="/css/img/logos.jpg" >
         </footer>
       </div>

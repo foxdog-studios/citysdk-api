@@ -1,10 +1,12 @@
 source 'https://rubygems.org'
 
 ruby '1.9.3'
+
 #ruby-gemset=citysdk
 
 gem 'active_support'
 gem 'faraday'
+gem 'haml'
 gem 'i18n'
 gem 'logger'
 gem 'multipart-post'
@@ -14,6 +16,7 @@ gem 'rgeo'
 gem 'rgeo-geojson'
 gem 'sequel'
 gem 'sinatra', require: 'sinatra/base'
+gem 'sinatra-authentication'
 gem 'sinatra-sequel'
 gem 'sinatra-session'
 
@@ -22,6 +25,7 @@ gem 'citysdk', path: './vendor/citysdk'
 group :development do
   gem 'capistrano', '~>2'
   gem 'capistrano-ext'
+  gem 'rerun'
   gem 'thin'
 end
 

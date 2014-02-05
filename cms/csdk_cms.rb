@@ -7,7 +7,6 @@ require 'open-uri'
 require 'sinatra'
 require 'sinatra/sequel'
 require 'sinatra/session'
-
 require 'citysdk'
 
 
@@ -33,7 +32,10 @@ end # class
 CONFIG = Configuration.new('config.json')
 
 
-configure do | app |
+enable :sessions
+
+
+configure do |app|
   if defined? PhusionPassenger
     PhusionPassenger.on_event(:starting_worker_process) do |forked|
       # Disconnect if we're in smart spawning mode.
@@ -50,18 +52,21 @@ configure do | app |
   app.database.extension :pg_array
   app.database.extension :pg_range
 
+  DB = app.database
+
   root_path = Pathname.new(__FILE__).dirname
   Dir[root_path.join('utils/*.rb')].each { |file| require file }
   Dir[root_path.join('models/*.rb')].each { |file| require file }
+
+  require 'sinatra-authentication'
 end # do
 
 
-enable :sessions
-
-
 class CSDK_CMS < Sinatra::Base
+  set :template_engine, :erb
+  Sinatra::SinatraAuthentication.registered(self)
 
-  set :views, Proc.new { File.join(root, "../views") }
+  set :views, Proc.new { File.join(root, '../views') }
 
   use Rack::MethodOverride
   register Sinatra::Session
@@ -77,40 +82,27 @@ class CSDK_CMS < Sinatra::Base
   before do
     @api_server = CONFIG.get_ep('api_url')
     @sample_url = CONFIG.get_ep('info_url') + "/map#http://#{@api_server}/"
-    @oid = session? ? session[:oid] : nil
-  end
 
-  def getLayers
+  end # do
+
+  def get_layers
     @layerSelect = Layer.selectTag()
     @selected = params[:category] || 'administrative'
+    ds = Layer
     if @selected != 'all'
-      ds = Layer.where(Sequel.like(:category, "#{ @selected }%"))
-    else
-      ds = Layer
-    end
-    if @oid and !@oid.zero?
-      ds = ds.where(owner_id: @oid)
-    end
+      ds = ds.where(Sequel.like(:category, "#{ @selected }%"))
+    end # if
     @layers = ds.order(:name).all
   end
 
   get '/' do
-    redirect '/login' if @oid.nil?
-    getLayers
+    get_layers
     erb :layers, :layout => @nolayout ? false : true
   end
 
   get '/layers' do
-    getLayers
+    get_layers
     erb :layers, :layout => @nolayout ? false : true
-  end
-
-  get '/login' do
-    if session?
-      redirect '/'
-    else
-      erb :login
-    end
   end
 
   get '/get_layer_keys/:layer' do |layer_name|
@@ -132,7 +124,7 @@ class CSDK_CMS < Sinatra::Base
   end
 
   get '/get_layer_stats/:layer' do |l|
-    l = Layer.where(:name=>l).first
+    l = Layer.where(name: l).first
     @lstatus = l.import_status || '-'
     @ndata   = NodeDatum.where(:layer_id => l.id).count
     @ndataua = NodeDatum.select(:updated_at).where(:layer_id => l.id).order(:updated_at).reverse.limit(1).all
@@ -142,156 +134,61 @@ class CSDK_CMS < Sinatra::Base
     erb :stats, :layout => false
   end
 
-  get '/logout' do
-    session_end!
-    redirect '/'
-  end
+  get '/layer/:layer_id/data' do |layer_id|
+    login_required
 
-  post '/login' do
-    oid, token = Owner.login(params[:email], params[:password])
-    session_start!
-    session[:auth_key] = token
-    session[:oid] = oid
+    @layer = Layer[layer_id]
+    if @layer.nil? || current_user.id != @layer.owner_id || !current_user.admin?
+      halt 401, 'Not authorized'
+    end # if
 
-    session[:e] = params[:email]
-    session[:p] = params[:password]
+    @period = @layer.period_select()
+    @props = {}
 
-    redirect '/'
-  end
+    LayerProperty.where(:layer_id => layer_id).each do |property|
+      @props[property.key] = property.serialize
+    end # do
 
-  get '/owners' do
-    if Owner.valid_session(session[:auth_key])
-      if( @oid == 0)
-        @owners = Owner.all
-        erb :owners
-      else
-        @errorContext = "Not authorised!"
-        erb :gen_error
-        return
-      end
+    @langSelect  = Layer.languageSelect
+    @ptypeSelect = Layer.propertyTypeSelect
+    @lType = @layer.rdf_type_uri
+    @epSelect,@eprops = Layer.epSelect
+    @props = @props.to_json
+
+    if params.fetch(:nolayout)
+      erb :layer_data, layout: false
     else
-      redirect '/'
+      erb :layer_data
     end
   end
 
-  post '/profile/create' do
-    if Owner.valid_session(session[:auth_key]) and (@oid == 0)
-      @owner = Owner.new
-      @owner.email = params['email']
-      @owner.name = params['email'].split('@')[0]
-      @owner.www = params['www']
-      @owner.organization = params['organization']
-      @owner.domains = params['domains']
-      if @owner.valid? and @owner.validatePW(params['password'],params['passwordc'])
-        @owner.save
-        @owner.createPW(params['password']) if (params['password'] && !params['password'].empty?)
-      else
-        erb :edit_profile
-        return
-      end
-    else
-      CSDK_CMS.do_abort(401,"not authorized")
-    end
-    redirect '/owners'
-  end
+  post '/layer/:layer_id/ldprops' do |layer_id|
+    @layer = Layer[layer_id]
+    if current_user.admin?
+      request.body.rewind
+      data = JSON.parse(request.body.read, symbolize_names: true)
 
-  get '/profile/new' do
-    if Owner.valid_session(session[:auth_key]) and (@oid == 0)
-      @owner = Owner.new
-    else
-      CSDK_CMS.do_abort(401,"not authorized")
-    end
-    erb :edit_profile
-  end
+      @layer.update(:rdf_type_uri=>data[:type])
+      data = data[:props]
 
-  get '/profile/:o_id' do |o|
-    if Owner.valid_session(session[:auth_key])
-      if( @oid == 0 or (o.to_i == @oid))
-        @owner = Owner[o]
-        erb :edit_profile
-      else
-        CSDK_CMS.do_abort(401,"not authorized")
-      end
-    else
-      redirect '/'
-    end
-  end
+      data.each_key do |k|
+        dk = data[k]
+        if dk[:unit] != '' && dk[:unit] !~ /^csdk:unit/
+          dk[:unit] = "csdk:unit#{dk[:unit]}"
+        end # if
 
-  post '/profile/:o_id' do |o|
-    if Owner.valid_session(session[:auth_key])
-      if( @oid == 0 or (o.to_i == @oid))
-        @owner = Owner[o]
-        @owner.email = params['email']
-        @owner.www = params['www']
-        @owner.organization = params['organization']
-        @owner.domains = params['domains']  if params['domains']
-        if @owner.valid? and @owner.validatePW(params['password'],params['passwordc'])
-          @owner.save
-          @owner.createPW(params['password']) if (params['password'] && !params['password'].empty?)
-          redirect '/'
-        else
-          erb :edit_profile
-        end
-      else
-        CSDK_CMS.do_abort(401,"not authorized")
-      end
-    end
-  end
+        p = LayerProperty.where(:layer_id => l, :key => k.to_s).first
+        p = LayerProperty.new({:layer_id => l, :key => k.to_s}) if p.nil?
+        p.type  = dk[:type]
+        p.unit  = p.type =~ /^xsd:(integer|float)/ ? dk[:unit] : ''
+        p.lang  = dk[:lang]
+        p.descr = dk[:descr]
+        p.eqprop = dk[:eqprop]
 
-
-  get '/layer/:layer_id/data' do |l|
-    if Owner.valid_session(session[:auth_key])
-      @layer = Layer[l]
-      if(@layer && (@oid == @layer.owner_id) or @oid==0)
-        @period = @layer.period_select()
-        @props = {}
-        LayerProperty.where(:layer_id => @layer.id).each do |p|
-          @props[p.key] = p.serialize
-        end
-        @langSelect  = Layer.languageSelect
-        @ptypeSelect = Layer.propertyTypeSelect
-        @lType = @layer.rdf_type_uri
-        @epSelect,@eprops = Layer.epSelect
-        @props = @props.to_json
-
-        if params[:nolayout]
-          erb :layer_data, :layout => false
-        else
-          erb :layer_data
-        end
-      else
-        CSDK_CMS.do_abort(401,"not authorized")
-      end
-    else
-      redirect '/'
-    end
-  end
-
-  post '/layer/:layer_id/ldprops' do |l|
-    if Owner.valid_session(session[:auth_key])
-      @layer = Layer[l]
-      if @layer && (@oid == @layer.owner_id) or @oid.zero?
-        request.body.rewind
-        data = JSON.parse(request.body.read, {:symbolize_names => true})
-
-        @layer.update(:rdf_type_uri=>data[:type])
-        data = data[:props]
-
-        data.each_key do |k|
-          dk = data[k]
-          dk[:unit] = "csdk:unit#{dk[:unit]}" if dk[:unit] != '' and dk[:unit] !~ /^csdk:unit/
-          p = LayerProperty.where(:layer_id => l, :key => k.to_s).first
-          p = LayerProperty.new({:layer_id => l, :key => k.to_s}) if p.nil?
-          p.type  = dk[:type]
-          p.unit  = p.type =~ /^xsd:(integer|float)/ ? dk[:unit] : ''
-          p.lang  = dk[:lang]
-          p.descr = dk[:descr]
-          p.eqprop = dk[:eqprop]
-          unless p.save
-            return [422, {}, 'error saving property data.']
-          end # unless
-        end # do
-      end # if
+        unless p.save
+          return [422, {}, 'error saving property data.']
+        end # unless
+      end # do
     end # if
   end # do
 
@@ -401,7 +298,7 @@ class CSDK_CMS < Sinatra::Base
         end
       end
     end
-    getLayers
+    get_layers
     redirect "/"
   end
 
@@ -469,7 +366,7 @@ class CSDK_CMS < Sinatra::Base
         erb :new_layer
       else
         @layer.save
-        getLayers
+        get_layers
         erb :layers
       end
     end
@@ -525,28 +422,23 @@ class CSDK_CMS < Sinatra::Base
   end
 
 
-  post '/layer/:layer_id/upload_file' do |l|
-
-    if Owner.valid_session(session[:auth_key])
-      @layer = Layer[l]
-      if(@layer && (@oid == @layer.owner_id) or @oid==0)
-        p = params['0'] || params['file']
-        @original_file = p[:filename]
-
-        if p && p[:tempfile]
-          @layerSelect = Layer.selectTag()
-          begin
-            tmpFileDir = $config['cms_tmp_file_dir']
-            return parseUploadedFile(p[:tempfile], @layer.name, tmpFileDir)
-          rescue => e
-            return [422,{},e.message]
-          end
-        end
-      else
-        CSDK_CMS.do_abort(401,"not authorized")
-      end
+  post '/layer/:layer_id/upload_file' do |layer_id|
+    login_required
+    unless current_user.admin?
+      halt 401, 'Not authorized'
     end
-  end
+
+    @layer = Layer[layer_id]
+    p = params['0'] || params.fetch('file')
+    @original_file = p.fetch(:filename)
+    if p.nil? || p[:tempfile].nil?
+      return
+    end
+
+    @layerSelect = Layer.selectTag()
+    tmp_file_dir = CONFIG.get('cms_tmp_file_dir')
+    parseUploadedFile(p[:tempfile], @layer.name,tmp_file_dir)
+  end # do
 
   get '/fupl/:layer' do |layer|
     @layer = Layer[layer]
@@ -555,7 +447,6 @@ class CSDK_CMS < Sinatra::Base
 
 
   post '/uploaded_file_headers' do
-
     if params['add']
 
       parameters = JSON.parse(Base64.decode64(params['parameters']),
@@ -586,27 +477,16 @@ class CSDK_CMS < Sinatra::Base
       api = CitySDK::API.new(@api_server)
       puts JSON.pretty_generate(parameters)
 
-      api.authenticate(session[:e],session[:p]) do
-        begin
-          d = { :data => Base64.encode64(parameters.to_json) }
-          api.put("/layer/#{parameters[:layername]}/config",d)
-        rescue => e
-          puts e.message
-        end
+      api.authenticate(session[:e], session[:p]) do
+        d = { :data => Base64.encode64(parameters.to_json) }
+        api.put("/layer/#{parameters[:layername]}/config",d)
       end
 
       redirect "/get_layer_stats/#{parameters[:layername]}"
-
     else
-      puts JSON.pretty_generate(params)
       a = matchCSV(params)
-      begin
-        a = JSON.pretty_generate(a)
-      rescue
-      end
-      return [200,{},"<hr/><pre>" + a + "</pre>"]
-
-    end
-  end
-
-end
+      a = JSON.pretty_generate(a)
+      return [200, {} ,"<hr/><pre>#{ a }</pre>"]
+    end # else
+  end # do
+end # class

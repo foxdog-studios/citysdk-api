@@ -1,44 +1,51 @@
+require 'json'
+require 'rgeo'
+require 'rgeo-geojson'
+
 class CitySDK_API < Sinatra::Base
 
   GEOMETRY_TYPE_POINT   = 'point'
   GEOMETRY_TYPE_LINE    = 'line'
   GEOMETRY_TYPE_POLYGON = 'polygon'
-  GEOMETRY_TYPES = [GEOMETRY_TYPE_POINT, GEOMETRY_TYPE_LINE, GEOMETRY_TYPE_POLYGON]
+  GEOMETRY_TYPES = [
+    GEOMETRY_TYPE_POINT,
+    GEOMETRY_TYPE_LINE,
+    GEOMETRY_TYPE_POLYGON
+  ]
 
   CREATE_TYPE_UPDATE = 'update'
   CREATE_TYPE_ROUTES = 'routes'
   CREATE_TYPE_CREATE = 'create'
-  CREATE_TYPES = [CREATE_TYPE_UPDATE, CREATE_TYPE_ROUTES, CREATE_TYPE_CREATE]
+  CREATE_TYPES = [
+    CREATE_TYPE_UPDATE,
+    CREATE_TYPE_ROUTES,
+    CREATE_TYPE_CREATE
+  ]
 
   DEFAULT_RADIUS = 250
 
   post '/util/match' do
+    login_required
+    json = JSON.parse(request.body.read)
+    require 'pp'; pp json
+    pp 'HERE'
 
-    if not Owner.validSession(request.env['HTTP_X_AUTH'])
-      CitySDK_API.do_abort(401,"Not Authorized")
-    end
+    unless json.key?('match') && json.fetch('match').key?(params)
+      halt 422, { error: 'No match parameters'}.to_json
+    end # unless
 
-    json = CitySDK_API.parse_request_json(request)
-
-    # Moet name + id in de node? of in de data?? Want nu soms dubbel met andere naam?
-    # (als in data, dan moet in parameters een mapping naar name/id voor node)
-
-    CitySDK_API.do_abort(422, "No 'match/params' object supplied") if (not json.has_key? "match") or (not json["match"].has_key? "params")
     match_params = json["match"]["params"]
 
-    # Abort if JSON data contains duplicate IDs
+    # Abort if nodes have duplicate IDs
     ids = []
-    json["nodes"].each { |node|
-      if not node.has_key? "id" or not node["id"]
-        CitySDK_API.do_abort(422, "Node without ID encountered in JSON")
-      end
-      id = node["id"]
-
-      if ids.include? id
-        CitySDK_API.do_abort(422, "Duplicate ID encountered in JSON: \"#{id}\"")
-      end
+    json["nodes"].each do |node|
+      id = node['id']
+      halt 422, { error: 'Node without ID' }.to_json  if id.nil?
+      if ids.include?(id)
+        halt 422, { error: "Duplicate ID '#{ id }'" }.to_json
+      end # if
       ids << id
-    }
+    end # do
 
     known = {}
     if json["match"].has_key? 'known'
@@ -57,22 +64,18 @@ class CitySDK_API < Sinatra::Base
 
       if not_known_cdk_ids.length > 0
         CitySDK_API.do_abort(422, "'known' object specifies cdk_ids that do not exist in CitySDK: #{not_known_cdk_ids.map{|row| row[:cdk_id]}.join(", ")}")
-      end
+      end # if
+    end # if
 
-    end
-
-    debug = false
-    if match_params.has_key? 'debug'
-      debug = match_params['debug']
-    end
+    debug = match_params.fetch('debug', false)
 
     radius = DEFAULT_RADIUS
     if match_params.has_key? 'radius'
       radius = match_params['radius'].to_i
       if not radius > 0
         CitySDK_API.do_abort(422, "Wrong value for parameter 'radius': must be integer and larger than 0.")
-      end
-    end
+      end # if
+    end # if
     match_params["radius"] = radius
 
     srid = 4326
@@ -191,430 +194,335 @@ class CitySDK_API < Sinatra::Base
     return results.to_json
   end
 
-  # Bulk API: add/update multiple nodes and node_data
-  put '/nodes/:layer' do |layer|
+  put '/nodes/:layer' do |layer_name|
+    login_required
 
-    # TODO: Refactor! Refactor! Refactor! Refactor! Refactor! Refactor! Refactor! Refactor! Refactor! Refactor!
-    # TODO: create class to check parameters. Here and in other functions!
+    # Get the layer and check it's owner by the user.
+    layer = Layer.where(name: layer_name, owner_id: current_user.id).first
+    if layer.nil?
+      halt 422, {
+        error: "Either the layer '#{ layer_name }' does not exist or you are " \
+               "not the owner."
+      }.to_json
+    end # if
 
-    begin
+    # Load the request body
+    json = JSON.load(request.body)
 
-      layer_id = Layer.idFromText(layer)
-      CitySDK_API.do_abort(422,"Invalid layer spec: #{layer}") if layer_id.nil? or layer_id.is_a? Array
+    # Halt if nodes have not been supplied.
+    nodes = json['nodes']
+    halt 422, { error: 'No node have been supplied' }.to_json if nodes.nil?
 
-      Owner.validateSessionForLayer(request.env['HTTP_X_AUTH'],layer_id)
+    # Get parameters. Halt if no parameters have been supplied.
+    create = json['create']
+    if create.nil? || create['params'].nil?
+      halt 422, { error: 'No create/params object supplied' }.to_json
+    end # if
+    params = create.fetch('params')
+    create_type = params.fetch('create_type')
+    node_type = params.fetch('node_type')
 
-      json = CitySDK_API.parse_request_json(request)
-      puts "REQUEST JSON"
-      puts json
-
-      CitySDK_API.do_abort(422,"No 'nodes' object supplied - nothing to do") if not json.has_key? "nodes"
-      nodes = json["nodes"]
-
-      CitySDK_API.do_abort(422,"No 'create/params' object supplied") if not json.has_key? "create" and not json["create"].has_key? "params"
-      create_params = json["create"]["params"]
-
-      create_type = create_params["create_type"]
-      node_type = create_params["node_type"]
-
-      results = {
-        :status => 'success',
-        :create => {
-          :params => create_params,
-          :results => {
-            :created => [],
-            :updated => [],
-            :totals => {
-              :created => 0,
-              :updated => 0
-            }
-          }
+    results = {
+      status: 'success',
+        create: {
+        params: params,
+        results: {
+          created: [],
+          updated: [],
+          totals: { created: 0, updated: 0 }
         }
       }
+    }
 
-      srid = 4326
-      if create_params.has_key? 'srid'
-        srid = create_params['srid'].to_i
-        if not srid > 0
-          CitySDK_API.do_abort(422, "Invalid 'srid' parameter supplied. (#{create_params['srid']}).")
-        end
-      end
+    # Get the SRID to use if it has been supplied.
+    raw_srid = params.fetch('srid', 4326)
+    srid = raw_srid.to_i
+    halt 411, { error: "Invalid SRID: #{ raw_srid }" }.to_json if srid.zero?
 
-      node_modalities = nil
-      if create_params.has_key? 'modalities'
-        if not create_params['modalities'].kind_of?(Array)
-          CitySDK_API.do_abort(422, "'modalities' parameter must be an array.")
-        end
+    # Get modalities, if they have been supplied, and covert them to IDs.
+    modalities = params.fetch('modalities', [])
+    unless modalities.kind_of?(Array)
+      halt 422, { error: 'modalities parameter must be an array' }.to_json
+    end # unless
+    modalities.map! { |name| Modality.where(name: name).get(:id) }
+    modalities = modalities.empty? ? nil : Sequel.pg_array(modalities)
 
-        node_modalities = create_params['modalities'].map{|modality| Modality.idFromText(modality)}
-        node_modalities.each_with_index { |modality, index|
-          CitySDK_API.do_abort(422,"Incorrect modality encountered in root modalities: \"#{create_params['modalities'][index]}\"") if modality.nil?
-        }
-      end
+    new_nodes = []
+    updated_nodes = []
+    node_data = []
+    node_data_cdk_ids = []
 
+    nodes.each do |node|
+      cdk_id = node['cdk_id']
+      cdk_ids = node['cdk_ids']
 
-      # Abort if nodes from JSON data contains duplicate IDs or cdk_ids
-      # ids = []
-      # json["nodes"].each { |node|
-      #   id = nil
-      #   if node.has_key? "id" and node["id"]
-      #     id = {
-      #       :type => :id,
-      #       :id => node["id"]
-      #     }
-      #   elsif node.has_key? "cdk_id" and node["cdk_id"]
-      #     id = {
-      #       :type => :cdk_id,
-      #       :id => node["cdk_id"]
-      #     }
-      #   elsif node.has_key? "cdk_ids" and node["cdk_ids"]
-      #     id = {
-      #       :type => :cdk_ids,
-      #       :id => node["cdk_ids"]
-      #     }
-      #   else
-      #     CitySDK_API.do_abort(422, "Node without id, cdk_id or cdk_ids field encountered in JSON")
-      #   end
-      #
-      #   if ids.include? id
-      #     CitySDK_API.do_abort(422, "Duplicate id, cdk_id or cdk_ids encountered in JSON: #{id[:id]}")
-      #   end
-      #   ids << id
-      # }
+      unless cdk_id.nil? || cdk_ids.nil?
+        halt 422, { error: 'node with both cdk_id and cdk_ids fields' }.to_json
+      end # unless
 
-      new_nodes = []
-      updated_nodes = []
-      node_data = []
-      node_data_cdk_ids = []
+      members = nil
 
-      nodes.each do |node|
-
-        cdk_id = node["cdk_id"]
-
-        cdk_ids = node["cdk_ids"]
-        members = nil
-
-        id = node["id"]
-        name = node["name"]
-
-       if cdk_id and cdk_ids
-          CitySDK_API.do_abort(422,"Node with both cdk_id and cdk_ids fields encountered.")
-        elsif cdk_ids
-          if cdk_ids.is_a? Array and cdk_ids.length > 0
-            if cdk_ids.length == 1
-              cdk_id = cdk_ids[0]
-            elsif cdk_ids.length > 1
-              # Node to be added is a route
-              members = cdk_ids.map { |cdk_id|
-                Sequel.function(:cdk_id_to_internal, cdk_id)
-              }
-              members = Sequel.pg_array(members)
-            end
-          else
-            CitySDK_API.do_abort(422,"Invalid cdk_ids field encountered. Must be array.")
-          end
-        end
-
-        if not id and not cdk_id and not cdk_ids
-          CitySDK_API.do_abort(422,"Node without id, cdk_id or cdk_ids field encountered.")
-        end
-
-        geom = nil
-        if node["geom"] and not cdk_id
-          # geom must be present if a new node is created,
-          # (e.g. when cdk_id and cdk_ids is empty)
-          # and must be empty when either of cdk_id or cdk_ids is provided
-
-          # PostGIS can convert GeoJSON to geometry with ST_GeomFromGeoJSON function:
-          #   geom = Sequel.function(:ST_Transform, Sequel.function(:ST_SetSRID, Sequel.function(:ST_GeomFromGeoJSON, node["geom"].to_json), srid), 4326)
-          # But on server this does not work:
-          #   ERROR:  You need JSON-C for ST_GeomFromGeoJSON
-          # TODO: find out why, and maybe update PostgreSQL/PostGIS...
-
-          if node["geom"]['type'] != 'wkb'
-            rgeo_geom = RGeo::GeoJSON.decode(node["geom"].to_json, :json_parser => :json)
-            wkb = CitySDK_API.wkb_generator.generate(rgeo_geom)
-            geom = Sequel.function(:ST_Transform, Sequel.function(:ST_SetSRID, Sequel.lit("'#{wkb}'").cast(:geometry), srid), 4326)
-          else
-            # geom is already in wkb format; with correct srid..
-            wkb = node["geom"]['wkb']
-            geom = Sequel.function(:ST_Transform, Sequel.lit("'#{wkb}'").cast(:geometry), 4326)
-          end
-        elsif members
-          # Compute derived geometry from the geometry of members
-          geom = Sequel.function(:route_geometry, members)
-        end
-
-        # TODO: check if data is one-dimensional and unnested
-        data = nil
-        if node["data"]
-          data = Sequel.hstore(node["data"])
+      unless cdk_ids.nil?
+        if !cdk_ids.is_a?(Array) || cdk_ids.empty?
+          halt 422, { error: 'invalid cdk_ids, must be array' }.to_json
+        end # if
+        if cdk_ids.length == 1
+          cdk_id = cdk_ids[0]
         else
-          CitySDK_API.do_abort(422,"Node without data encountered.")
-        end
+          # Node to be added is a route
+          members = cdk_ids.map do |cdk_id|
+            Sequel.function(:cdk_id_to_internal, cdk_id)
+          end # do
+          members = Sequel.pg_array(members)
+        end # else
+      end # unless
 
-        modalities = nil
-        if node["modalities"]
+      id = node['id']
 
-          if not node['modalities'].kind_of?(Array)
-            CitySDK_API.do_abort(422, "'modalities' parameter must be an array.")
-          end
+      unless id || cdk_id || cdk_ids
+        fail 422, { error: 'node without id, cdk_id or cdk_ids' }.to_json
+      end # unless
 
-          modalities = node["modalities"].map{|modality| Modality.idFromText(modality)}
-          modalities.each_with_index { |modality, index|
-            CitySDK_API.do_abort(422,"Incorrect modality encountered in object with cdk_id=#{cdk_id}: \"#{node["modalities"][index]}\"") if modality.nil?
+      geom = nil
+      if !node['geometry'].nil? && cdk_id.nil?
+        geom = node.fetch('geometry')
+
+        # geom must be present if a new node is created,
+        # (e.g. when cdk_id and cdk_ids is empty)
+        # and must be empty when either of cdk_id or cdk_ids is provided
+
+        # PostGIS can convert GeoJSON to geometry with ST_GeomFromGeoJSON
+        # function: geom = Sequel.function(:ST_Transform,
+        # Sequel.function(:ST_SetSRID, Sequel.function(:ST_GeomFromGeoJSON,
+        # node["geom"].to_json), srid), 4326) But on server this does not work:
+        # ERROR:  You need JSON-C for ST_GeomFromGeoJSON
+        # TODO: find out why, and maybe update PostgreSQL/PostGIS.
+
+        if geom['type'] == 'wkb'
+          # The geometry is already in WKB format with correct SRID.
+          wkb = geom.fetch('wkb')
+          wkb = Sequel.lit("'#{ wkb }'").cast(:geometry)
+        else
+          rgeo_geom = RGeo::GeoJSON.decode(geom)
+          wkb = CitySDK_API.wkb_generator.generate(rgeo_geom)
+          wkb = Sequel.function(
+            :ST_SetSRID,
+            Sequel.lit("'#{ wkb }'").cast(:geometry),
+            srid
+          )
+        end # else
+        geom = Sequel.function(:ST_Transform, wkb, 4326)
+      elsif !members.nil?
+        # Compute derived geometry from the geometry of members.
+        geom = Sequel.function(:route_geometry, members)
+      end
+
+      data = node['data']
+      if data.nil?
+        halt 422, { error: 'node without data encountered' }.to_json
+      end # if
+      data = Sequel.hstore(data)
+
+      validity = node['validity']
+      if !validity.nil?
+        unless validity.is_a?(Array) && validity.length == 2
+          halt 422, {
+            error: "Object with cdk_id=#{cdk_id} submitted with incorrect " \
+                   "validity field, must be array with two datetime values, " \
+                   "with value 1 < value 2"
           }
-        end
+        end # unless
+        valid_from = DateTime.parse(validity.fetch(0))
+        valid_to = DateTime.parse(validity.fetch(1))
+        validity = (valid_from..valid_to).pg_range(:tstzrange)
+      end # if
 
-        validity = nil
-        if node["validity"]
-          if node["validity"].is_a? Array and node["validity"].length == 2
-            begin
-              lower_bound = DateTime.parse node["validity"][0]
-              upper_bound = DateTime.parse node["validity"][1]
-              if lower_bound < upper_bound
-                validity = (lower_bound..upper_bound).pg_range(:tstzrange)
-              end
-            rescue
-            end
-          end
-          CitySDK_API.do_abort(422,"Object with cdk_id=#{cdk_id} submitted with incorrect validity field, must be array with two datetime values, with value 1 < value 2") if validity.nil?
-        end
+      # Create new node and add data when:
+      #   - create_type = create
+      #   - cdk_id and cdk_ids is empty
+      #   - geom is not empty
+      check_1 = \
+          create_type == 'create' \
+          && cdk_id.nil? \
+          && cdk_ids.nil? \
+          && !geom.nil?
 
-        # Create new node and add data when:
-        #   - create_type = create
-        #   - cdk_id and cdk_ids is empty
-        #   - geom is not empty
-        # Or when:
-        #   - create_type = routes (or create_type = create)
-        #   - cdk_id is empty
-        #   - cdk_ids is not empty
-        #
-        # Otherwise, do not create new node, only add data
+      # Or when:
+      #   - create_type = routes (or create_type = create)
+      #   - cdk_id is empty
+      #   - cdk_ids is not empty
+      check_2 = \
+          !cdk_id \
+          && cdk_ids \
+          && %w{create routes}.includes?(create_type)
 
-        if data and
-          (not cdk_id and not cdk_ids and geom and create_type == "create") or
-          (not cdk_id and cdk_ids and (create_type == "routes" or create_type == "create"))
+      # Otherwise, do not create new node, only add data.
 
-          # TODO: only create new route when node with same members does not exist!
+      name = node['name']
+      if (check_1 || check_2) && !cdk_id
+        cdk_id =
+          if id
+            cdk_id = CitySDK_API.generate_cdk_id_from_text(layer_name, id)
+          elsif name
+            cdk_id = CitySDK_API.generate_cdk_id_from_text(layer_name, name)
+          elsif cdk_ids
+            cdk_id = CitySDK_API.generate_route_cdk_id(cdk_ids)
+          else
+            halt 422, { error: 'No id, name or cdk_ids for new node' }.to_json
+          end # else
+      end # if
 
-          # Make new node, first generate cdk_id
-          # TODO: option in create_params: how to construct cdk_id
-          if not cdk_id
-            if id
-              cdk_id = CitySDK_API.generate_cdk_id_from_text(layer, id)
-            elsif name
-              cdk_id = CitySDK_API.generate_cdk_id_from_text(layer, name)
-            elsif cdk_ids
-              cdk_id = CitySDK_API.generate_route_cdk_id(cdk_ids)
-            else
-              CitySDK_API.do_abort(422,"No id, name or cdk_ids to generate new cdk_id from.")
-            end
-          end
-
-        end
-
-        # TODO: node_type per node, not per request.
-        # TODO: ptline when ptstop and members
-        # TODO: not documented - for now.
-        if 0 == Node.where(:cdk_id=>cdk_id).count
-          # TODO validate node_type when given..
-          # Set node_type to route (3) if node has members. Otherwise 0.
-          node_type_id = 0
+      if Node.where(cdk_id: cdk_id).count.zero?
+        node_type_id =
           if node_type
             case node_type
-            when 'route'
-              node_type_id = 1
-            when 'ptstop'
-              node_type_id = 2
-            when 'ptline'
-              node_type_id = 3
-            end
+            when 'route'  then 1
+            when 'ptstop' then 2
+            when 'ptline' then 3
+            end # case
+          elsif members
+            1
           else
-            node_type_id = members ? 1 : 0
-          end
+            0
+          end # else
 
+        new_nodes << {
+          cdk_id: cdk_id,
+          name: name,
+          members: members,
+          layer_id: layer.id,
+          node_type: node_type_id,
+          modalities: modalities,
+          geom: geom
+        }
+      elsif node_type == 'ptstop'
+        # node with cdk_id already exist.
+        # cdk_id is available, data is added to existing node.
+        # If existing node has node_type 'node' and new node is 'ptstop'
+        # convert node to ptstop:
+        updated_nodes << cdk_id
+      end # elsif
 
-          new_nodes << {
-            :cdk_id => cdk_id,
-            :name => name,
-            :members => members,
-            :layer_id => layer_id,
-            :node_type => node_type_id,
-            :modalities => node_modalities ? Sequel.pg_array(node_modalities) : nil,
-            :geom => geom
-          }
+      # See if there is node_data to add/update. Otherwise, skip
+      if cdk_id
+        node_data << {
+          node_id: Sequel.function(:cdk_id_to_internal, cdk_id),
+          layer_id: layer.id,
+          data: data,
+          modalities: modalities,
+          node_data_type: 0,
+          validity: validity
+        }
+        node_data_cdk_ids << cdk_id
+      end # if
+    end # do
 
-          results[:create][:results][:totals][:created] += 1
+    db = Sequel::Model.db
+    db.transaction do
+      db[:nodes].multi_insert(new_nodes)
+      Node.where(cdk_id: updated_nodes).update(node_type: 2)
+      NodeDatum.where(
+        node_id: Sequel.function(
+          :any,
+          Sequel.function(
+            :cdk_ids_to_internal,
+            Sequel.pg_array(node_data_cdk_ids)
+          )
+        )
+      ).where(layer_id: layer.id).delete
+      db[:node_data].multi_insert(node_data)
+    end # do
+  end # do
 
-          # TODO: also update :updated and :totals
-          results[:create][:results][:created] << {
-            :cdk_id => cdk_id
-          }
-
-        else
-          # node with cdk_id already exist.
-          # TODO: update geom/name/members/node_type of existing node!
-
-          # cdk_id is available, data is added to existing node.
-          # If existing node has node_type 'node' and new node is 'ptstop'
-          # convert node to ptstop:
-          if node_type == 'ptstop'
-            updated_nodes << cdk_id
-          end
-        end
-
-        # See if there is node_data to add/update. Otherwise: skip
-        if cdk_id and data
-          node_data << {
-            :node_id => Sequel.function(:cdk_id_to_internal, cdk_id),
-            :layer_id => layer_id,
-            :data => data,
-            :modalities => modalities ? Sequel.pg_array(modalities) : nil,
-            :validity => validity
-          }
-          node_data_cdk_ids << cdk_id
-          results[:create][:results][:totals][:updated] += 1
-        end
-
-      end
-
-      results[:create][:results][:totals][:updated] -= results[:create][:results][:totals][:created]
-
-      Sequel::Model.db.transaction do
-        Sequel::Model.db[:nodes].multi_insert(new_nodes)
-
-        if updated_nodes.length > 0
-          Node.where(:cdk_id => updated_nodes).update(:node_type => 2)
-        end
-
-        if node_data_cdk_ids.length > 0
-          NodeDatum.where(:node_id => Sequel.function(:any, Sequel.function(:cdk_ids_to_internal, Sequel.pg_array(node_data_cdk_ids)))).where(:layer_id => layer_id).delete
-        end
-
-        Sequel::Model.db[:node_data].multi_insert(node_data)
-      end
-
-    rescue Exception => e
-      CitySDK_API.do_abort(501,"Error: #{e.message}")
-    end
-
-    return results.to_json
-  end
-
-  # curl -X PUT -d '{"data": {"aap": "noot"}}' http://localhost:3000/admr.nl.amsterdam/cbs.plop
-  put '/:cdk_id/:layer' do |cdk_id, layer|
-
-    layer_id = Layer.idFromText(layer)
-    CitySDK_API.do_abort(422,"Invalid layer spec: #{layer}") if layer_id.nil? or layer_id.is_a? Array
-
-    Owner.validateSessionForLayer(request.env['HTTP_X_AUTH'],layer_id)
+  put '/:cdk_id/:layer' do |cdk_id, layer_name|
+    login_required
+    layer = Layer.where(name: layer_name, owner_id: current_user.id).first
+    if layer.nil?
+      halt 422, {
+        error: "Either the layer '#{name}' does not exist or you are not the " \
+               "owner."
+      }.to_json
+    end # if
 
     node = Node.where(:cdk_id => cdk_id).first
-    if(node)
-      json = CitySDK_API.parse_request_json(request)
+    halt 422, { error: "Node '#{ cdk_id }' not found." } if node.nil?
 
-      if(json)
-        CitySDK_API.do_abort(422,"No 'data' found in post." ) if not json['data']
-        nd = NodeDatum.where(:layer_id=>layer_id, :node_id => node.id).first
-        if(nd)
-          if(json['modalities'])
-            nd.modalities = [] if nd.modalities.nil?
-            nd.modalities << json['modalities'].map{ |m| Modality.idFromText(m)}
-            nd.modalities.flatten!.uniq!
-          end
-          nd.data.merge!(json['data'])
-          nd.save
-        else
-          h = {
-            :layer_id=>layer_id,
-            :node_id => node.id,
-            :data => Sequel.hstore(json['data']),
-            :node_data_type => 0,
-            :modalities => json['modalities'] ? Sequel.pg_array(json['modalities'].map{ |m| Modality.idFromText(m)} ) : []
-          }
-          id = NodeDatum.insert h
-        end
-      end
-      return 200, {
-        :status => 'success'
-      }.to_json
+    json = CitySDK_API.parse_request_json(request)['data']
+    data = json['data']
+    halt 422, { error: "No 'data' found in post." } if data.nil?
+
+    node_data = NodeDatum.where(layer_id: layer_id, node_id: node.id).first
+    modalities = json['modalities']
+    modalities = [] if modalities.nil?
+    modalities = modalities.map { |name| Modality.get_id_for_name(name) }
+
+    if node_data.nil?
+      NodeDataum.insert(
+        layer_id: layer_id,
+        node_id: node.id,
+        data: Sequel.hstore(data),
+        node_data_type: 0,
+        modalities: Sequel.pg_array(modalities)
+      )
     else
-      CitySDK_API.do_abort(422,"Node '#{cdk_id}' not found." )
+      unless modalities.nil?
+        node_data.modalities << modalities
+        node_data.modalities.flatten!.uniq!
+      end # unless
+      node_data.data.merge!(data)
+      node_data.save
     end
-  end
 
+    [200, { :status => 'success' }.to_json]
+  end # do
 
+  put '/layers/' do
+    login_required
+    json = JSON.parse(request.body.read)
+    halt 422, 'Layer data missing' if json['data'].nil?
+    data = json.fetch('data')
+    domain = data.fetch('name').split('.')[0]
+    user = current_user
+    unless user.domains.include?(domain)
+      halt 401, "Not authorized for domain #{ domain }"
+    end # unless
+    layer = Layer.new(data)
+    halt 422, layer.errors.to_json unless layer.valid?
+    layer.owner_id = user.id
+    layer.save
+    [200, { :status => 'success' }.to_json]
+  end # do
 
-
-  put '/layer/:layer/status' do |layer|
-    puts layer
-    Layer.getLayerHashes
-
-    layer_id = Layer.idFromText(layer)
-    CitySDK_API.do_abort(422,"Invalid layer spec: #{layer}") if layer_id.nil? or layer_id.is_a? Array
-    Owner.validateSessionForLayer(request.env['HTTP_X_AUTH'],layer_id)
-    json = CitySDK_API.parse_request_json(request)
-    puts json
-    if json['data']
-      l = Layer[layer_id]
-      l.import_status = json['data']
-      l.save
-      return 200, {
-        :status => 'success'
+  put '/layers/:layer/config' do |name|
+    login_required
+    layer = Layer.where(name: name, owner_id: current_user.id).first
+    if layer.nil?
+      halt 422, {
+        error: "Either the layer '#{name}' does not exist or you are not the " \
+               "owner."
       }.to_json
-    end
-    CitySDK_API.do_abort(422,"Data missing..")
-  end
+    end # if
+    data = CitySDK_API.parse_request_json(request)['data']
+    halt 422, {error: 'Data missing'}.to_json if data.nil?
+    layer.import_config = 'data'
+    layer.save
+    [200, { :status => 'success' }.to_json]
+  end # do
 
-
-  put '/layer/:layer/config' do |layer|
-    Layer.getLayerHashes
-    layer_id = Layer.idFromText(layer)
-    CitySDK_API.do_abort(422,"Invalid layer spec: #{layer}") if layer_id.nil? or layer_id.is_a? Array
-    Owner.validateSessionForLayer(request.env['HTTP_X_AUTH'],layer_id)
-    json = CitySDK_API.parse_request_json(request)
-    if json['data']
-      l = Layer[layer_id]
-      l.import_config = json['data']
-      l.save
-      return 200, {
-        :status => 'success'
+  put '/layers/:layer/status' do |name|
+    login_required
+    layer = Layer.where(name: name, owner_id: current_user.id).first
+    if layer.nil?
+      halt 422, {
+        error: "Either the layer '#{name}' does not exist or you are not the " \
+               "owner."
       }.to_json
-    end
-    CitySDK_API.do_abort(422,"Data missing..")
+    end # if
+    data = CitySDK_API.parse_request_json(request)['data']
+    halt 422, {error: 'Data missing'}.to_json if data.nil?
+    layer.import_status = 'data'
+    layer.save
+    [200, { :status => 'success' }.to_json]
   end
-
-
-
-  put '/layers' do
-    Layer.getLayerHashes
-
-    json = CitySDK_API.parse_request_json(request)
-
-    if json['data']
-      if Owner.domains(request.env['HTTP_X_AUTH']).include?(json['data']['name'].split('.')[0])
-        l = Layer.new(json['data'])
-        if l.valid?
-          l.owner_id = Owner.get_id(request.env['HTTP_X_AUTH'])
-          l.save
-          Layer.getLayerHashes
-        else
-          CitySDK_API.do_abort(422,l.errors)
-        end
-      else
-        CitySDK_API.do_abort(401,"Not authorized for domain '#{json['data']['name'].split('.')[0]}'.")
-      end
-      return 200, {
-        :status => 'success'
-      }.to_json
-    end
-    CitySDK_API.do_abort(422,"Data missing..")
-  end
-
-
-end
-
-
-
+end # class
 

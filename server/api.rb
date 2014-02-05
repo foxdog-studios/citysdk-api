@@ -3,16 +3,18 @@ $LOAD_PATH.unshift File.dirname(__FILE__)
 require 'csv'
 require 'json'
 
+require 'httpauth/basic'
 require 'sinatra'
+require 'sinatra/sequel'
+
 
 class CitySDK_API < Sinatra::Base
   attr_reader :config
-  Config = JSON.parse(File.read('./config.json'),{:symbolize_names => true})
+  Config = JSON.parse(File.read('./config.json'), symbolize_names: true)
 end
 
-configure do | sinatraApp |
-  set :environment, :production
 
+configure do |app|
   if defined?(PhusionPassenger)
     PhusionPassenger.on_event(:starting_worker_process) do |forked|
       if forked
@@ -24,15 +26,15 @@ configure do | sinatraApp |
     end
   end
 
-  sinatraApp.database = "postgres://#{CitySDK_API::Config[:db_user]}:#{CitySDK_API::Config[:db_pass]}@#{CitySDK_API::Config[:db_host]}/#{CitySDK_API::Config[:db_name]}"
+  app.database = "postgres://#{CitySDK_API::Config[:db_user]}:#{CitySDK_API::Config[:db_pass]}@#{CitySDK_API::Config[:db_host]}/#{CitySDK_API::Config[:db_name]}"
 
+  app.database.extension :pg_array
+  app.database.extension :pg_range
+  app.database.extension :pg_hstore
+  app.database.extension :pg_json
 
-  # sinatraApp.database.logger = Logger.new(STDOUT)
-
-  sinatraApp.database.extension :pg_array
-  sinatraApp.database.extension :pg_range
-  sinatraApp.database.extension :pg_hstore
-  sinatraApp.database.extension :pg_json
+  DB = app.database
+  require 'sinatra-authentication'
 
   require File.dirname(__FILE__) + '/api_read.rb'
   require File.dirname(__FILE__) + '/api_write.rb'
@@ -42,7 +44,6 @@ configure do | sinatraApp |
   Dir[File.dirname(__FILE__) + '/utils/match/*.rb'].each {|file| require file }
   Dir[File.dirname(__FILE__) + '/utils/commands/*.rb'].each {|file| require file }
   Dir[File.dirname(__FILE__) + '/models/*.rb'].each {|file| require file }
-
 end
 
 class CitySDK_API < Sinatra::Base
@@ -59,17 +60,20 @@ class CitySDK_API < Sinatra::Base
   Sequel::Model.db.extension(:pagination)
 
   before do
-    # puts "REQ = #{JSON.pretty_generate(request.env)}"
-    # @do_cache = (request.env['REQUEST_METHOD'] == 'GET')
-    # @cache_time = 300
+    # Basic authentication
+    header_name = 'HTTP_AUTHORIZATION'
+    if request.env.key?(header_name)
+      header_value = request.env.fetch(header_name)
+      email, password = HTTPAuth::Basic.unpack_authorization(header_value)
+      user = User.authenticate(email, password)
+      session[:user] = user.id unless user.nil?
+    end # if
+
     params[:request_format] = CitySDK_API.geRequestFormat(params, request)
-  end
+  end # do
 
   after do
-    # if @do_cache and (request.url =~ /http:\/\/.+?(\/.*$)/)
-    #   @@memcache.set($1,response.body[0], @cache_time, :raw => true)
-    # end
-    response.headers['Content-type'] = params[:request_format] + "; charset=utf-8"
+    response.headers['Content-type'] = params[:request_format] + '; charset=utf-8'
     response.headers['Access-Control-Allow-Origin'] = '*'
   end
 
@@ -121,9 +125,5 @@ class CitySDK_API < Sinatra::Base
       CitySDK_API.do_abort(500,"Server error (#{e.message}, \n #{e.backtrace.join('\n')}.")
     end
   end
-
-  ##########################################################################################
-  # URL handlers are in api_read.rb and api_write.rb
-  ##########################################################################################
-
 end
+

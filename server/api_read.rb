@@ -1,56 +1,35 @@
 class CitySDK_API < Sinatra::Base
-  
   get '/' do
-    
-      kv8  = CitySDK_API::memcache_get('kv8daemon');
-      divv = CitySDK_API::memcache_get('divvdaemon');
-      @do_cache = false
-      
-      case params[:request_format]
-      when 'text/turtle'
-        a = ["@base <#{CDK_BASE_URI}#{Config[:ep_code]}/> ."]
-        a << "@prefix : <#{CDK_BASE_URI}> ."
-        a << "@prefix foaf: <http://xmlns.com/foaf/0.1/> ."
-        a << "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> ."
-        a << ""
-        a << '_:ep'
-        a << ' a :CitysdkEndpoint ;'
-        a << " rdfs:description \"#{Config[:ep_description]}\" ;"
-        a << " :endpointCode \"#{Config[:ep_code]}\" ;"
-        a << " :apiUrl \"#{Config[:ep_api_url]}\" ;"
-        a << " :cmsUrl \"#{Config[:ep_cms_url]}\" ;"
-        a << " :infoUrl \"#{Config[:ep_info_url]}\" ;"
-        a << " foaf:mbox \"#{Config[:ep_maintainer_email]}\" ."
-        return a.join("\n")
-      when 'application/json'
-        return { :status => 'success', 
-          :url => request.url, 
-          "name" => "CitySDK Version 1.0",
-          "description" => "live testing; preliminary documentation @ http://dev.citysdk.waag.org",
-          "health" => {
-            "kv8" => kv8 ? "alive, #{kv8}" : "dead",
-            "divv" => divv ? "alive, last timestamp: #{divv}" : "dead",
-          }
-        }.to_json 
-      end
-
-  end
-
-  get '/get_session' do
+    kv8  = CitySDK_API::memcache_get('kv8daemon');
+    divv = CitySDK_API::memcache_get('divvdaemon');
     @do_cache = false
-    st,sess = Owner.login(params[:e],params[:p])
-    { :status => st,
-      :results => [sess]
-    }.to_json
-  end
 
-  get '/release_session' do
-    @do_cache = false
-    if Owner.validSession(request.env['HTTP_X_AUTH'])
-      Owner.release_session(request.env['HTTP_X_AUTH'])
-      { :status => 'success' }.to_json
-    else
-      CitySDK_API.do_abort(401,"Not Authorized")
+    case params[:request_format]
+    when 'text/turtle'
+      a = ["@base <#{CDK_BASE_URI}#{Config[:ep_code]}/> ."]
+      a << "@prefix : <#{CDK_BASE_URI}> ."
+      a << "@prefix foaf: <http://xmlns.com/foaf/0.1/> ."
+      a << "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> ."
+      a << ""
+      a << '_:ep'
+      a << ' a :CitysdkEndpoint ;'
+      a << " rdfs:description \"#{Config[:ep_description]}\" ;"
+      a << " :endpointCode \"#{Config[:ep_code]}\" ;"
+      a << " :apiUrl \"#{Config[:ep_api_url]}\" ;"
+      a << " :cmsUrl \"#{Config[:ep_cms_url]}\" ;"
+      a << " :infoUrl \"#{Config[:ep_info_url]}\" ;"
+      a << " foaf:mbox \"#{Config[:ep_maintainer_email]}\" ."
+      return a.join("\n")
+    when 'application/json'
+      return { :status => 'success',
+        :url => request.url,
+        "name" => "CitySDK Version 1.0",
+        "description" => "live testing; preliminary documentation @ http://dev.citysdk.waag.org",
+        "health" => {
+          "kv8" => kv8 ? "alive, #{kv8}" : "dead",
+          "divv" => divv ? "alive, last timestamp: #{divv}" : "dead",
+        }
+      }.to_json
     end
   end
 
@@ -59,7 +38,7 @@ class CitySDK_API < Sinatra::Base
   get '/regions/?' do
     path_regions
   end
-  
+
   get '/layers/reload__' do
     @do_cache = false
     Layer.getLayerHashes
@@ -73,7 +52,7 @@ class CitySDK_API < Sinatra::Base
         .category_search(params)
         .layer_geosearch(params)
         .do_paginate(params)
-        
+
       Node.serializeStart(params,request)
       res = 0
       pgn.each { |l| l.serialize(params,request); res += 1 }
@@ -96,11 +75,11 @@ class CitySDK_API < Sinatra::Base
     path_cdk_nodes(3)
   end
 
-  get '/layer/:name/?' do |name|
-    layer_id = Layer.idFromText(name)
-    CitySDK_API.do_abort(422,"Unknown layer or invalid layer spec: #{name}") if layer_id.nil? or layer_id.is_a? Array
-    Node.serializeStart(params,request)
-    Layer[layer_id].serialize(params,request)
+  get '/layers/:name/' do |name|
+    layer = Layer[name: name]
+    halt 404, { error: "no layer named '#{ name }'" }.to_json if layer.nil?
+    Node.serializeStart(params, request)
+    layer.serialize(params, request)
     Node.serializeEnd(params, request)
   end
 
@@ -124,28 +103,28 @@ class CitySDK_API < Sinatra::Base
     path_regions
   end
 
-  
+
   get '/:cdk_id/select/:cmd/?' do
-    n = Node.where(:cdk_id=>params[:cdk_id]).first    
+    n = Node.where(:cdk_id=>params[:cdk_id]).first
     if n.nil?
       CitySDK_API.do_abort(422,"Node not found: #{params[:cdk_id]}")
     end
-  
+
     code = 0, h = {}
     case n.node_type
       when 0 # nodes
         Nodes.processCommand(n,params,request)
-      when 1 # routes        
+      when 1 # routes
         Routes.processCommand(n,params,request)
       when 2 # ptstops
-        if( Nodes.processCommand?(n,params) ) 
-          Nodes.processCommand(n,params,request)      
+        if( Nodes.processCommand?(n,params) )
+          Nodes.processCommand(n,params,request)
         else
           PublicTransport.processStop(n,params,request)
         end
       when 3 # ptlines
-        if( Routes.processCommand?(n,params) ) 
-          Routes.processCommand(n,params,request)    
+        if( Routes.processCommand?(n,params) )
+          Routes.processCommand(n,params,request)
         else
           PublicTransport.processLine(n,params,request)
         end
@@ -163,23 +142,22 @@ class CitySDK_API < Sinatra::Base
     end
     n  = Node.where(:cdk_id=>params[:node]).first
     nd = NodeDatum.where(:layer_id => Layer.idFromText(params[:layer])).where(:node_id => n.id).first
-    
+
     case params[:request_format]
     when 'application/json'
-      { :status => 'success', 
+      { :status => 'success',
         :url => request.url,
         :results => [NodeDatum.serialize(params[:node],[nd.values],params)]
-      }.to_json 
+      }.to_json
     when 'text/turtle'
       Node.serializeStart(params,request)
       t,d = NodeDatum.turtelize(params[:node],[nd.values],params)
       [Node.prefixes.join("\n"),Node.layerProps(params).join("\n"),d.join("\n")].join("\n")
     end
-    
+
   end
 
 
-# http://0.0.0.0:3000/admr.nl.zwolle?p=cbs/aant_inw
   get '/:node/?' do
     results = Node.where(:cdk_id=>params[:node])
       .node_layers(params)
@@ -189,7 +167,7 @@ class CitySDK_API < Sinatra::Base
     end
     Node.serializeStart(params, request)
     if params[:p]
-      Node.processPredicate(results.first,params)      
+      Node.processPredicate(results.first,params)
     else
       results.map { |item| Node.serialize(item,params) }
     end

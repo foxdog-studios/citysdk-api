@@ -4,6 +4,7 @@ GEM
     active_support (3.0.0)
       activesupport (= 3.0.0)
     activesupport (3.0.0)
+    addressable (2.3.5)
     amatch (0.2.11)
       tins (~> 0.3)
     base62 (1.0.0)
@@ -17,11 +18,26 @@ GEM
       capistrano (>= 1.0.0)
     daemons (1.1.9)
     dalli (2.7.0)
+    dm-core (1.2.1)
+      addressable (~> 2.3)
+    dm-migrations (1.2.0)
+      dm-core (~> 1.2.0)
+    dm-timestamps (1.2.0)
+      dm-core (~> 1.2.0)
+    dm-validations (1.2.0)
+      dm-core (~> 1.2.0)
+    docopt (0.5.0)
     eventmachine (1.0.3)
     faraday (0.9.0)
       multipart-post (>= 1.2, < 3)
+    ffi (1.9.3)
     highline (1.6.20)
+    httpauth (0.2.1)
     i18n (0.6.9)
+    listen (1.0.3)
+      rb-fsevent (>= 0.9.3)
+      rb-inotify (>= 0.9)
+      rb-kqueue (>= 0.2)
     logger (1.2.8)
     multipart-post (2.0.0)
     net-scp (1.1.2)
@@ -33,6 +49,8 @@ GEM
       net-ssh (>= 2.6.5)
     pg (0.17.1)
     rack (1.5.2)
+    rack-flash (0.1.2)
+      rack
     rack-protection (1.5.2)
       rack
     rack-test (0.6.2)
@@ -40,17 +58,36 @@ GEM
     racksh (1.0.0)
       rack (>= 1.0)
       rack-test (>= 0.5)
+    rb-fsevent (0.9.4)
+    rb-inotify (0.9.3)
+      ffi (>= 0.5.0)
+    rb-kqueue (0.2.0)
+      ffi (>= 0.5.0)
+    rerun (0.8.2)
+      listen (~> 1.0.3)
     rgeo (0.3.20)
     rgeo-geojson (0.2.3)
       rgeo (>= 0.3.7)
+    rufus-tokyo (1.0.7)
     sequel (4.6.0)
     sinatra (1.4.4)
       rack (~> 1.4)
       rack-protection (~> 1.4)
       tilt (~> 1.3, >= 1.3.4)
+    sinatra-authentication (0.4.1)
+      dm-core
+      dm-migrations
+      dm-timestamps
+      dm-validations
+      rack-flash
+      rufus-tokyo
+      sinatra
+      sinbook
     sinatra-sequel (0.9.0)
       sequel (>= 3.2.0)
       sinatra (>= 0.9.4)
+    sinbook (0.1.9)
+      yajl-ruby
     stringex (2.1.2)
     thin (1.6.1)
       daemons (>= 1.0.9)
@@ -70,15 +107,19 @@ DEPENDENCIES
   capistrano (~> 2)
   capistrano-ext
   dalli
+  docopt
   faraday
+  httpauth
   i18n
   logger
   pg
   racksh
+  rerun
   rgeo
   rgeo-geojson
   sequel
   sinatra
+  sinatra-authentication
   sinatra-sequel
   stringex
   thin

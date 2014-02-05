@@ -16,13 +16,17 @@ gem 'rgeo'
 gem 'rgeo-geojson'
 gem 'sequel'
 gem 'sinatra', :require => 'sinatra/base'
+gem 'sinatra-authentication'
 gem 'sinatra-sequel'
 gem 'stringex'
 gem 'yajl-ruby'
+gem 'httpauth'
 
 group :development do
   gem 'capistrano', '~>2'
   gem 'capistrano-ext'
+  gem 'docopt'
+  gem 'rerun'
   gem 'thin'
 end
 
