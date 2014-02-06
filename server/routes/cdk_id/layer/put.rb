@@ -1,5 +1,5 @@
 class CitySDKAPI < Sinatra::Application
-  put '/:cdk_id/:layer' do |cdk_id, layer_name|
+  put '/nodes/:cdk_id/:layer' do |cdk_id, layer_name|
     login_required
     layer = Layer.where(name: layer_name, owner_id: current_user.id).first
     if layer.nil?

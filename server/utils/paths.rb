@@ -24,7 +24,7 @@ class CitySDKAPI < Sinatra::Application
           .node_layers(params)
           .do_paginate(params)
       end
-      CitySDKAPI.nodes_results(pgn, params, request)
+    CitySDKAPI.nodes_results(pgn, params, request)
   end # def
 
   def path_regions

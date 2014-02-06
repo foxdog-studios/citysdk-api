@@ -1,4 +1,4 @@
-class CitySDKPI < Sinatra::Application
+class CitySDKAPI < Sinatra::Application
   put '/nodes/:layer' do |layer_name|
     login_required
 

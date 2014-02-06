@@ -27,14 +27,15 @@ class Layer < Sequel::Model
   end
 
   def self.get_layer(id)
-    self.ensure_layer_cache
-    key = self.memcache_key(id)
-    CitySDKAPI.memcache_get(key)
+    self[id]
   end
 
   def self.get_layer_names
-    self.ensure_layer_cache
-    CitySDKAPI.memcache_get(KEY_LAYER_NAMES)
+    name_to_id_map = {}
+    self.select(:id, :name).each do |layer|
+      name_to_id_map[layer.name] = layer.id
+    end
+    name_to_id_map
   end
 
   def self.ensure_layer_cache
@@ -60,7 +61,6 @@ class Layer < Sequel::Model
       prfs << "@prefix : <#{::CitySDKAPI::CDK_BASE_URI}> ."
       res = turtelize(params)
       prefixes.each do |p|
-        puts p
         prfs << "@prefix #{p} <#{Prefix.where(:prefix => p).first[:url]}> ."
       end
       return [prfs.join("\n"),"",res.join("\n")].join("\n")

@@ -1,7 +1,9 @@
 require 'set'
 
+require 'rgeo-geojson'
+
 class Sequel::Model
-  @@node_types = ['node','route','ptstop','ptline']  
+  @@node_types = ['node','route','ptstop','ptline']
   @@noderesults = []
   @@prefixes = Set.new
   @@layers = []
@@ -30,7 +32,7 @@ class Node < Sequel::Model
       end
     end
   end
-  
+
 
   def getLayer(n)
     if n.is_a?(String)
@@ -44,8 +46,8 @@ class Node < Sequel::Model
     end
     nil
   end
-  
-  
+
+
   def self.serializeStart(params,request)
     case params[:request_format]
     when 'application/json'
@@ -56,20 +58,17 @@ class Node < Sequel::Model
       @@layers = []
     end
   end
-  
-  
+
+
   def self.prefixes
     prfs = ["@base <#{::CitySDKAPI::CDK_BASE_URI}#{::CitySDKAPI::Config[:ep_code]}/> ."]
     prfs << "@prefix : <#{::CitySDKAPI::CDK_BASE_URI}> ."
     @@prefixes.each do |p|
-      
-      puts p
-      
-      prfs << "@prefix #{p} <#{Prefix.where(:prefix => p).first[:url]}> ." 
+      prfs << "@prefix #{p} <#{Prefix.where(:prefix => p).first[:url]}> ."
     end
     prfs << ""
   end
-  
+
   def self.layerProps(params)
     pr = []
     if params[:layerdataproperties]
@@ -80,7 +79,7 @@ class Node < Sequel::Model
     end
     pr
   end
-  
+
   def self.serializeEnd(params,request, pagination = {})
 
     case params[:request_format]
@@ -101,22 +100,22 @@ class Node < Sequel::Model
 
 
   end
-  
+
 
   def self.serialize(h,params)
     case params[:request_format]
     when 'application/json'
-      Node.make_hash(h,params)    
+      Node.make_hash(h,params)
     when 'text/turtle'
-      Node.turtelize(h,params)    
+      Node.turtelize(h,params)
     end
   end
-  
 
-  def self.make_hash(h,params)    
+
+  def self.make_hash(h,params)
     h[:layers] = NodeDatum.serialize(h[:cdk_id], h[:node_data], params) if h[:node_data]
 
-    # members not directly exposed, 
+    # members not directly exposed,
     # call ../ptstops form members of route, f.i.
     h.delete(:members)
 
@@ -131,7 +130,7 @@ class Node < Sequel::Model
     else
       h.delete(:geom)
     end
-    
+
     if h[:modalities]
       h[:modalities] = h[:modalities].map { |m| Modality.NameFromId(m) }
     else
@@ -139,7 +138,7 @@ class Node < Sequel::Model
     end
 
     h.delete(:related) if h[:related].nil?
-    h.delete(:member_geometries)    
+    h.delete(:member_geometries)
     #h.delete(:modalities) if (h[:modalities] == [] or h[:modalities].nil?)
     h[:node_type] = @@node_types[h[:node_type]]
     h.delete(:layer_id)
@@ -154,9 +153,9 @@ class Node < Sequel::Model
     @@noderesults << h
     h
   end
-  
-  
-  def self.turtelize(h,params)    
+
+
+  def self.turtelize(h,params)
     @@prefixes << 'rdfs:'
     @@prefixes << 'rdf:'
     @@prefixes << 'geos:'
@@ -164,24 +163,24 @@ class Node < Sequel::Model
     @@prefixes << 'owl:'
     @@prefixes << 'lgdo:' if h[:layer_id] == 0
     triples = []
-    
+
     if not @@layers.include?(h[:layer_id])
       @@layers << h[:layer_id]
       triples << "<layer/#{Layer.nameFromId(h[:layer_id])}> a :Layer ."
       triples << ""
     end
-    
+
     triples << "<#{h[:cdk_id]}>"
     triples << "\t a :#{@@node_types[h[:node_type]].capitalize} ;"
     triples << "\t dc:title \"#{h[:name].gsub('"','\"')}\" ;" if h[:name] and h[:name] != ''
     triples << "\t :createdOnLayer <layer/#{Layer.nameFromId(h[:layer_id])}> ;"
-    
+
     if h[:modalities]
-      h[:modalities].each { |m| 
+      h[:modalities].each { |m|
         triples << "\t :hasTransportmodality :transportModality_#{Modality.NameFromId(m)} ;"
       }
     end
-    
+
     if params.has_key? "geom"
       if h[:member_geometries] and h[:node_type] != 3
         triples << "\t geos:hasGeometry \"" +  RGeo::WKRep::WKTGenerator.new.generate( CitySDKAPI.rgeo_factory.parse_wkb(h[:member_geometries]) )  + "\" ;"
@@ -191,18 +190,18 @@ class Node < Sequel::Model
     end
 
     if h[:node_data]
-      t,d =  NodeDatum.turtelize(h[:cdk_id], h[:node_data], params) 
+      t,d =  NodeDatum.turtelize(h[:cdk_id], h[:node_data], params)
       triples += t if t
       triples += d if d
     end
-    
+
 
     @@noderesults += triples
     @@noderesults[-1][-1]='.' if @@noderesults[-1] and @@noderesults[-1][-1] == ';'
     triples
-    
+
   end
-  
+
 
 end
 
