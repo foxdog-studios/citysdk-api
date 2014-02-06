@@ -1,3 +1,5 @@
+require 'rgeo-geojson'
+
 class Node < Sequel::Model
   one_to_many :node_data
 
