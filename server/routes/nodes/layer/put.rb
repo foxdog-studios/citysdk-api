@@ -228,7 +228,7 @@ class CitySDKPI < Sinatra::Application
     db.transaction do
       db[:nodes].multi_insert(new_nodes)
       Node.where(cdk_id: updated_nodes).update(node_type: 2)
-      NodeDatum.where(
+      NodeData.where(
         node_id: Sequel.function(
           :any,
           Sequel.function(

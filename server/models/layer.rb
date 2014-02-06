@@ -2,7 +2,7 @@ require 'sinatra/sequel'
 
 class Layer < Sequel::Model
   many_to_one :owner, class: :SequelUser
-  one_to_many :node_data, class: :NodeDatum
+  one_to_many :node_data, class: :NodeData
 
   plugin :validation_helpers
   plugin :json_serializer

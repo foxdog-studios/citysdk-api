@@ -6,7 +6,7 @@ class Node < Sequel::Model
 end
 
 
-class NodeDatum < Sequel::Model
+class NodeData < Sequel::Model
   many_to_one :node
   many_to_one :layer
 end

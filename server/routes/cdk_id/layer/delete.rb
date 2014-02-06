@@ -8,9 +8,9 @@ class CitySDKAPI < Sinatra::Application
     layer_id = layer.id
     node = Node.where(cdk_id: cdk_id).first
     if(node)
-      NodeDatum.where(:layer_id=>layer_id, :node_id => node.id).delete
-      if( (node.layer_id == layer_id) and (params['delete_node'] == 'true') )
-        if NodeDatum.select(:node_id).where(:node_id => node.id).all.length > 0
+      NodeData.where(:layer_id=>layer_id, :node_id => node.id).delete
+      if node.layer_id == layer_id && params['delete_node'] == 'true'
+        if NodeData.select(:node_id).where(:node_id => node.id).all.length > 0
           node.update(:layer_id => -1)
         else
           node.delete

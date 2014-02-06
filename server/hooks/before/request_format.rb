@@ -3,7 +3,7 @@
 class CitySDKAPI < Sinatra::Application
 
   before do
-    # Decude the request format using helper.
+    # Deduce the request format using helper.
     params[:request_format] = request_format
   end # do
 

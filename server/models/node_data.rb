@@ -3,33 +3,31 @@ require 'sequel/plugins/serialization'
 require 'set'
 require 'json'
 
-require_relative 'node.rb'
-
-class NodeDatum < Sequel::Model
+class NodeData < Sequel::Model
   many_to_one :node
   many_to_one :layer
 
-	plugin :validation_helpers
-  
+  plugin :validation_helpers
+
   # hash = {
   #   :name => :plop,
   #   :id => 123,
   #   'addr1:str'=>'kj',
   #   'addr1:num'=>1
   # }
-  # 
+  #
 
   KEY_SEPARATOR = ':'
-  
+
   def self.atonestedh(a,v,h)
     begin
       g = h
       while(a.length > 1 )
         aa = a.shift.to_sym
         if g[aa].nil?
-          g[aa] = {} 
+          g[aa] = {}
         elsif g[aa].class == String
-          g[aa] = {'->' => g[aa]} 
+          g[aa] = {'->' => g[aa]}
         end
         g = g[aa]
       end
@@ -57,8 +55,8 @@ class NodeDatum < Sequel::Model
     end
     h
   end
-  
-  
+
+
   def self.osmprop(k,v)
     o = OSMProps.where({:key => k,:val => v}).first
     return "\t #{o[:type]} #{o[:uri]} ;" if(o)
@@ -77,7 +75,7 @@ class NodeDatum < Sequel::Model
 
     nil
   end
-  
+
   # deal with osm rdf mapping separately...
   def self.osmprops(h,datas,triples,params)
     h.each do |k,v|
@@ -91,7 +89,7 @@ class NodeDatum < Sequel::Model
       end
     end # h.each
   end
-  
+
   def self.turtelize_one(nd,triples,base_uri,params,cdk_id)
     datas = []
     layer_id = nd[:layer_id]
@@ -100,8 +98,8 @@ class NodeDatum < Sequel::Model
     subj = base_uri + name
 
     # datas << "<#{subj}>"
-    
-    if layer_id == 0 
+
+    if layer_id == 0
 
       osmprops(nd[:data].to_hash,datas,triples,params)
 
@@ -115,7 +113,7 @@ class NodeDatum < Sequel::Model
           triples << "\t a  #{layer.rdf_type_uri} ;"
         end
       end
-    
+
       if Layer.isWebservice?(layer_id) and !params.has_key?('skip_webservice')
         nd[:data] = WebService.load(layer_id, cdk_id, nd[:data])
       end
@@ -133,14 +131,14 @@ class NodeDatum < Sequel::Model
           lang = type = unit = desc = eqpr = nil
         end
         prop = "<#{name}/#{k.to_s}>"
-      
+
         lp  = "#{prop}"
         lp += "\n\t :definedOnLayer <layer/#{Layer.nameFromId(layer_id)}> ;"
         lp += "\n\t rdfs:subPropertyOf :layerProperty ;"
-        lp += "\n\t owl:equivalentProperty #{eqpr} ;" if eqpr 
-        
+        lp += "\n\t owl:equivalentProperty #{eqpr} ;" if eqpr
+
         @@prefixes << $1 if eqpr and (eqpr =~ /^([a-z]+\:)/)
-        
+
         if desc and desc =~ /\n/
           lp += "\n\t rdfs:description \"\"\"#{desc}\"\"\" ;"
         elsif desc
@@ -149,7 +147,7 @@ class NodeDatum < Sequel::Model
         lp += "\n\t :hasValueUnit #{unit} ;" if unit and type =~ /xsd:(integer|float|double)/
         lp[-1] = '.'
         params[:layerdataproperties] << lp
-      
+
         s  = "\t #{prop} \"#{v}\""
         s += "^^#{type}" if type and type !~ /^xsd:string/
         s += "#{lang}" if lang and type == 'xsd:string'
@@ -161,31 +159,31 @@ class NodeDatum < Sequel::Model
           s  = "\t #{prop} \"#{v}\""
           s += "^^#{type}" if type and type !~ /^xsd:string/
           s += "#{lang}" if lang and type == 'xsd:string'
-        end      
+        end
 
 
         datas << s + " ;"
 
       end
     end
-    
+
     if datas.length > 1
       datas[-1][-1] = '.'
       datas << ""
-    else 
+    else
       datas = []
     end
     return datas
   end
-  
+
   def self.turtelizeOneField(cdk_id,nd,field,params)
-    
+
     ret = []
 
     if Layer.isWebservice?(nd[:layer_id]) and !params.has_key?('skip_webservice')
       nd[:data] = WebService.load(nd[:layer_id], cdk_id, nd[:data])
     end
-    
+
     name = Layer.nameFromId(nd[:layer_id])
     prop = "<#{name}/#{field}>"
 
@@ -199,31 +197,31 @@ class NodeDatum < Sequel::Model
     else
       lang = type = unit = desc = eqpr = nil
     end
-    
+
     @@prefixes << $1 if eqpr and (eqpr =~ /^([a-z]+\:)/)
     @@prefixes << $1 if type and (type =~ /^([a-z]+\:)/)
 
     @@prefixes << 'xsd:'
     @@prefixes << 'rdfs:'
-    
+
     # puts type
     # if type =~ /^\w+\:/
     #   puts $0
     # end
-    #    
+    #
     # puts unit
     # if unit =~ /^\w+\:/
     #   puts $0
     # end
-    #    
+    #
     # @@prefixes << $1 if type =~ /^\w+\:/
-    
+
 
     lp  = "#{prop}"
     lp += "\n\t :definedOnLayer <layer/#{Layer.nameFromId(nd[:layer_id])}> ;"
     lp += "\n\t rdfs:subPropertyOf :layerProperty ;"
-    lp += "\n\t owl:equivalentProperty #{eqpr} ;" if eqpr 
-    
+    lp += "\n\t owl:equivalentProperty #{eqpr} ;" if eqpr
+
 
     if desc and desc =~ /\n/
       lp += "\n\t rdfs:description \"\"\"#{desc}\"\"\" ;"
@@ -232,7 +230,7 @@ class NodeDatum < Sequel::Model
     end
     lp += "\n\t :hasValueUnit #{unit.gsub(/^csdk\:/,':')} ;" if unit and type =~ /xsd:(integer|float|double)/
     lp[-1] = '.'
-    
+
     ret << lp
     ret << ""
 
@@ -245,14 +243,14 @@ class NodeDatum < Sequel::Model
       s  = "\t #{prop} \"#{nd[:data][field]}\""
       s += "^^#{type}" if type and type !~ /^xsd:string/
       s += "#{lang}" if lang and type == 'xsd:string'
-    end      
-    
+    end
+
     ret << s + " ."
 
     return ret
   end
 
-  def self.turtelize(cdk_id, h, params)    
+  def self.turtelize(cdk_id, h, params)
     triples = []
     gdatas = []
     params[:layerdataproperties] = Set.new if params[:layerdataproperties].nil?
@@ -263,15 +261,15 @@ class NodeDatum < Sequel::Model
     return triples, gdatas
   end
 
- 
-  def self.serialize(cdk_id, h, params)    
+
+  def self.serialize(cdk_id, h, params)
     newh = {}
     h.each do |nd|
 
       layer_id = nd[:layer_id]
-      
+
       name = Layer.nameFromId(layer_id)
-      
+
       nd.delete(:validity)
       # rt,vl = Layer.get_validity(layer_id)
       # if(rt)
@@ -281,10 +279,10 @@ class NodeDatum < Sequel::Model
       #   nd[:validity] = vl if nd[:validity].nil?
       #   nd[:validity] = [nd[:validity].begin, nd[:validity].end] if nd[:validity]
       # end
-      # nd.delete(:validity) if nd[:validity].nil?      
-      
+      # nd.delete(:validity) if nd[:validity].nil?
+
       nd.delete(:tags) if nd[:tags].nil?
-      
+
       if nd[:modalities]
         nd[:modalities] = nd[:modalities].map { |m| Modality.NameFromId(m) }
       else
@@ -304,11 +302,11 @@ class NodeDatum < Sequel::Model
       if Layer.isWebservice?(layer_id) and !params.has_key?('skip_webservice')
         nd[:data] = WebService.load(layer_id, cdk_id, nd[:data])
       end
-      
+
       nd[:data] = nest(nd[:data].to_hash)
       newh[name] = nd
     end
     newh
   end
-  
+
 end

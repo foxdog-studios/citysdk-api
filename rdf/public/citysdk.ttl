@@ -10,13 +10,13 @@
 @base <http://rdf.citysdk.eu/> .
 
 <http://rdf.citysdk.eu/> rdf:type owl:Ontology ;
-                         
+
                          dc:contributor "Tom Demeyer" ;
-                         
+
                          owl:versionInfo "1.0" ;
-                         
+
                          dc:description "Formalizes the current CitySDK endpoint implementation.."@en ;
-                         
+
                          owl:imports <http://www.opengis.net/ont/geosparql> ,
                                      foaf: .
 
@@ -37,9 +37,9 @@ dc:description rdf:type owl:AnnotationProperty .
 ###  http://rdf.citysdk.eu/apiUrl
 
 :apiUrl rdf:type owl:AnnotationProperty ;
-        
+
         rdfs:domain :CitysdkEndpoint ;
-        
+
         rdfs:range xsd:anyURI .
 
 
@@ -47,7 +47,7 @@ dc:description rdf:type owl:AnnotationProperty .
 ###  http://rdf.citysdk.eu/cmsUrl
 
 :cmsUrl rdf:type owl:AnnotationProperty ;
-        
+
         rdfs:domain :CitysdkEndpoint .
 
 
@@ -55,7 +55,7 @@ dc:description rdf:type owl:AnnotationProperty .
 ###  http://rdf.citysdk.eu/endpointCode
 
 :endpointCode rdf:type owl:AnnotationProperty ;
-              
+
               rdfs:domain :CitysdkEndpoint .
 
 
@@ -63,7 +63,7 @@ dc:description rdf:type owl:AnnotationProperty .
 ###  http://rdf.citysdk.eu/identifierProperty
 
 :identifierProperty rdf:type owl:AnnotationProperty ;
-                    
+
                     rdfs:subPropertyOf :layerProperty .
 
 
@@ -71,7 +71,7 @@ dc:description rdf:type owl:AnnotationProperty .
 ###  http://rdf.citysdk.eu/infoUrl
 
 :infoUrl rdf:type owl:AnnotationProperty ;
-         
+
          rdfs:domain :CitysdkEndpoint .
 
 
@@ -79,8 +79,8 @@ dc:description rdf:type owl:AnnotationProperty .
 ###  http://rdf.citysdk.eu/layerProperty
 
 :layerProperty rdf:type owl:AnnotationProperty ;
-               
-               rdfs:domain :NodeDatum .
+
+               rdfs:domain :NodeData .
 
 :dataSource rdf:type owl:AnnotationProperty ;
            rdfs:domain  :Layer .
@@ -113,15 +113,15 @@ dc:description rdf:type owl:AnnotationProperty .
 :hasDataField rdf:type owl:ObjectProperty ;
              rdfs:domain  :Layer ;
              rdfs:range   :LayerField .
-              
+
 ###  http://rdf.citysdk.eu/createdBy
 
 :createdBy rdf:type owl:ObjectProperty ;
-           
+
            dc:description "The organization or person who created the Layer. "@en ;
-           
+
            rdfs:domain :Layer ;
-           
+
            rdfs:range foaf:Agent .
 
 
@@ -129,11 +129,11 @@ dc:description rdf:type owl:AnnotationProperty .
 ###  http://rdf.citysdk.eu/createdOnLayer
 
 :createdOnLayer rdf:type owl:ObjectProperty ;
-                
+
                 dc:description "Links to the layer that created the node. Data was added to the system, on a particular layer, but an existing node to attach the data to was not found. "@en ;
-                
+
                 rdfs:range :Layer ;
-                
+
                 rdfs:domain :Node .
 
 
@@ -141,10 +141,10 @@ dc:description rdf:type owl:AnnotationProperty .
 ###  http://rdf.citysdk.eu/hasTransportModality
 
 :hasTransportModality rdf:type owl:ObjectProperty ;
-                      
+
                       rdfs:domain :Ptstop ,
                                   :Route ;
-                      
+
                       rdfs:range :TransportModality .
 
 
@@ -152,12 +152,12 @@ dc:description rdf:type owl:AnnotationProperty .
 ###  http://rdf.citysdk.eu/layerData
 
 :layerData rdf:type owl:ObjectProperty ;
-           
-           dc:description "Links a NodeDatum (a package of data in a particular layer) to a CitySDK Node."@en ;
-           
+
+           dc:description "Links a NodeData (a package of data in a particular layer) to a CitySDK Node."@en ;
+
            rdfs:domain :Node ;
-           
-           rdfs:range :NodeDatum .
+
+           rdfs:range :NodeData .
 
 
 
@@ -186,7 +186,7 @@ dc:description rdf:type owl:AnnotationProperty .
 ###  http://rdf.citysdk.eu/Layer
 
 :Layer rdf:type owl:Class ;
-       
+
        rdfs:subClassOf geos:Feature .
 
 
@@ -194,17 +194,17 @@ dc:description rdf:type owl:AnnotationProperty .
 ###  http://rdf.citysdk.eu/Node
 
 :Node rdf:type owl:Class ;
-      
+
       rdfs:subClassOf geos:Feature ;
-      
-      owl:disjointWith :NodeDatum .
+
+      owl:disjointWith :NodeData .
 
 
 
-###  http://rdf.citysdk.eu/NodeDatum
+###  http://rdf.citysdk.eu/NodeData
 
-:NodeDatum rdf:type owl:Class ;
-           
+:NodeData rdf:type owl:Class ;
+
            dc:description "Is an entity holding data about a particular Node on a particular Layer."@en .
 
 
@@ -212,7 +212,7 @@ dc:description rdf:type owl:AnnotationProperty .
 ###  http://rdf.citysdk.eu/Ptline
 
 :Ptline rdf:type owl:Class ;
-        
+
         rdfs:subClassOf :Route .
 
 
@@ -220,7 +220,7 @@ dc:description rdf:type owl:AnnotationProperty .
 ###  http://rdf.citysdk.eu/Ptstop
 
 :Ptstop rdf:type owl:Class ;
-        
+
         rdfs:subClassOf :Node .
 
 
@@ -228,7 +228,7 @@ dc:description rdf:type owl:AnnotationProperty .
 ###  http://rdf.citysdk.eu/Region
 
 :Region rdf:type owl:Class ;
-        
+
         rdfs:subClassOf :Node .
 
 
@@ -236,7 +236,7 @@ dc:description rdf:type owl:AnnotationProperty .
 ###  http://rdf.citysdk.eu/Route
 
 :Route rdf:type owl:Class ;
-       
+
        rdfs:subClassOf :Node .
 
 

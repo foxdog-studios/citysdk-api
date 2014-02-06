@@ -10,7 +10,7 @@ class CitySDKAPI < Sinatra::Application
 
   configure :production do
     PhusionPassenger.on_event(:starting_worker_process) do |forked|
-      return if  forked
+      return if forked
       CitySDKAPI.memcache_new
       Sequel::Model.db.disconnect
     end # do

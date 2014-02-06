@@ -1,19 +1,19 @@
-class NodeDatum < Sequel::Model
-  
-  module WebService   
+class NodeData < Sequel::Model
+
+  module WebService
     require 'faraday'
     require 'net/http'
-    require 'uri'    
-  
+    require 'uri'
+
     def self.memcache_key(layer_id, cdk_id)
       l = Layer.nameFromId(layer_id)
       return "#{l}!!#{cdk_id}"
     end
-    
+
     def self.load_from_ws(url,data)
       connection = Faraday.new(:url => url)
       response = connection.post('',data.to_json)
-      if(response.status == 200) 
+      if(response.status == 200)
         begin
           r = JSON.parse(response.body)
           return r['data']
@@ -28,8 +28,8 @@ class NodeDatum < Sequel::Model
 
     def self.load(layer_id, cdk_id, hstore)
       key = memcache_key(layer_id, cdk_id)
-      data = CitySDKAPI.memcache_get(key)      
-      if data        
+      data = CitySDKAPI.memcache_get(key)
+      if data
         return data
       else
         url = Layer.getWebserviceUrl(layer_id)
@@ -40,8 +40,8 @@ class NodeDatum < Sequel::Model
         end
       end
       hstore
-    end    
+    end
 
 
-  end 
+  end
 end
