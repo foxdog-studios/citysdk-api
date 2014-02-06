@@ -187,6 +187,13 @@ function create_osm_nodes()
          --username=$db_user
 }
 
+function modify_osm_nodes()
+{
+    psql --dbname=$db_name                    \
+         --file=$sql_dir/modify_osm_nodes.sql \
+         --username=$db_user
+}
+
 
 # ==============================================================================
 # = Command line interface                                                     =
@@ -204,6 +211,7 @@ tasks=(
     create_admin
     create_osm_layer
     create_osm_nodes
+    modify_osm_nodes
 )
 
 function usage()
@@ -229,6 +237,7 @@ function usage()
 		    create_osm_layer
 		    create_osm_tuples
 		    create_osm_nodes
+		    modify_osm_nodes
 	EOF
     exit 1
 }
