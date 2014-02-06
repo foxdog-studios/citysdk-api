@@ -16,13 +16,13 @@ class CitySDKAPI < Sinatra::Application
     data = json['data']
     halt 422, { error: "No 'data' found in post." } if data.nil?
 
-    node_data = NodeDatum.where(layer_id: layer_id, node_id: node.id).first
+    node_data = NodeData.where(layer_id: layer_id, node_id: node.id).first
     modalities = json['modalities']
     modalities = [] if modalities.nil?
     modalities = modalities.map { |name| Modality.get_id_for_name(name) }
 
     if node_data.nil?
-      NodeDataum.insert(
+      NodeData.insert(
         layer_id: layer_id,
         node_id: node.id,
         data: Sequel.hstore(data),

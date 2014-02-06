@@ -1,17 +1,4 @@
-require 'set'
-
-require 'rgeo-geojson'
-
-class Sequel::Model
-  @@node_types = ['node','route','ptstop','ptline']
-  @@noderesults = []
-  @@prefixes = Set.new
-  @@layers = []
-end
-
-
 class Node < Sequel::Model
-  #plugin :validation_helpers
   one_to_many :node_data
 
   def self.processPredicate(n,params)
@@ -21,14 +8,14 @@ class Node < Sequel::Model
       CitySDKAPI.do_abort(422,"Layer not found: 'layer'")
     end
     layer_id = Layer.idFromText(layer)
-    nd = NodeDatum.where({:node_id => n[:id], :layer_id => layer_id}).first
+    nd = NodeData.where({:node_id => n[:id], :layer_id => layer_id}).first
     if nd
       # puts JSON.pretty_generate(nd[:data])
       case params[:request_format]
       when'application/json'
         @@noderesults << {field => nd[:data][field.to_sym]}
       when'text/turtle'
-        @@noderesults = NodeDatum.turtelizeOneField(n[:cdk_id],nd,field,params)
+        @@noderesults = NodeData.turtelizeOneField(n[:cdk_id],nd,field,params)
       end
     end
   end
@@ -113,8 +100,7 @@ class Node < Sequel::Model
 
 
   def self.make_hash(h,params)
-    h[:layers] = NodeDatum.serialize(h[:cdk_id], h[:node_data], params) if h[:node_data]
-
+    h[:layers] = NodeData.serialize(h[:cdk_id], h[:node_data], params) if h[:node_data]
     # members not directly exposed,
     # call ../ptstops form members of route, f.i.
     h.delete(:members)
@@ -190,7 +176,7 @@ class Node < Sequel::Model
     end
 
     if h[:node_data]
-      t,d =  NodeDatum.turtelize(h[:cdk_id], h[:node_data], params)
+      t,d =  NodeData.turtelize(h[:cdk_id], h[:node_data], params)
       triples += t if t
       triples += d if d
     end

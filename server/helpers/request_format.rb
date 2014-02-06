@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 module CitySDK
 
   def request_format

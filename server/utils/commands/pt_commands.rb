@@ -27,7 +27,7 @@ class CitySDKAPI < Sinatra::Base
         h = {}
         a = Sequel::Model.db.fetch("select * from stop_now('#{g[:data]['stop_id']}','#{tz}')").all
         a.to_a.each do |t|
-          
+
           aname = t[:agency_id]
           key = "gtfs.line.#{aname.downcase.gsub(/\W/,'')}.#{t[:route_name].gsub(/\W/,'')}-#{t[:direction_id]}"
           mckey = "gtfs.line.#{t[:route_id]}-#{t[:direction_id]}"
@@ -59,10 +59,10 @@ class CitySDKAPI < Sinatra::Base
         end
 
         r = []
-        h.each_value do |v| r << v end 
-        return { 
-          :status => 'success', 
-          :pages => 1, 
+        h.each_value do |v| r << v end
+        return {
+          :status => 'success',
+          :pages => 1,
           :results => r
         }.to_json
       else
@@ -70,15 +70,15 @@ class CitySDKAPI < Sinatra::Base
         g = stop.getLayer('ns')
         if(g)
           h = g.data
-          h = NodeDatum::WebService.load(g.layer_id, stop.cdk_id, h)
-          return { 
-            :status => 'success', 
-            :pages => 1, 
+          h = NodeData::WebService.load(g.layer_id, stop.cdk_id, h)
+          return {
+            :status => 'success',
+            :pages => 1,
             :results => h['VertrekkendeTreinen']
           }.to_json
         end
       end
-      
+
     end
 
     def self.scheduleForStop(stop)
@@ -91,7 +91,7 @@ class CitySDKAPI < Sinatra::Base
           d = ( t+86400 * day ).strftime("%a %-d %b")
           a = Sequel::Model.db.fetch("select * from departs_from_stop('#{g[:data]['stop_id']}', #{day})").all
           a.to_a.each do |t|
-            
+
             aname = self.get_agency_name(t[:agency_id])
             key = "gtfs.line.#{aname.downcase.gsub(/\W/,'')}.#{t[:route_name].gsub(/\W/,'')}-#{t[:direction_id]}"
             if h[key].nil?
@@ -111,16 +111,16 @@ class CitySDKAPI < Sinatra::Base
           end
         end
         r = []
-        h.each_value do |v| r << v end 
-        return { 
-          :status => 'success', 
-          :pages => 1, 
+        h.each_value do |v| r << v end
+        return {
+          :status => 'success',
+          :pages => 1,
           :results => r
         }.to_json
       end
     end
-    
-    
+
+
     def self.scheduleForLine(line, day)
       g = line.getLayer('gtfs')
       if(g)
@@ -140,11 +140,11 @@ class CitySDKAPI < Sinatra::Base
           trips[t[:trip_id]] = [] if trips[t[:trip_id]].nil?
           trips[t[:trip_id]] << [ key, self.getRealTime(mckey,t[:stop_id],t[:departure_time]) ]
         end
-        
+
         t = []
-        trips.each_value do |v| t << v end 
-        
-        
+        trips.each_value do |v| t << v end
+
+
         h[0] = {
           :line => line.cdk_id,
           :date => d,
@@ -154,16 +154,16 @@ class CitySDKAPI < Sinatra::Base
         }
 
         r = []
-        h.each_value do |v| r << v end 
-        return { 
-          :status => 'success', 
-          :pages => 1, 
+        h.each_value do |v| r << v end
+        return {
+          :status => 'success',
+          :pages => 1,
           :results => r
         }.to_json
       end
     end
-    
-    
+
+
     def self.processStop?(n,params)
       ['ptlines','schedule','now'].include?(params[:cmd])
     end
@@ -175,14 +175,14 @@ class CitySDKAPI < Sinatra::Base
           when 'ptlines'
             lines = Node.where("members @> '{ #{stop.id} }' ").eager_graph(:node_data).where(:node_id => :nodes__id)
             lines = lines.all.map { |a| a.values.merge(:node_data=>a.node_data.map{|al| al.values}) }
-            
+
             # TODO: gebruik  CitySDKAPI.json_simple_results(res, req)
-            return { 
-              :status => 'success', 
-              :pages => 1, 
-              :per_page => lines.length, 
-              :record_count => lines.length, 
-              :results => lines.each {|l| Node.serialize(l,params)} 
+            return {
+              :status => 'success',
+              :pages => 1,
+              :per_page => lines.length,
+              :record_count => lines.length,
+              :results => lines.each {|l| Node.serialize(l,params)}
             }.to_json
           when 'schedule'
             return scheduleForStop(stop)
@@ -192,19 +192,19 @@ class CitySDKAPI < Sinatra::Base
           else
             CitySDKAPI.do_abort(422,"Command #{params[:cmd]} not defined for ptstop.")
           end
-        else 
+        else
           CitySDKAPI.do_abort(422,'Stop ' + params[:cdk_id] + ' not found..')
         end
       else
         CitySDKAPI.do_abort(500,'Server error. ')
       end
     end
-    
+
 
     def self.processLine?(n,params)
       ['ptstops','schedule'].include?(params[:cmd])
     end
-    
+
 
     def self.processLine(line,params,req)
       if params.has_key? 'cdk_id'
@@ -213,18 +213,18 @@ class CitySDKAPI < Sinatra::Base
           when 'ptstops'
             members = line.members.to_a
             stops = Node.where(:nodes__id => members).eager_graph(:node_data).where(:node_data__node_id => :nodes__id).all
-            stops = stops.sort_by { |a| members.index(a.values[:id]) }.map { |a| 
+            stops = stops.sort_by { |a| members.index(a.values[:id]) }.map { |a|
               a.values.merge( :node_data =>
-               a.node_data.map{ |al| 
+               a.node_data.map{ |al|
                  al.values
                 }
-              ) 
+              )
             }
             return {
-              :status => 'success', 
-              :pages => 1, 
-              :per_page => stops.length, 
-              :record_count => stops.length, 
+              :status => 'success',
+              :pages => 1,
+              :per_page => stops.length,
+              :record_count => stops.length,
               :results => stops.each {|l| Node.serialize(l,params)}
             }.to_json
           when 'schedule'

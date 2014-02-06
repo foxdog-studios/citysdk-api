@@ -30,10 +30,10 @@
         <owl:imports rdf:resource="http://www.opengis.net/ont/geosparql"/>
         <owl:imports rdf:resource="http://xmlns.com/foaf/0.1/"/>
     </owl:Ontology>
-    
 
 
-    <!-- 
+
+    <!--
     ///////////////////////////////////////////////////////////////////////////////////////
     //
     // Annotation properties
@@ -41,13 +41,13 @@
     ///////////////////////////////////////////////////////////////////////////////////////
      -->
 
-    
+
 
 
     <!-- http://purl.org/dc/elements/1.1/description -->
 
     <owl:AnnotationProperty rdf:about="&dc;description"/>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/apiUrl -->
@@ -56,7 +56,7 @@
         <rdfs:domain rdf:resource="http://rdf.citysdk.eu/CitysdkEndpoint"/>
         <rdfs:range rdf:resource="&xsd;anyURI"/>
     </owl:AnnotationProperty>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/cmsUrl -->
@@ -64,7 +64,7 @@
     <owl:AnnotationProperty rdf:about="http://rdf.citysdk.eu/cmsUrl">
         <rdfs:domain rdf:resource="http://rdf.citysdk.eu/CitysdkEndpoint"/>
     </owl:AnnotationProperty>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/dataSource -->
@@ -72,7 +72,7 @@
     <owl:AnnotationProperty rdf:about="http://rdf.citysdk.eu/dataSource">
         <rdfs:domain rdf:resource="http://rdf.citysdk.eu/Layer"/>
     </owl:AnnotationProperty>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/endpointCode -->
@@ -80,7 +80,7 @@
     <owl:AnnotationProperty rdf:about="http://rdf.citysdk.eu/endpointCode">
         <rdfs:domain rdf:resource="http://rdf.citysdk.eu/CitysdkEndpoint"/>
     </owl:AnnotationProperty>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/hasValueUnit -->
@@ -88,7 +88,7 @@
     <owl:AnnotationProperty rdf:about="http://rdf.citysdk.eu/hasValueUnit">
         <rdfs:domain rdf:resource="http://rdf.citysdk.eu/layerProperty"/>
     </owl:AnnotationProperty>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/identifierProperty -->
@@ -96,7 +96,7 @@
     <owl:AnnotationProperty rdf:about="http://rdf.citysdk.eu/identifierProperty">
         <rdfs:subPropertyOf rdf:resource="http://rdf.citysdk.eu/layerProperty"/>
     </owl:AnnotationProperty>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/infoUrl -->
@@ -104,15 +104,15 @@
     <owl:AnnotationProperty rdf:about="http://rdf.citysdk.eu/infoUrl">
         <rdfs:domain rdf:resource="http://rdf.citysdk.eu/CitysdkEndpoint"/>
     </owl:AnnotationProperty>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/layerProperty -->
 
     <owl:AnnotationProperty rdf:about="http://rdf.citysdk.eu/layerProperty">
-        <rdfs:domain rdf:resource="http://rdf.citysdk.eu/NodeDatum"/>
+        <rdfs:domain rdf:resource="http://rdf.citysdk.eu/NodeData"/>
     </owl:AnnotationProperty>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/valueLanguange -->
@@ -121,7 +121,7 @@
         <rdfs:domain rdf:resource="http://rdf.citysdk.eu/LayerField"/>
         <rdfs:range rdf:resource="&xsd;string"/>
     </owl:AnnotationProperty>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/valueType -->
@@ -130,10 +130,10 @@
         <rdfs:domain rdf:resource="http://rdf.citysdk.eu/LayerField"/>
         <rdfs:range rdf:resource="&xsd;anyURI"/>
     </owl:AnnotationProperty>
-    
 
 
-    <!-- 
+
+    <!--
     ///////////////////////////////////////////////////////////////////////////////////////
     //
     // Object Properties
@@ -141,7 +141,7 @@
     ///////////////////////////////////////////////////////////////////////////////////////
      -->
 
-    
+
 
 
     <!-- http://rdf.citysdk.eu/createdBy -->
@@ -151,7 +151,7 @@
         <rdfs:domain rdf:resource="http://rdf.citysdk.eu/Layer"/>
         <rdfs:range rdf:resource="&foaf;Agent"/>
     </owl:ObjectProperty>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/createdOnLayer -->
@@ -161,7 +161,7 @@
         <rdfs:range rdf:resource="http://rdf.citysdk.eu/Layer"/>
         <rdfs:domain rdf:resource="http://rdf.citysdk.eu/Node"/>
     </owl:ObjectProperty>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/hasDataField -->
@@ -170,7 +170,7 @@
         <rdfs:domain rdf:resource="http://rdf.citysdk.eu/Layer"/>
         <rdfs:range rdf:resource="http://rdf.citysdk.eu/LayerField"/>
     </owl:ObjectProperty>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/hasTransportModality -->
@@ -180,7 +180,7 @@
         <rdfs:domain rdf:resource="http://rdf.citysdk.eu/Route"/>
         <rdfs:range rdf:resource="http://rdf.citysdk.eu/TransportModality"/>
     </owl:ObjectProperty>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/hasValueUnit -->
@@ -188,17 +188,17 @@
     <owl:ObjectProperty rdf:about="http://rdf.citysdk.eu/hasValueUnit">
         <rdfs:range rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:ObjectProperty>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/layerData -->
 
     <owl:ObjectProperty rdf:about="http://rdf.citysdk.eu/layerData">
-        <dc:description xml:lang="en">Links a NodeDatum (a package of data in a particular layer) to a CitySDK Node.</dc:description>
+        <dc:description xml:lang="en">Links a NodeData (a package of data in a particular layer) to a CitySDK Node.</dc:description>
         <rdfs:domain rdf:resource="http://rdf.citysdk.eu/Node"/>
-        <rdfs:range rdf:resource="http://rdf.citysdk.eu/NodeDatum"/>
+        <rdfs:range rdf:resource="http://rdf.citysdk.eu/NodeData"/>
     </owl:ObjectProperty>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/valueUnit -->
@@ -207,10 +207,10 @@
         <rdfs:domain rdf:resource="http://rdf.citysdk.eu/LayerField"/>
         <rdfs:range rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:ObjectProperty>
-    
 
 
-    <!-- 
+
+    <!--
     ///////////////////////////////////////////////////////////////////////////////////////
     //
     // Classes
@@ -218,7 +218,7 @@
     ///////////////////////////////////////////////////////////////////////////////////////
      -->
 
-    
+
 
 
     <!-- http://rdf.citysdk.eu/CitysdkEndpoint -->
@@ -226,7 +226,7 @@
     <owl:Class rdf:about="http://rdf.citysdk.eu/CitysdkEndpoint">
         <dc:description xml:lang="en">A CitySDKEndPoint is a server running an instance of the API, serving particular categories of data for a particular geographical area.</dc:description>
     </owl:Class>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/Layer -->
@@ -234,7 +234,7 @@
     <owl:Class rdf:about="http://rdf.citysdk.eu/Layer">
         <rdfs:subClassOf rdf:resource="&geos;Feature"/>
     </owl:Class>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/LayerField -->
@@ -242,24 +242,24 @@
     <owl:Class rdf:about="http://rdf.citysdk.eu/LayerField">
         <dc:description xml:lang="en">An abstraction of a key-value field in the layer specification.</dc:description>
     </owl:Class>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/Node -->
 
     <owl:Class rdf:about="http://rdf.citysdk.eu/Node">
         <rdfs:subClassOf rdf:resource="&geos;Feature"/>
-        <owl:disjointWith rdf:resource="http://rdf.citysdk.eu/NodeDatum"/>
+        <owl:disjointWith rdf:resource="http://rdf.citysdk.eu/NodeData"/>
     </owl:Class>
-    
 
 
-    <!-- http://rdf.citysdk.eu/NodeDatum -->
 
-    <owl:Class rdf:about="http://rdf.citysdk.eu/NodeDatum">
+    <!-- http://rdf.citysdk.eu/NodeData -->
+
+    <owl:Class rdf:about="http://rdf.citysdk.eu/NodeData">
         <dc:description xml:lang="en">Is an entity holding data about a particular Node on a particular Layer.</dc:description>
     </owl:Class>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/Ptline -->
@@ -267,7 +267,7 @@
     <owl:Class rdf:about="http://rdf.citysdk.eu/Ptline">
         <rdfs:subClassOf rdf:resource="http://rdf.citysdk.eu/Route"/>
     </owl:Class>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/Ptstop -->
@@ -275,7 +275,7 @@
     <owl:Class rdf:about="http://rdf.citysdk.eu/Ptstop">
         <rdfs:subClassOf rdf:resource="http://rdf.citysdk.eu/Node"/>
     </owl:Class>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/Region -->
@@ -283,7 +283,7 @@
     <owl:Class rdf:about="http://rdf.citysdk.eu/Region">
         <rdfs:subClassOf rdf:resource="http://rdf.citysdk.eu/Node"/>
     </owl:Class>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/Route -->
@@ -291,13 +291,13 @@
     <owl:Class rdf:about="http://rdf.citysdk.eu/Route">
         <rdfs:subClassOf rdf:resource="http://rdf.citysdk.eu/Node"/>
     </owl:Class>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/TransportModality -->
 
     <owl:Class rdf:about="http://rdf.citysdk.eu/TransportModality"/>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/Unit -->
@@ -305,22 +305,22 @@
     <owl:Class rdf:about="http://rdf.citysdk.eu/Unit">
         <dc:description xml:lang="en">Unit of measurement, like SI units, including abstractions as &apos;Percent&apos; and &apos;Count&apos; (for dimensionless units).</dc:description>
     </owl:Class>
-    
+
 
 
     <!-- http://www.opengis.net/ont/geosparql#SpatialObject -->
 
     <owl:Class rdf:about="&geos;SpatialObject"/>
-    
+
 
 
     <!-- http://xmlns.com/foaf/0.1/Organization -->
 
     <owl:Class rdf:about="&foaf;Organization"/>
-    
 
 
-    <!-- 
+
+    <!--
     ///////////////////////////////////////////////////////////////////////////////////////
     //
     // Individuals
@@ -328,7 +328,7 @@
     ///////////////////////////////////////////////////////////////////////////////////////
      -->
 
-    
+
 
 
     <!-- http://rdf.citysdk.eu/transportModality_airplane -->
@@ -336,7 +336,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/transportModality_airplane">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/TransportModality"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/transportModality_any -->
@@ -344,7 +344,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/transportModality_any">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/TransportModality"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/transportModality_bicycle -->
@@ -352,7 +352,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/transportModality_bicycle">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/TransportModality"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/transportModality_bus -->
@@ -360,7 +360,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/transportModality_bus">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/TransportModality"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/transportModality_cable_car -->
@@ -368,7 +368,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/transportModality_cable_car">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/TransportModality"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/transportModality_car -->
@@ -376,7 +376,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/transportModality_car">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/TransportModality"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/transportModality_ferry -->
@@ -384,7 +384,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/transportModality_ferry">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/TransportModality"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/transportModality_foot -->
@@ -392,7 +392,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/transportModality_foot">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/TransportModality"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/transportModality_funicular -->
@@ -400,7 +400,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/transportModality_funicular">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/TransportModality"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/transportModality_gondola -->
@@ -408,7 +408,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/transportModality_gondola">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/TransportModality"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/transportModality_horse -->
@@ -416,7 +416,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/transportModality_horse">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/TransportModality"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/transportModality_moped -->
@@ -424,7 +424,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/transportModality_moped">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/TransportModality"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/transportModality_motorbike -->
@@ -432,7 +432,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/transportModality_motorbike">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/TransportModality"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/transportModality_rail -->
@@ -440,7 +440,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/transportModality_rail">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/TransportModality"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/transportModality_subway -->
@@ -448,7 +448,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/transportModality_subway">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/TransportModality"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/transportModality_tram -->
@@ -456,7 +456,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/transportModality_tram">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/TransportModality"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/transportModality_truck -->
@@ -464,7 +464,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/transportModality_truck">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/TransportModality"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitAcre -->
@@ -472,7 +472,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitAcre">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitAmpere -->
@@ -480,7 +480,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitAmpere">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitAre -->
@@ -488,7 +488,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitAre">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitCandela -->
@@ -496,7 +496,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitCandela">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitCentimeter -->
@@ -504,7 +504,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitCentimeter">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitCoulomb -->
@@ -512,7 +512,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitCoulomb">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitCount -->
@@ -520,7 +520,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitCount">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitCubicCentimeter -->
@@ -528,7 +528,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitCubicCentimeter">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitCubicFoot -->
@@ -536,7 +536,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitCubicFoot">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitCubicInch -->
@@ -544,7 +544,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitCubicInch">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitCubicMeter -->
@@ -552,7 +552,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitCubicMeter">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitCubicYard -->
@@ -560,7 +560,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitCubicYard">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitCurie -->
@@ -568,7 +568,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitCurie">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitDay -->
@@ -576,7 +576,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitDay">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitDecibel -->
@@ -584,7 +584,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitDecibel">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitDegreeCelsius -->
@@ -592,7 +592,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitDegreeCelsius">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitDegreeFahrenheit -->
@@ -600,7 +600,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitDegreeFahrenheit">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitDegreeKelvin -->
@@ -608,7 +608,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitDegreeKelvin">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitFoot -->
@@ -616,7 +616,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitFoot">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitGallonImperial -->
@@ -624,7 +624,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitGallonImperial">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitGallonUS -->
@@ -632,7 +632,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitGallonUS">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitGigaHertz -->
@@ -640,7 +640,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitGigaHertz">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitGram -->
@@ -648,7 +648,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitGram">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitHectare -->
@@ -656,7 +656,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitHectare">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitHertz -->
@@ -664,7 +664,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitHertz">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitHorsepower -->
@@ -672,7 +672,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitHorsepower">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitHour -->
@@ -680,7 +680,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitHour">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitInch -->
@@ -688,7 +688,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitInch">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitJoule -->
@@ -696,7 +696,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitJoule">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitKilo -->
@@ -704,7 +704,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitKilo">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitKiloHertz -->
@@ -712,7 +712,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitKiloHertz">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitKilocalorie -->
@@ -720,7 +720,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitKilocalorie">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitKilogram -->
@@ -728,7 +728,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitKilogram">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitKilometer -->
@@ -736,7 +736,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitKilometer">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitKilometerPerHour -->
@@ -744,7 +744,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitKilometerPerHour">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitKilometerPerSecond -->
@@ -752,7 +752,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitKilometerPerSecond">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitKilowatt -->
@@ -760,7 +760,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitKilowatt">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitKilowatthour -->
@@ -768,7 +768,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitKilowatthour">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitLiter -->
@@ -776,7 +776,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitLiter">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitLumen -->
@@ -784,7 +784,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitLumen">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitLux -->
@@ -792,7 +792,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitLux">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitMegaHertz -->
@@ -800,7 +800,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitMegaHertz">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitMegaWatt -->
@@ -808,7 +808,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitMegaWatt">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitMeter -->
@@ -816,7 +816,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitMeter">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitMeterPerSecond -->
@@ -824,7 +824,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitMeterPerSecond">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitMeterPerSecondSquared -->
@@ -832,7 +832,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitMeterPerSecondSquared">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitMilePerHour -->
@@ -840,7 +840,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitMilePerHour">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitMilliMeter -->
@@ -848,7 +848,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitMilliMeter">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitMilliSecond -->
@@ -856,7 +856,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitMilliSecond">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitMillibar -->
@@ -864,7 +864,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitMillibar">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitNauticalMile -->
@@ -872,7 +872,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitNauticalMile">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitNauticalMilePerHour -->
@@ -880,7 +880,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitNauticalMilePerHour">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitPercent -->
@@ -888,7 +888,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitPercent">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitPint -->
@@ -896,7 +896,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitPint">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitRadian -->
@@ -904,7 +904,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitRadian">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitSecond -->
@@ -912,7 +912,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitSecond">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitSquareCentimeter -->
@@ -920,7 +920,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitSquareCentimeter">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitSquareFoot -->
@@ -928,7 +928,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitSquareFoot">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitSquareInch -->
@@ -936,7 +936,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitSquareInch">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitSquareKilometer -->
@@ -944,7 +944,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitSquareKilometer">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitSquareMeter -->
@@ -952,7 +952,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitSquareMeter">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitSquareMile -->
@@ -960,7 +960,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitSquareMile">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitSquareYard -->
@@ -968,7 +968,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitSquareYard">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitTonMetric -->
@@ -976,7 +976,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitTonMetric">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitWatt -->
@@ -984,7 +984,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitWatt">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitYard -->
@@ -992,7 +992,7 @@
     <owl:NamedIndividual rdf:about="http://rdf.citysdk.eu/unitYard">
         <rdf:type rdf:resource="http://rdf.citysdk.eu/Unit"/>
     </owl:NamedIndividual>
-    
+
 
 
     <!-- http://rdf.citysdk.eu/unitYear -->
