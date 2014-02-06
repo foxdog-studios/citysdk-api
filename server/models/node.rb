@@ -51,9 +51,6 @@ class Node < Sequel::Model
     prfs = ["@base <#{::CitySDKAPI::CDK_BASE_URI}#{::CitySDKAPI::Config[:ep_code]}/> ."]
     prfs << "@prefix : <#{::CitySDKAPI::CDK_BASE_URI}> ."
     @@prefixes.each do |p|
-
-      puts p
-
       prfs << "@prefix #{p} <#{Prefix.where(:prefix => p).first[:url]}> ."
     end
     prfs << ""
@@ -104,7 +101,6 @@ class Node < Sequel::Model
 
   def self.make_hash(h,params)
     h[:layers] = NodeData.serialize(h[:cdk_id], h[:node_data], params) if h[:node_data]
-
     # members not directly exposed,
     # call ../ptstops form members of route, f.i.
     h.delete(:members)

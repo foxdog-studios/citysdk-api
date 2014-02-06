@@ -1,5 +1,5 @@
 class CitySDKAPI < Sinatra::Application
-  put '/:cdk_id/:layer' do |cdk_id, layer_name|
+  put '/nodes/:cdk_id/:layer' do |cdk_id, layer_name|
     login_required
     layer = Layer.where(name: layer_name, owner_id: current_user.id).first
     if layer.nil?
@@ -22,7 +22,7 @@ class CitySDKAPI < Sinatra::Application
     modalities = modalities.map { |name| Modality.get_id_for_name(name) }
 
     if node_data.nil?
-      NodeDataum.insert(
+      NodeData.insert(
         layer_id: layer_id,
         node_id: node.id,
         data: Sequel.hstore(data),
