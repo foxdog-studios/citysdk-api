@@ -1,4 +1,4 @@
-class CitySDK_API < Sinatra::Base
+class CitySDKAPI < Sinatra::Base
 
   module PublicTransport
 
@@ -14,7 +14,7 @@ class CitySDK_API < Sinatra::Base
     end
 
     def self.getRealTime(key,stop_id,deptime)
-      rt = CitySDK_API.memcache_get("#{stop_id}!!#{key}!!#{deptime}")
+      rt = CitySDKAPI.memcache_get("#{stop_id}!!#{key}!!#{deptime}")
       if rt
         return "#{rt} (#{deptime})"
       end
@@ -176,7 +176,7 @@ class CitySDK_API < Sinatra::Base
             lines = Node.where("members @> '{ #{stop.id} }' ").eager_graph(:node_data).where(:node_id => :nodes__id)
             lines = lines.all.map { |a| a.values.merge(:node_data=>a.node_data.map{|al| al.values}) }
             
-            # TODO: gebruik  CitySDK_API.json_simple_results(res, req)
+            # TODO: gebruik  CitySDKAPI.json_simple_results(res, req)
             return { 
               :status => 'success', 
               :pages => 1, 
@@ -190,13 +190,13 @@ class CitySDK_API < Sinatra::Base
             tzdiff = params['tz'] ? -60 * (Time.now.utc_offset/3600 + params['tz'].to_i) : 0
             return nowForStop(stop,"#{tzdiff} minutes")
           else
-            CitySDK_API.do_abort(422,"Command #{params[:cmd]} not defined for ptstop.")
+            CitySDKAPI.do_abort(422,"Command #{params[:cmd]} not defined for ptstop.")
           end
         else 
-          CitySDK_API.do_abort(422,'Stop ' + params[:cdk_id] + ' not found..')
+          CitySDKAPI.do_abort(422,'Stop ' + params[:cdk_id] + ' not found..')
         end
       else
-        CitySDK_API.do_abort(500,'Server error. ')
+        CitySDKAPI.do_abort(500,'Server error. ')
       end
     end
     
@@ -230,13 +230,13 @@ class CitySDK_API < Sinatra::Base
           when 'schedule'
             return scheduleForLine(line,params[:day]||0)
           else
-            CitySDK_API.do_abort(422,"Command #{params[:cmd]} not defined for ptline.")
+            CitySDKAPI.do_abort(422,"Command #{params[:cmd]} not defined for ptline.")
           end
         else
-          CitySDK_API.do_abort(422,'Line ' + params[:cdk_id] + ' not found..')
+          CitySDKAPI.do_abort(422,'Line ' + params[:cdk_id] + ' not found..')
         end
       else
-        CitySDK_API.do_abort(500,'Server error. ')
+        CitySDKAPI.do_abort(500,'Server error. ')
       end
     end
   end

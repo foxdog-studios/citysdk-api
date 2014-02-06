@@ -1,6 +1,6 @@
 require 'amatch'
 
-class CitySDK_API < Sinatra::Base
+class CitySDKAPI < Sinatra::Base
   
   # TODO: move to Node class??
   module NodeCompare

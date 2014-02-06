@@ -1,5 +1,6 @@
-PATH
-  remote: ./vendor/citysdk
+GIT
+  remote: https://github.com/foxdog-studios/citysdk-client.git
+  revision: 68820d7c493a9d5167496ffc79d1b9ad2021e7fc
   specs:
     citysdk (0.1.2.1)
       charlock_holmes (>= 0.6.9.4)

@@ -1,4 +1,4 @@
-class CitySDK_API < Sinatra::Base
+class CitySDKAPI < Sinatra::Base
 
   module PolygonMatcher
     

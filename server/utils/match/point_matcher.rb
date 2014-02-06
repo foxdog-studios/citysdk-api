@@ -1,4 +1,4 @@
-class CitySDK_API < Sinatra::Base
+class CitySDKAPI < Sinatra::Base
 
   module PointMatcher
     
@@ -10,7 +10,7 @@ class CitySDK_API < Sinatra::Base
       id = node["id"]
       name = node["name"] 
       
-      CitySDK_API.do_abort(422, "Geometry encountered that is not a \"Point\".") if node["geom"]["type"] != "Point"
+      CitySDKAPI.do_abort(422, "Geometry encountered that is not a \"Point\".") if node["geom"]["type"] != "Point"
       
       point = node["geom"]["coordinates"]
       

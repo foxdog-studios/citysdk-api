@@ -16,7 +16,7 @@ class Node < Sequel::Model
     p = params[:p]
     layer,field = p.split('/')
     if 0 == Layer.where(:name=>layer).count
-      CitySDK_API.do_abort(422,"Layer not found: 'layer'")
+      CitySDKAPI.do_abort(422,"Layer not found: 'layer'")
     end
     layer_id = Layer.idFromText(layer)
     nd = NodeDatum.where({:node_id => n[:id], :layer_id => layer_id}).first
@@ -59,8 +59,8 @@ class Node < Sequel::Model
   
   
   def self.prefixes
-    prfs = ["@base <#{::CitySDK_API::CDK_BASE_URI}#{::CitySDK_API::Config[:ep_code]}/> ."]
-    prfs << "@prefix : <#{::CitySDK_API::CDK_BASE_URI}> ."
+    prfs = ["@base <#{::CitySDKAPI::CDK_BASE_URI}#{::CitySDKAPI::Config[:ep_code]}/> ."]
+    prfs << "@prefix : <#{::CitySDKAPI::CDK_BASE_URI}> ."
     @@prefixes.each do |p|
       
       puts p
@@ -95,7 +95,7 @@ class Node < Sequel::Model
       begin
         return [self.prefixes.join("\n"),self.layerProps(params),@@noderesults.join("\n")].join("\n")
       rescue Exception => e
-        ::CitySDK_API::do_abort(500,"Server error (#{e.message}, \n #{e.backtrace.join('\n')}.")
+        ::CitySDKAPI::do_abort(500,"Server error (#{e.message}, \n #{e.backtrace.join('\n')}.")
       end
     end
 
@@ -124,9 +124,9 @@ class Node < Sequel::Model
     h[:name] = '' if h[:name].nil?
     if params.has_key? "geom"
       if h[:member_geometries] and h[:node_type] != 3
-        h[:geom] = RGeo::GeoJSON.encode(CitySDK_API.rgeo_factory.parse_wkb(h[:member_geometries])) if h[:member_geometries]
+        h[:geom] = RGeo::GeoJSON.encode(CitySDKAPI.rgeo_factory.parse_wkb(h[:member_geometries])) if h[:member_geometries]
       elsif h[:geom]
-        h[:geom] = RGeo::GeoJSON.encode(CitySDK_API.rgeo_factory.parse_wkb(h[:geom])) if h[:geom]
+        h[:geom] = RGeo::GeoJSON.encode(CitySDKAPI.rgeo_factory.parse_wkb(h[:geom])) if h[:geom]
       end
     else
       h.delete(:geom)
@@ -184,9 +184,9 @@ class Node < Sequel::Model
     
     if params.has_key? "geom"
       if h[:member_geometries] and h[:node_type] != 3
-        triples << "\t geos:hasGeometry \"" +  RGeo::WKRep::WKTGenerator.new.generate( CitySDK_API.rgeo_factory.parse_wkb(h[:member_geometries]) )  + "\" ;"
+        triples << "\t geos:hasGeometry \"" +  RGeo::WKRep::WKTGenerator.new.generate( CitySDKAPI.rgeo_factory.parse_wkb(h[:member_geometries]) )  + "\" ;"
       elsif h[:geom]
-        triples << "\t geos:hasGeometry \"" +  RGeo::WKRep::WKTGenerator.new.generate( CitySDK_API.rgeo_factory.parse_wkb(h[:geom]) )  + "\" ;"
+        triples << "\t geos:hasGeometry \"" +  RGeo::WKRep::WKTGenerator.new.generate( CitySDKAPI.rgeo_factory.parse_wkb(h[:geom]) )  + "\" ;"
       end
     end
 

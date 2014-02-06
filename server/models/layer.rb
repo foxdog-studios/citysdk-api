@@ -1,5 +1,4 @@
-require 'sequel/model'
-
+require 'sinatra/sequel'
 
 class Layer < Sequel::Model
   many_to_one :owner, class: :SequelUser
@@ -30,16 +29,16 @@ class Layer < Sequel::Model
   def self.get_layer(id)
     self.ensure_layer_cache
     key = self.memcache_key(id)
-    CitySDK_API.memcache_get(key)
+    CitySDKAPI.memcache_get(key)
   end
 
   def self.get_layer_names
     self.ensure_layer_cache
-    CitySDK_API.memcache_get(KEY_LAYER_NAMES)
+    CitySDKAPI.memcache_get(KEY_LAYER_NAMES)
   end
 
   def self.ensure_layer_cache
-    unless CitySDK_API.memcache_get(KEY_LAYERS_AVAILABLE)
+    unless CitySDKAPI.memcache_get(KEY_LAYERS_AVAILABLE)
       self.getLayerHashes
     end
   end
@@ -57,8 +56,8 @@ class Layer < Sequel::Model
     case params[:request_format]
     when 'text/turtle'
       prefixes = Set.new
-      prfs = ["@base <#{::CitySDK_API::CDK_BASE_URI}#{::CitySDK_API::Config[:ep_code]}/> ."]
-      prfs << "@prefix : <#{::CitySDK_API::CDK_BASE_URI}> ."
+      prfs = ["@base <#{::CitySDKAPI::CDK_BASE_URI}#{::CitySDKAPI::Config[:ep_code]}/> ."]
+      prfs << "@prefix : <#{::CitySDKAPI::CDK_BASE_URI}> ."
       res = turtelize(params)
       prefixes.each do |p|
         puts p
@@ -124,7 +123,7 @@ class Layer < Sequel::Model
 
 
     if params.has_key? "geom" and !bbox.nil?
-      triples << "  geos:hasGeometry \"" +  RGeo::WKRep::WKTGenerator.new.generate( CitySDK_API.rgeo_factory.parse_wkb(bbox) )  + "\" ;"
+      triples << "  geos:hasGeometry \"" +  RGeo::WKRep::WKTGenerator.new.generate( CitySDKAPI.rgeo_factory.parse_wkb(bbox) )  + "\" ;"
     end
 
     triples[-1][-1] = '.'
@@ -169,7 +168,7 @@ class Layer < Sequel::Model
     end
 
     if !bbox.nil? and params.has_key? 'geom'
-       h[:bbox] = RGeo::GeoJSON.encode(CitySDK_API.rgeo_factory.parse_wkb(bbox))
+       h[:bbox] = RGeo::GeoJSON.encode(CitySDKAPI.rgeo_factory.parse_wkb(bbox))
     end
     @@noderesults << h
     h
@@ -191,14 +190,14 @@ class Layer < Sequel::Model
             prefix = p[0..(p.index("*") - 1)]
             return layer_names.select{|k,v| k.start_with? prefix}.values
           else
-            CitySDK_API.do_abort(422,"You can only use wildcards in layer names directly after a name separator (e.g. osm.*)")
+            CitySDKAPI.do_abort(422,"You can only use wildcards in layer names directly after a name separator (e.g. osm.*)")
           end
         else
           return layer_names[p]
         end
       else
         # No layer names available, something went wrong
-        CitySDK_API.do_abort(500,"Layer cache unavailable")
+        CitySDKAPI.do_abort(500,"Layer cache unavailable")
       end
     end
   end
@@ -253,12 +252,12 @@ class Layer < Sequel::Model
       name = l[:name]
       # Save layer data in memcache without expiration
       key = self.memcache_key(id)
-      CitySDK_API.memcache_set(key, l.values, 0)
+      CitySDKAPI.memcache_set(key, l.values, 0)
       names[name] = id
     end
 
-    CitySDK_API.memcache_set(KEY_LAYER_NAMES, names, 0)
-    CitySDK_API.memcache_set(KEY_LAYERS_AVAILABLE, true, 0)
+    CitySDKAPI.memcache_set(KEY_LAYER_NAMES, names, 0)
+    CitySDKAPI.memcache_set(KEY_LAYERS_AVAILABLE, true, 0)
   end
 end
 

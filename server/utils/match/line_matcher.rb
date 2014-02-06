@@ -1,4 +1,4 @@
-class CitySDK_API < Sinatra::Base
+class CitySDKAPI < Sinatra::Base
 
   module LineMatcher
 
@@ -15,11 +15,11 @@ class CitySDK_API < Sinatra::Base
       ignore_oneway = params["ignore_oneway"]
       
       if not node.has_key? "geom"
-        CitySDK_API.do_abort(422, "Parameter 'geom' missing for node with id=#{node["id"]}.")
+        CitySDKAPI.do_abort(422, "Parameter 'geom' missing for node with id=#{node["id"]}.")
       end
       
       if not layers.has_key? "osm"
-        CitySDK_API.do_abort(422, "Line matching is (for now) only possible on 'osm' layer. Parameter 'layer' must have key 'osm' with some values.")
+        CitySDKAPI.do_abort(422, "Line matching is (for now) only possible on 'osm' layer. Parameter 'layer' must have key 'osm' with some values.")
       end
 
       # TODO: check if input geom is not too big
@@ -64,7 +64,7 @@ class CitySDK_API < Sinatra::Base
       end  
 
       rgeo_geom = RGeo::GeoJSON.decode(geom.to_json, :json_parser => :json)        
-      wkb = CitySDK_API.wkb_generator.generate(rgeo_geom)      
+      wkb = CitySDKAPI.wkb_generator.generate(rgeo_geom)      
       wkb_4326 = <<-SQL
         ST_Transform(ST_SetSRID('#{wkb}'::geometry, #{srid}), 4326)
       SQL
@@ -126,7 +126,7 @@ class CitySDK_API < Sinatra::Base
             :nodes => [nodes[0], nodes[-1]], :dst_start => dst_start, :dst_end => dst_end
           }
         else
-          CitySDK_API.do_abort(500, "Encountered OSM way with less than two nodes.")
+          CitySDKAPI.do_abort(500, "Encountered OSM way with less than two nodes.")
         end
 
         (0..(nodes.length - 2)).each do |i|                 

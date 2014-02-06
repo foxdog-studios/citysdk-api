@@ -2,8 +2,7 @@ require 'dalli'
 require 'set'
 require 'rgeo'
 
-
-class CitySDK_API < Sinatra::Base
+class CitySDKAPI < Sinatra::Application
 
   ##############################################################################
   # RGeo                                                                       #
@@ -112,25 +111,7 @@ class CitySDK_API < Sinatra::Base
     throw(:halt, [code, {'Content-Type' => 'application/json'}, {:status => 'fail', :message  => message}.to_json])
   end
 
-  def self.geRequestFormat(params, req)
-    case req.env['HTTP_ACCEPT']
-      # accept header takes precedence
-    when 'application/json'
-      return 'application/json'
-    when 'text/turtle'
-      return 'text/turtle'
-    else
-      case params[:format]
-      when 'turtle', 'ttl'
-        return 'text/turtle'
-      when 'json'
-        return 'application/json'
-      else
-        # json if nothing specified
-        return 'application/json'
-      end
-    end
-  end
+
 
   def self.nodes_results(dataset, params, req)
     res = 0

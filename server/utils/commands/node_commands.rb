@@ -1,4 +1,4 @@
-class CitySDK_API < Sinatra::Base
+class CitySDKAPI < Sinatra::Base
 
   module Nodes
     
@@ -19,7 +19,7 @@ class CitySDK_API < Sinatra::Base
           .node_layers(params)
           .do_paginate(params)
           
-        CitySDK_API.nodes_results(pgn, params, req)      
+        CitySDKAPI.nodes_results(pgn, params, req)      
             
       elsif params[:cmd] == 'routes_start' or params[:cmd] == 'routes_end'
         # Select all routes that start or end in cdk_id, 
@@ -42,7 +42,7 @@ class CitySDK_API < Sinatra::Base
           .node_layers(params)
           .do_paginate(params)
           
-        CitySDK_API.nodes_results(pgn, params, req) 
+        CitySDKAPI.nodes_results(pgn, params, req) 
     
       elsif params[:cmd] == 'regions'
 
@@ -74,9 +74,9 @@ class CitySDK_API < Sinatra::Base
 
         # 
         #             
-        # CitySDK_API.json_simple_results(res, req) 
+        # CitySDKAPI.json_simple_results(res, req) 
       else 
-        CitySDK_API.do_abort(422,"Command #{params[:cmd]} not defined for this node type.")
+        CitySDKAPI.do_abort(422,"Command #{params[:cmd]} not defined for this node type.")
       end
     end
   end

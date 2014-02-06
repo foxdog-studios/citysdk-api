@@ -5,6 +5,7 @@ ruby '1.9.3'
 #ruby-gemset=citysdk
 
 gem 'active_support'
+gem 'citysdk', git: 'https://github.com/foxdog-studios/citysdk-client.git'
 gem 'faraday'
 gem 'haml'
 gem 'i18n'
@@ -19,8 +20,6 @@ gem 'sinatra', require: 'sinatra/base'
 gem 'sinatra-authentication'
 gem 'sinatra-sequel'
 gem 'sinatra-session'
-
-gem 'citysdk', path: './vendor/citysdk'
 
 group :development do
   gem 'capistrano', '~>2'
