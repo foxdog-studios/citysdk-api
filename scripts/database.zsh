@@ -131,15 +131,16 @@ function import_osm_data()
 
     expect -f - <<-EOF
 		set timeout -1
-		spawn osm2pgsql                \
-		    --cache 800                \
-		    --database "$db_name"      \
-		    --host "$db_host"          \
-		    --hstore-all               \
-		    --latlong                  \
-		    --password                 \
-		    --slim                     \
-		    --username "$dba_username" \
+		spawn osm2pgsql                          \
+		    --cache 800                          \
+		    --database "$db_name"                \
+		    --host "$db_host"                    \
+		    --hstore-all                         \
+		    --latlong                            \
+		    --password                           \
+		    --slim                               \
+		    --style $repo/database/citysdk.style \
+		    --username "$dba_username"           \
 		    "$osm_dir/$osm_file_name"
 		expect "Password:"
 		send "$db_password\r"
