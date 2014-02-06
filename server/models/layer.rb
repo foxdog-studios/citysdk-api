@@ -1,4 +1,4 @@
-require 'sinatra/sequel'
+# encoding: utf-8
 
 class Layer < Sequel::Model
   many_to_one :owner, class: :SequelUser

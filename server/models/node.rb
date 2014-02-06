@@ -1,15 +1,4 @@
-require 'set'
-
-class Sequel::Model
-  @@node_types = ['node','route','ptstop','ptline']
-  @@noderesults = []
-  @@prefixes = Set.new
-  @@layers = []
-end
-
-
 class Node < Sequel::Model
-  #plugin :validation_helpers
   one_to_many :node_data
 
   def self.processPredicate(n,params)
