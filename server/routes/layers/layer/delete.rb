@@ -12,11 +12,11 @@ class CitySDKAPI < Sinatra::Application
     end # if
 
     # Delete node_data
-    NodeData.where('layer_id = ?', layer_id).delete
+    NodeDatum.where('layer_id = ?', layer_id).delete
 
     # Delete nodes
     nodes = Node.select(:id).where(:layer_id => layer_id)
-    ndata = NodeData.select(:node_id).where(:node_id => nodes)
+    ndata = NodeDatum.select(:node_id).where(:node_id => nodes)
     Node.where(:layer_id => layer_id).exclude(:id => ndata).delete
     Node.where(:layer_id => layer_id).update(:layer_id => -1)
 

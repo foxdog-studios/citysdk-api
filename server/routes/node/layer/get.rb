@@ -13,18 +13,18 @@ class CitySDKAPI < Sinatra::Application
       halt 404, { error: "No layer named '#{ layer_name }'."}.to_json
     end # if
 
-    nd = NodeData.where(node_id: node.id, layer_id: layer.id).first
+    nd = NodeDatum.where(node_id: node.id, layer_id: layer.id).first
 
     case params.fetch(:request_format)
     when 'application/json'
       {
         status: 'success',
         url: request.url,
-        results: [NodeData.serialize(cdk_id, [nd.values], params)]
+        results: [NodeDatum.serialize(cdk_id, [nd.values], params)]
       }.to_json
     when 'text/turtle'
       Node.serializeStart(params, request)
-      t, d = NodeData.turtelize(cdk_id, [nd.values], params)
+      t, d = NodeDatum.turtelize(cdk_id, [nd.values], params)
       [
         Node.prefixes.join("\n"),
         Node.layerProps(params).join("\n"),

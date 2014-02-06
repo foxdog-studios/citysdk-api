@@ -70,7 +70,7 @@ class CitySDKAPI < Sinatra::Base
         g = stop.getLayer('ns')
         if(g)
           h = g.data
-          h = NodeData::WebService.load(g.layer_id, stop.cdk_id, h)
+          h = NodeDatum::WebService.load(g.layer_id, stop.cdk_id, h)
           return {
             :status => 'success',
             :pages => 1,

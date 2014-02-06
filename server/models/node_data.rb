@@ -3,7 +3,9 @@ require 'sequel/plugins/serialization'
 require 'set'
 require 'json'
 
-class NodeData < Sequel::Model
+Sequel::Inflections.uncountable 'node_data'
+
+class NodeDatum < Sequel::Model
   many_to_one :node
   many_to_one :layer
 

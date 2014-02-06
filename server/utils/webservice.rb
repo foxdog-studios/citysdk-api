@@ -1,4 +1,4 @@
-class NodeData < Sequel::Model
+class NodeDatum < Sequel::Model
 
   module WebService
     require 'faraday'
