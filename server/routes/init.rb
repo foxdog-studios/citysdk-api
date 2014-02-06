@@ -5,6 +5,7 @@ require_relative 'cdk_id/layer/put'
 require_relative 'cdk_id/select/cmd/get'
 
 require_relative 'layers/get.rb'
+require_relative 'layers/put.rb'
 require_relative 'layers/layer/delete'
 require_relative 'layers/layer/get'
 require_relative 'layers/layer/config/put'

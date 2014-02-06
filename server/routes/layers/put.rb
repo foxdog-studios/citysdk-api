@@ -9,7 +9,7 @@ class CitySDKAPI < Sinatra::Application
 
     unless user.domains.include?(domain)
       halt 401, {
-        error: "You cannot create a layer within the #{ domain.inspect } "
+        error: "You cannot create a layer within the #{ domain.inspect } " \
                "domain because you are not a member of it."
         }.to_json
     end # unless
