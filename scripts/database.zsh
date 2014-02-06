@@ -14,108 +14,176 @@ db_name=$(config-server db_name)
 db_user=$(config-server db_user)
 db_password=$(config-server db_pass)
 
-conn=postgres://$db_user:$db_password@$db_host/$db_name
+dba_username=postgres
 
-data_path=$repo/local/data_sets/osm.pbf
-data_url=$(config-setup osm2pgsql.data_url)
+osm_dir=$repo/local/data_sets
+osm_file_name=$(config-setup osm2pgsql.file_name)
+osm_layer=osm
+osm_url=$(config-setup osm2pgsql.url)
+
+sql_dir=$repo/database/sql
+
+
+# ==============================================================================
+# = Helpers                                                                    =
+# ==============================================================================
+
+function psql_dba()
+{
+    psql --username=$dba_username $@
+}
+
+function returns_1()
+{
+    tuples=$(psql_dba --command=$1 --no-align --tuples-only)
+    [[ $tuples == 1 ]]
+}
 
 
 # ==============================================================================
 # = Tasks                                                                      =
 # ==============================================================================
 
-function delete_db()
+function drop_database()
 {
-    psql "DROP DATABASE IF EXISTS $db_name;" postgres
+    psql_dba --echo-all <<-SQL
+		\set ON_ERROR_STOP on
+		DROP DATABASE IF EXISTS $db_name;
+	SQL
 }
 
-function delete_user()
+function drop_role()
 {
-    psql "DROP USER IF EXISTS $db_user;" postgres
+    psql_dba --echo-all <<-SQL
+		\set ON_ERROR_STOP on
+		DROP USER IF EXISTS $db_user;
+	SQL
 }
 
-function create_db()
+function create_database()
 {
     local query="SELECT 1 FROM pg_database WHERE datname = '$db_name';"
 
-    # Return is the database already exists
-    if psql $query postgres | grep --quiet 1; then
+    # Return if the database already exists.
+    if returns_1 $query; then
         return
     fi
 
-    pdo createdb $db_name
+    psql_dba <<-SQL
+		\set ON_ERROR_STOP on
+		CREATE DATABASE $db_name;
+	SQL
 }
 
-function create_extensions()
-{
-    psql 'CREATE EXTENSION IF NOT EXISTS hstore;
-          CREATE EXTENSION IF NOT EXISTS pg_trgm;
-          CREATE EXTENSION IF NOT EXISTS postgis;'
-}
-
-function create_user()
+function create_role()
 {
     local query="SELECT 1 FROM pg_roles WHERE rolname='$db_user';"
 
-    # Stop this the user already exists
-    if psql $query postgres | grep --quiet 1; then
+    # Return if the role already exists.
+    if returns_1 $query; then
         return
     fi
 
-    psql "CREATE USER $db_user PASSWORD '$db_password'" postgres
-    psql "GRANT ALL ON DATABASE $db_name TO $db_user"
+    # Do not echo this comment. It'll print the user's password to the
+    # terminal.
+    psql_dba <<-SQL
+		\set ON_ERROR_STOP on
+
+		CREATE ROLE $db_user
+		WITH
+		    LOGIN
+		    PASSWORD '$db_password'
+		;
+	SQL
 }
 
-function download_data()
+function grant_permissions()
 {
-    mkdir --parent $data_path:h
+    psql_dba --echo-all --dbname=$db_name <<-SQL
+		\set ON_ERROR_STOP on
 
-    if [[ ! -f $data_path ]]; then
-        curl --location --output $data_path $data_url
-    fi
+		GRANT SELECT ON ALL TABLES IN SCHEMA public TO $db_user;
+		GRANT INSERT ON ALL TABLES IN SCHEMA public TO $db_user;
+		GRANT UPDATE ON ALL TABLES IN SCHEMA public TO $db_user;
+		GRANT DELETE ON ALL TABLES IN SCHEMA public TO $db_user;
+		GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO $db_user;
+		GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO $db_user;
+	SQL
 }
 
-function import_data()
+function initialize_database()
 {
+    psql_dba --dbname=$db_name --file=$sql_dir/initialize_database.sql
+}
+
+function update_osm_data()
+{(
+    mkdir --parent $osm_dir
+    cd $osm_dir
+    wget --timestamping $osm_url
+)}
+
+function import_osm_data()
+{
+    # Without --siim the planet_osm_rels tables is not created. This
+    # table is required by create_osm_nodes.sql. I don't know why nor
+    # do I understand the data held in that table.
+
     expect -f - <<-EOF
 		set timeout -1
-		spawn osm2pgsql           \
-		    --cache 800           \
-		    --database "$db_name" \
-		    --host "$db_host"     \
-		    --hstore-all          \
-		    --latlong             \
-		    --password            \
-		    --slim                \
-		    --username "$db_user" \
-		    "$data_path"
+		spawn osm2pgsql                \
+		    --cache 800                \
+		    --database "$db_name"      \
+		    --host "$db_host"          \
+		    --hstore-all               \
+		    --latlong                  \
+		    --password                 \
+		    --slim                     \
+		    --username "$dba_username" \
+		    "$osm_dir/$osm_file_name"
 		expect "Password:"
 		send "$db_password\r"
 		expect eof
 	EOF
 }
 
-function create_schema()
+function create_admin()
 {
-    # TODO: Instead of always succeeding, make the script idempotent.
-    pdo psql $db_name < $repo/database/osm_schema.sql || true
+    local config=$CITYSDK_CONFIG_DIR
+    ruby $repo/database/create_admin.rb $config/server.json $config/setup.json
 }
 
-function migrations()
+function create_osm_layer()
 {
-    psql "GRANT ALL ON SCHEMA osm TO $db_user;"
+    psql --dbname=$db_name --echo-all --username=$db_user <<-SQL
+		\set ON_ERROR_STOP on
 
-    function migration()
-    {(
-        cd $repo/database
-        bundle exec sequel -m migrations $@ $conn
-    )}
+		INSERT INTO layers (
+		    name,
+		    owner_id,
+		    organization,
+		    category,
+		    title,
+		    description,
+		    data_sources
+		)
+		VALUES (
+		    '$osm_layer',
+		    (SELECT id FROM users WHERE email = '$(config-setup admin.email)'),
+		    'CitySDK',
+		    'base.geography',
+		    'OpenStreetMap',
+		    'Base geograpy layer.',
+		    '{"Data from OpenstreetMap; openstreetmap.org © OpenStreetMap contributors"}'
+		);
+	SQL
+}
 
-    # 0 resets something
-    migration -M 0
-    migration
-
-    unfunction migration
+function create_osm_nodes()
+{
+    psql --dbname=$db_name                    \
+         --file=$sql_dir/create_osm_nodes.sql \
+         --username=$db_user
 }
 
 
@@ -124,22 +192,23 @@ function migrations()
 # ==============================================================================
 
 tasks=(
-    delete_db
-    delete_user
-    create_db
-    create_extensions
-    create_user
-    download_data
-    import_data
-    create_schema
-    migrations
-    set_admin_details
+    drop_database
+    drop_role
+    create_database
+    create_role
+    initialize_database
+    update_osm_data
+    import_osm_data
+    grant_permissions
+    create_admin
+    create_osm_layer
+    create_osm_nodes
 )
 
 function usage()
 {
     cat <<-'EOF'
-		Clean and build the CitySDK database
+		Clean and build the CitySDK database.
 
 		Usage:
 
@@ -147,16 +216,18 @@ function usage()
 
 		Tasks:
 
-		    delete_db
-		    delete_user
-		    create_db
-		    create_extensions
-		    create_user
-		    download_data
-		    import_data
-		    create_schema
-		    migrations
-		    set_admin_details
+		    drop_database
+		    drop_role
+		    create_database
+		    create_role
+		    grant_permissions
+		    initialize_database
+		    update_osm_data
+		    import_osm_data
+		    create_admin
+		    create_osm_layer
+		    create_osm_tuples
+		    create_osm_nodes
 	EOF
     exit 1
 }

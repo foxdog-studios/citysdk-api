@@ -125,9 +125,12 @@ function configure_postgresql()
 {
     sudo systemd-tmpfiles --create postgresql.conf
 
-    local data=/var/lib/postgres/data
-    if [[ "$(pdo ls -1 $data | wc -l)" -eq 0 ]]; then
-        pdo initdb --locale en_GB.UTF-8 -D $data
+    local root=/var/lib/postgres
+    sudo chown -R postgres:postgres $root
+
+    local data=$root/data
+    if [[ "$(sudo --user=postgres ls -1 $data | wc -l)" -eq 0 ]]; then
+        sudo --login --user=postgres initdb --locale en_GB.UTF-8 -D $data
     fi
 
     sudo systemctl enable postgresql.service
