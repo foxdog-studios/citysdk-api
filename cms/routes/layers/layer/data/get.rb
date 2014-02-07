@@ -23,11 +23,7 @@ module CitySDK
       @epSelect,@eprops = Layer.epSelect
       @props = @props.to_json
 
-      if params.fetch(:nolayout)
-        erb :layer_data, layout: false
-      else
-        erb :layer_data
-      end # else
+      erb :layer_data
     end # do
   end # class
 end # module

@@ -5,7 +5,7 @@ ruby '1.9.3'
 #ruby-gemset=citysdk
 
 gem 'active_support'
-gem 'citysdk', git: 'https://github.com/foxdog-studios/citysdk-client.git'
+gem 'citysdk', path: '../../citysdk-client'
 gem 'faraday'
 gem 'haml'
 gem 'i18n'

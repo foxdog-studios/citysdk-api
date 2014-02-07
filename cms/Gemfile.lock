@@ -1,12 +1,13 @@
-GIT
-  remote: https://github.com/foxdog-studios/citysdk-client.git
-  revision: 68820d7c493a9d5167496ffc79d1b9ad2021e7fc
+PATH
+  remote: ../../citysdk-client
   specs:
     citysdk (0.1.2.1)
-      charlock_holmes (>= 0.6.9.4)
+      addressable (~> 2.3.5)
+      charlock_holmes (~> 0.6.9.4)
       dbf
-      faraday (>= 0.8.5)
-      georuby (>= 2.0.0)
+      faraday (~> 0.8.5)
+      georuby (~> 2.0.0)
+      nokogiri (~> 1.6.1)
 
 GEM
   remote: https://rubygems.org/
@@ -36,11 +37,11 @@ GEM
     dm-validations (1.2.0)
       dm-core (~> 1.2.0)
     eventmachine (1.0.3)
-    faraday (0.9.0)
-      multipart-post (>= 1.2, < 3)
+    faraday (0.8.9)
+      multipart-post (~> 1.2.0)
     fastercsv (1.5.5)
     ffi (1.9.3)
-    georuby (2.2.1)
+    georuby (2.0.0)
     haml (4.0.5)
       tilt
     highline (1.6.20)
@@ -54,14 +55,17 @@ GEM
       mime-types (~> 1.16)
       treetop (~> 1.4.8)
     mime-types (1.25.1)
-    multipart-post (2.0.0)
+    mini_portile (0.5.2)
+    multipart-post (1.2.0)
     net-scp (1.1.2)
       net-ssh (>= 2.6.5)
     net-sftp (2.1.2)
       net-ssh (>= 2.6.5)
-    net-ssh (2.7.0)
+    net-ssh (2.8.0)
     net-ssh-gateway (1.2.0)
       net-ssh (>= 2.6.5)
+    nokogiri (1.6.1)
+      mini_portile (~> 0.5.0)
     pg (0.17.1)
     polyglot (0.3.3)
     pony (1.6.2)
@@ -82,7 +86,7 @@ GEM
     rgeo-geojson (0.2.3)
       rgeo (>= 0.3.7)
     rufus-tokyo (1.0.7)
-    sequel (4.6.0)
+    sequel (4.7.0)
     sinatra (1.4.4)
       rack (~> 1.4)
       rack-protection (~> 1.4)
