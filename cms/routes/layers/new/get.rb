@@ -3,9 +3,9 @@
 module CitySDK
   class CMSApplication < Sinatra::Application
     get '/layer/new' do
-      logging_required
+      login_required
       @owner = current_user
-      domains = @owner.domains.split(',')
+      domains = @owner.domains
       if( domains.length > 1 )
         @prefix  = "<select name='prefix'> "
         domains.uniq.each do |p|
