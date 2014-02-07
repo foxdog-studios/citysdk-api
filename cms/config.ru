@@ -1,4 +1,10 @@
-require './csdk_cms'
-use Rack::Static, root: 'public', urls: %w(/css /script)
-run CSDK_CMS
+# encoding: utf-8
+
+# Add the application directory to the load path.
+root = File.realpath(File.dirname(__FILE__))
+$LOAD_PATH << root unless $LOAD_PATH.include?(root)
+
+# Run the CitySDK API application.
+require 'app'
+run CitySDK::CMSApplication
 

@@ -1,6 +1,3 @@
-require 'json'
-require 'sinatra/sequel'
-
 configure do |app|
   # Load external configuration.
   path = File.join(File.dirname(__FILE__), '..', 'config.json')

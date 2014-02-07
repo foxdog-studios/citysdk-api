@@ -16,27 +16,6 @@ CREATE EXTENSION IF NOT EXISTS postgis;
 
 
 -- -----------------------------------------------------------------------------
--- - Types                                                                     -
--- -----------------------------------------------------------------------------
-
-DROP TYPE IF EXISTS category;
-
-CREATE TYPE category AS ENUM (
-    'administrative',
-    'civic',
-    'commercial',
-    'cultural',
-    'education',
-    'environment',
-    'health',
-    'mobility',
-    'natural',
-    'security',
-    'tourism'
-);
-
-
--- -----------------------------------------------------------------------------
 -- - Users table                                                               -
 -- -----------------------------------------------------------------------------
 
@@ -109,11 +88,15 @@ ALTER TABLE layers ADD CONSTRAINT constraint_bbox_4326 CHECK (
 -- - Other tables                                                              -
 -- -----------------------------------------------------------------------------
 
+CREATE TABLE IF NOT EXISTS categories (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE
+);
+
 CREATE TABLE IF NOT EXISTS modalities (
     id   SERIAL PRIMARY KEY,
     name TEXT NOT NULL UNIQUE
 );
-
 
 CREATE TABLE IF NOT EXISTS nodes (
     id         SERIAL PRIMARY KEY,
@@ -179,6 +162,20 @@ CREATE TABLE IF NOT EXISTS node_data (
 -- -----------------------------------------------------------------------------
 -- - Inserts                                                                   -
 -- -----------------------------------------------------------------------------
+
+INSERT INTO categories (name) VALUES
+    ('administrative'),
+    ('civic'         ),
+    ('commercial'    ),
+    ('cultural'      ),
+    ('education'     ),
+    ('environment'   ),
+    ('health'        ),
+    ('mobility'      ),
+    ('natural'       ),
+    ('security'      ),
+    ('tourism'       )
+;
 
 INSERT INTO modalities (id, name) VALUES
     (  0, 'tram'     ), -- Tram, Streetcar, Light rail
