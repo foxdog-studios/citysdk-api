@@ -16,4 +16,14 @@
   "ep_tileserver_url": "",
   "ep_maintainer_email": "",
   "ep_mapxyz": ""
+  "ep_dev_examples": [
+    {
+      "url": "nodes/?layer=osm",
+      "title": "OSM layer"
+    },
+    {
+      "url": "nodes/?layer=osm&osm::power=tower",
+      "title": "Power towers in OSM layer"
+    }
+  ]
 }
