@@ -154,30 +154,12 @@ function create_admin()
     ruby $db_dir/create_admin.rb $config/server.json $config/setup.json
 }
 
-function create_osm_layer()
+function create_required_layers()
 {
-    psql --dbname=$db_name --echo-all --username=$db_user <<-SQL
-		\set ON_ERROR_STOP on
-
-		INSERT INTO layers (
-		    name,
-		    owner_id,
-		    organization,
-		    category,
-		    title,
-		    description,
-		    data_sources
-		)
-		VALUES (
-		    '$osm_layer',
-		    (SELECT id FROM users WHERE email = '$(config-setup admin.email)'),
-		    'CitySDK',
-		    'base.geography',
-		    'OpenStreetMap',
-		    'Base geograpy layer.',
-		    '{"Data from OpenstreetMap; openstreetmap.org © OpenStreetMap contributors"}'
-		);
-	SQL
+    local config=$CITYSDK_CONFIG_DIR
+    ruby $db_dir/create_required_layers.rb \
+         $config/server.json               \
+         $config/setup.json
 }
 
 function create_osm_nodes()
@@ -215,7 +197,7 @@ tasks=(
     import_osm_data
     grant_permissions
     create_admin
-    create_osm_layer
+    create_required_layers
     create_osm_nodes
     modify_osm_nodes
     update_modalities
@@ -236,12 +218,12 @@ function usage()
 		    drop_role
 		    create_database
 		    create_role
-		    grant_permissions
 		    initialize_database
 		    update_osm_data
 		    import_osm_data
+		    grant_permissions
 		    create_admin
-		    create_osm_layer
+		    create_required_layers
 		    create_osm_tuples
 		    create_osm_nodes
 		    modify_osm_nodes
