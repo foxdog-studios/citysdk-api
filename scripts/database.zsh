@@ -9,6 +9,8 @@ source ${0:h}/library.zsh
 # = Configuration                                                              =
 # ==============================================================================
 
+db_dir=$repo/database
+
 db_host=$(config-server db_host)
 db_name=$(config-server db_name)
 db_user=$(config-server db_user)
@@ -20,8 +22,6 @@ osm_dir=$repo/local/data_sets
 osm_file_name=$(config-setup osm2pgsql.file_name)
 osm_layer=osm
 osm_url=$(config-setup osm2pgsql.url)
-
-sql_dir=$repo/database/sql
 
 
 # ==============================================================================
@@ -113,7 +113,7 @@ function grant_permissions()
 
 function initialize_database()
 {
-    psql_dba --dbname=$db_name --file=$sql_dir/initialize_database.sql
+    psql_dba --dbname=$db_name --file=$db_dir/initialize_database.pgsql
 }
 
 function update_osm_data()
@@ -126,21 +126,21 @@ function update_osm_data()
 function import_osm_data()
 {
     # Without --siim the planet_osm_rels tables is not created. This
-    # table is required by create_osm_nodes.sql. I don't know why nor
+    # table is required by create_osm_nodes.pgsql. I don't know why nor
     # do I understand the data held in that table.
 
     expect -f - <<-EOF
 		set timeout -1
-		spawn osm2pgsql                          \
-		    --cache 800                          \
-		    --database "$db_name"                \
-		    --host "$db_host"                    \
-		    --hstore-all                         \
-		    --latlong                            \
-		    --password                           \
-		    --slim                               \
-		    --style $repo/database/citysdk.style \
-		    --username "$dba_username"           \
+		spawn osm2pgsql                   \
+		    --cache 800                   \
+		    --database "$db_name"         \
+		    --host "$db_host"             \
+		    --hstore-all                  \
+		    --latlong                     \
+		    --password                    \
+		    --slim                        \
+		    --style $db_dir/citysdk.style \
+		    --username "$dba_username"    \
 		    "$osm_dir/$osm_file_name"
 		expect "Password:"
 		send "$db_password\r"
@@ -151,7 +151,7 @@ function import_osm_data()
 function create_admin()
 {
     local config=$CITYSDK_CONFIG_DIR
-    ruby $repo/database/create_admin.rb $config/server.json $config/setup.json
+    ruby $db_dir/create_admin.rb $config/server.json $config/setup.json
 }
 
 function create_osm_layer()
@@ -182,22 +182,22 @@ function create_osm_layer()
 
 function create_osm_nodes()
 {
-    psql --dbname=$db_name                    \
-         --file=$sql_dir/create_osm_nodes.sql \
+    psql --dbname=$db_name                     \
+         --file=$db_dir/create_osm_nodes.pgsql \
          --username=$db_user
 }
 
 function modify_osm_nodes()
 {
-    psql --dbname=$db_name                    \
-         --file=$sql_dir/modify_osm_nodes.sql \
+    psql --dbname=$db_name                     \
+         --file=$db_dir/modify_osm_nodes.pgsql \
          --username=$db_user
 }
 
 function update_modalities()
 {
     local config=$CITYSDK_CONFIG_DIR/server.json
-    ruby $repo/database/update_modalities.rb $config
+    ruby $db_dir/update_modalities.rb $config
 }
 
 

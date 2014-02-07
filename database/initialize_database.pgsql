@@ -634,4 +634,3 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- vi: filetype=pgsql

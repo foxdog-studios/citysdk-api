@@ -92,4 +92,3 @@ INSERT INTO node_data (node_id, layer_id, data)
     FROM planet_osm_rels
 ;
 
--- vi: filetype=pgsql

@@ -67,4 +67,3 @@ UPDATE nodes
         AND geom IS NULL
 ;
 
--- vi: filetype=pgsql
