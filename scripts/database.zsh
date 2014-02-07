@@ -194,6 +194,12 @@ function modify_osm_nodes()
          --username=$db_user
 }
 
+function update_modalities()
+{
+    local config=$CITYSDK_CONFIG_DIR/server.json
+    ruby $repo/database/update_modalities.rb $config
+}
+
 
 # ==============================================================================
 # = Command line interface                                                     =
@@ -212,6 +218,7 @@ tasks=(
     create_osm_layer
     create_osm_nodes
     modify_osm_nodes
+    update_modalities
 )
 
 function usage()
@@ -238,6 +245,7 @@ function usage()
 		    create_osm_tuples
 		    create_osm_nodes
 		    modify_osm_nodes
+		    update_modalities
 	EOF
     exit 1
 }
