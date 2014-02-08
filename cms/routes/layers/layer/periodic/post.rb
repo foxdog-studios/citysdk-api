@@ -6,7 +6,7 @@ module CitySDK
       login_required
       @layer = layer = Layer[l]
 
-      if layer.nil? || !current_user.can_update_layer(layer)
+      if layer.nil? || !current_user.update_layer?(layer)
         return
       end # if
 

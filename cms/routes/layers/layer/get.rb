@@ -5,7 +5,7 @@ module CitySDK
     get '/layers/:layer_name/' do |layer_name|
       login_required
       layer = Layer.where(name: layer_name).first
-      if layer.nil? || !current_user.can_update_layer(layer)
+      if layer.nil? || !current_user.update_layer?(layer)
         halt 401, 'Not authorized'
       end # if
       haml :edit_layer, locals: { layer: layer }

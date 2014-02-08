@@ -4,7 +4,7 @@ module CitySDK
   class CMSApplication < Sinatra::Application
     get '/layers/new' do
       owner = current_user
-      halt 403 unless owner.can_create_layer
+      halt 403 unless owner.create_layer?
       layer = Layer.new
       layer.organization = owner.organization
       layer.data_sources = []

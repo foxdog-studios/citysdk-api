@@ -11,7 +11,7 @@ module CitySDK
 
       user = current_user
 
-      unless user.can_update_layer(layer)
+      unless user.update_layer?(layer)
         halt 401, 'Not authorized.'
       end # if
 

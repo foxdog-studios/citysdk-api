@@ -6,7 +6,7 @@ module CitySDK
       login_required
 
       layer = Layer.get_by_name(layer_name)
-      if layer.nil? || !current_user.can_retrieve_layer(layer)
+      if layer.nil? || !current_user.retrieve_layer?(layer)
         halt 401, 'Not authorized'
       end # if
 

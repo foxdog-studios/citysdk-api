@@ -1,7 +1,5 @@
 # encoding: utf-8
 
-require 'citysdkserverdbutils'
-
 module CitySDK
   class CMSApplication < Sinatra::Application
     post '/uploaded_file_headers' do
@@ -57,7 +55,7 @@ module CitySDK
         halt 422, { error: e.message }.to_json
       end
 
-      redirect "/get_layer_stats/#{params[:layer_name]}"
+      redirect "/layers/#{params[:layer_name]}/stats"
     end # do
   end # class
 end # module

@@ -42,14 +42,14 @@ var addHtml = function(a, ts, i) {
   }
 };
 
-var tagsForLayer = function (l, ts, i) {
-  if (availableTags[l] != null ) {
-    addHtml(availableTags[l], ts, i)
+var tagsForLayer = function (name, ts, i) {
+  if (availableTags[name] != null ) {
+    addHtml(availableTags[name], ts, i)
     return;
   }
 
   $.ajax({
-    url: '/get_layer_keys/' + l,
+    url: '/layers/' + name + '/keys',
     type: 'get',
     success: function(data) {
       obj = $.parseJSON(data)
@@ -343,7 +343,7 @@ var selectFieldTags = function(layer, fieldselect) {
   }
 
   $.ajax({
-    url: '/get_layer_keys/' + layer,
+    url: '/layers/' + layer + ' /keys',
     type: 'get',
     success: function(data) {
       obj = $.parseJSON(data)

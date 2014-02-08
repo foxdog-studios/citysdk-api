@@ -3,7 +3,7 @@
     %span.layeredit
       Layer:
       = layer.name
-    - if current_user.can_update_layer(layer)
+    - if current_user.update_layer?(layer)
       %span.editlinks
 
   .code

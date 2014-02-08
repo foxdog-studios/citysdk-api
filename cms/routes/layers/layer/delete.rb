@@ -5,8 +5,10 @@ module CitySDK
     delete '/layers/:layer_name/' do |layer_name|
       layer = Layer.get_by_name(layer_name)
       halt 404 if layer.nil?
-      halt 403 unless current_user.can_delete_layer(layer)
-      # TODO: Delete via DAL
+      halt 403 unless current_user.delete_layer?(layer)
+      database.transaction do
+        CitySDK::delete_layer!(layer)
+      end #
       redirect '/layers/'
     end # do
   end # class

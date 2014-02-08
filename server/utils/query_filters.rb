@@ -105,7 +105,7 @@ module Sequel
       if params['layer'] == "*"
         # Return ALL data (on ALL layers) for node
         if not params.has_key? "geom"
-          columns = (Node.dataset.columns - [:geom]).map { |column| "nodes__#{column}".to_sym }
+          columns = (CitySDK::Node.dataset.columns - [:geom]).map { |column| "nodes__#{column}".to_sym }
           return self.select{columns}
         else
           return self.select_append(Sequel.function(:collect_member_geometries, :members).as(:member_geometries))
@@ -148,7 +148,7 @@ module Sequel
         if layer_ids.length > 0
           if op == :&
 
-            cdk_ids = Node.select(:cdk_id)
+            cdk_ids = CitySDK::Node.select(:cdk_id)
             layer_ids.each { |layer_id|
               cdk_ids = cdk_ids.join_table(:inner, :node_data, {:layer_id => layer_id, :node_id => :nodes__id}, {:table_alias=>"nd#{layer_id}"})
             }
@@ -192,7 +192,7 @@ module Sequel
 
         # Only retrieve geometry from database if requested
         if not params.has_key? "geom"
-          columns = (Node.dataset.columns - [:geom]).map { |column| "nodes__#{column}".to_sym }
+          columns = (CitySDK::Node.dataset.columns - [:geom]).map { |column| "nodes__#{column}".to_sym }
           return self.select{columns}.eager_graph(:node_data).where(where)
         else
           return self.eager_graph(:node_data).where(where)
@@ -206,7 +206,7 @@ module Sequel
 
         # Only retrieve geometry from database if requested
         if not params.has_key? "geom"
-          columns = (Node.dataset.columns - [:geom]).map { |column| "nodes__#{column}".to_sym }
+          columns = (CitySDK::Node.dataset.columns - [:geom]).map { |column| "nodes__#{column}".to_sym }
           return self.select{columns}
         else
           self.select_append(Sequel.function(:collect_member_geometries, :members).as(:member_geometries))
@@ -280,7 +280,7 @@ module Sequel
       if params.has_key? 'lat' and params.has_key? 'lon'
         return self.where("ST_Intersects(ST_SetSRID(ST_Point(%s, %s), 4326),bbox)" % [params["lon"], params["lat"]] )
       elsif params.has_key? 'where'
-        loc = Node.where(:cdk_id => params['where']).first
+        loc = CitySDK::Node.where(:cdk_id => params['where']).first
         if(loc)
           return self.where("ST_Intersects('%s',bbox)" % loc.geom)
         end
@@ -314,7 +314,7 @@ module Sequel
     def geo_bounds(params)
       dataset = self
       if params.has_key? "within"
-        container = Node.where(:cdk_id => params[:within]).first
+        container = CitySDK::Node.where(:cdk_id => params[:within]).first
         if container
 
           # Find nodes contained by within node.

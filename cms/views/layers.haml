@@ -5,7 +5,7 @@
     %br
     Category:
     = layer_category_select
-    - if current_user.can_create_layer
+    - if current_user.create_layer?
       |
       %a(href='/layers/new') New layer
     %span.editlinks
