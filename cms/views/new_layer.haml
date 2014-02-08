@@ -1,0 +1,49 @@
+.info
+  .pageheader
+    %h1 New Layer
+  = haml :layer_errors, locals: { layer: layer }
+  %form#cl(name='input' method='post')
+    %input(type='hidden' name='category' value=@category)
+    .code
+      %label Name
+      - if @prefix
+        %span.flex= @prefix
+      %div
+        %span.flexinput
+          %input.layer{type: 'text',
+                       size: '100',
+                       name: 'name',
+                       value: layer.name}
+    .code
+      %label Organization
+      %input.layer{type: 'text',
+                   size: '100',
+                   name: 'organization',
+                   value: layer.organization}
+    .code
+      %label Category
+      %div
+        %span.flex= @categories
+        %span.flexinput
+          %input.layer{type: 'text',
+                       size: '100',
+                       name: 'category',
+                       value: layer.category}
+    .code
+      %label Description
+      %textarea(name='description')= layer.description
+    .code
+      %label Data sources
+      - layer.data_sources.each_with_index do |source, index|
+        %div
+          %input.layer{type: 'text',
+                       size: '100',
+                       name: "data_sources[#{ index }]",
+                       value: source}
+      %div
+        %input.layer{type: 'text',
+                     size: '100',
+                     name: 'data_sources_x'}
+    %input(type='hidden' name='prefixc' value=@prefix)
+    %input.submitb(type='submit' value='Save')
+

@@ -1,7 +1,5 @@
 /* "Simpliste" template. Renat Rafikov. http://cssr.ru/simpliste/ */
 
-@import url('reset.css');
-
 
 table {
 /*  border-collapse:collapse;*/
@@ -68,7 +66,7 @@ table.twotable {
 
 
 
-/* Columns 
+/* Columns
 -------
 .col_33 | .col_33 | .col_33
 .clearfix

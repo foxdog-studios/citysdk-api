@@ -1,0 +1,61 @@
+%h4 Layer- and Properties Mapping
+%span.codecomment
+  Map the layer and properties to meaningful linked data uri's.
+%div
+  %div(style='float:right')
+    %a(href='#' onclick='loadPrefixes()')
+      Manage prefixes
+  %hr(style='clear:both')
+  %table.proptable(title='Add rdf:type relation defining the objects this layer describes.')
+    %tr
+      %td.sel_lab type of object:
+      %td.sel_uri
+        %input#layer_type.layer{type: 'text',
+                                value: @lType,
+                                placeholder: 'URI (e.g., dbpedia, freebase)'}
+      %td.sel_sel
+  %hr
+  %table.proptable
+    %tr
+      %td.sel_lab Field:
+      %td.sel_sel
+        %span#ldmap
+      %td.sel_uri
+      %td.sel_4
+    %tr
+      %td.sel_lab Equivalent property:
+      %td.sel_sel= @epSelect
+      %td.sel_uri
+        %input#relation_ep.layer(type='text' placeholder='Optional URI')
+      %td.sel_4
+    %tr
+      %td.sel_lab Type:
+      %td.sel_sel= @ptypeSelect
+      %td.sel_uri
+        %input#relation_type.layer{type: 'text',
+                                   placeholder: 'Optional URI'}
+      %td#relationlang.sel_4(style="display: none")= @langSelect
+    %tr#relationunit(style='display: none;')
+      %td.sel_lab Unit:
+      %td.sel_sel
+      %td.sel_uri
+        %input#relation_unit.layer(type='text' placeholder='Unit')
+      %td.sel_4
+  #relationdesc
+    Property description
+    %span#pname
+    %textarea#relation_desc(rows='2' cols='50' name='relation_desc')
+  %input.submitb{type: 'submit',
+                 value:'Save',
+                 onclick: "saveLayerProperties(#{ layer.id }"}
+  %span#was_saved(style='display: none;')
+    %em Saved!
+
+:javascript
+  $(document).ready(function () {
+    $.eqProperties = #{ @eprops };
+    $.layerProperties = #{ @props };
+    $.selectedField = null;
+    selectFieldTags("#{ layer.name }", 'fields');
+  });
+

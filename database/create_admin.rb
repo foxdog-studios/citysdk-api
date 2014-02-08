@@ -37,6 +37,7 @@ end # def
 
 ADMIN_EMAIL = get_admin(:email)
 ADMIN_PASSWORD = get_admin(:password)
+ADMIN_ORGANIZATION = get_admin(:organization)
 ADMIN_DOMAINS = get_admin(:domains).split(',')
 
 def get_db(key)
@@ -47,6 +48,7 @@ DB_NAME = get_db(:name)
 DB_HOST = get_db(:host)
 DB_USER = get_db(:user)
 DB_PASSWORD = get_db(:pass)
+
 
 # ==============================================================================
 # = Database connection                                                        =
@@ -77,12 +79,16 @@ print 'Creating or updating admin user...'
 require 'sinatra-authentication'
 
 USER = User.set(
-  email:                 ADMIN_EMAIL,
-  password:              ADMIN_PASSWORD,
+  # Sinatra authentication attributes.
+  email: ADMIN_EMAIL,
+  password: ADMIN_PASSWORD,
   password_confirmation: ADMIN_PASSWORD,
   # Admin permission level
-  permission_level:      -1,
-  domains:               Sequel.pg_array(ADMIN_DOMAINS)
+  permission_level: -1,
+
+  # CitySDK attributes.
+  organization: ADMIN_ORGANIZATION,
+  domains: Sequel.pg_array(ADMIN_DOMAINS)
 )
 
 puts 'done'

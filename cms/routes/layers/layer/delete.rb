@@ -2,27 +2,12 @@
 
 module CitySDK
   class CMSApplication < Sinatra::Application
-    delete '/layer/:layer_id' do |l|
-      login_required
-      @layer = layer = Layer[l]
-
-      if layer.nil? || !current_user.can_delete_layer(layer)
-        redirect '/'
-      end
-
-      url = "/layer/#{@layer.name}"
-      par = []
-      params.each_key { par << "#{k}=#{params[k]}" }
-      url += "?" + par.join("&") if par.length > 0
-
-      # XXX: User of old API client.
-      api = CitySDK::API.new(@api_server)
-      api.authenticate(session[:e],session[:p]) do
-        api.delete(url)
-      end # do
-
-      get_layers
-      redirect "/"
+    delete '/layers/:layer_name/' do |layer_name|
+      layer = Layer.get_by_name(layer_name)
+      halt 404 if layer.nil?
+      halt 403 unless current_user.can_delete_layer(layer)
+      # TODO: Delete via DAL
+      redirect '/layers/'
     end # do
   end # class
 end # module

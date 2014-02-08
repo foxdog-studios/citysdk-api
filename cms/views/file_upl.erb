@@ -1,9 +1,0 @@
-<h4>File Upload<span class="codecomment">Upload a CSV, JSON or Shape (zipped) file. </span></h4>
-<div id='csvupl'>
-  <% @upl = "fileUpload(#{@layer.id},'#csvupl');" %>
-  <span class='flex'>one-off file upload:</span>
-  <span class='flexinput'>
-    <input name='file' type='file'/>
-    <input class='nostretch' type='button' value="upload" onclick="<%= @upl %>"/>&nbsp;&nbsp;&nbsp;
-  </span >
-</div>

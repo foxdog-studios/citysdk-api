@@ -27,6 +27,7 @@ config_applications=(
 )
 
 global_node_packages=(
+    bower
     underscore-cli
 )
 
@@ -37,6 +38,7 @@ pacman_packages=(
     memcached
     nodejs
     python2-virtualenv
+    wget
     yaourt
     zsh
 )

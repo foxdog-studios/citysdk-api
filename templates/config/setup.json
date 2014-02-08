@@ -6,6 +6,10 @@
     "organization": "",
     "domains": ""
   },
+  "database_admin": {
+    "username": "",
+    "password": ""
+  },
   "osm2pgsql": {
     "url": "",
     "file_name": ""

@@ -1,0 +1,31 @@
+.code
+  %a.layerheader(href="/layers/#{ layer.name }/")
+    = layer.name
+  - if current_user.can_update_layer(layer)
+    %span.editlinks
+      %a(href="/layers/#{ layer.name }/data") Data
+      |
+      %a(href="/layers/#{ layer.name }/") Edit
+      |
+      %a(href='#' onclick="deleteLayer('#{ layer.name }');")
+        Delete
+  %table.twotable
+    %tr
+      %td.left Category:
+      %td.right= layer.category
+    %tr
+      %td.left Description:
+      %td.right= layer.description
+    %tr
+      %td.left Organization:
+      %td.right= layer.organization
+    %tr
+      %td.left Maintainer:
+      %td.right= layer.owner.email
+    %tr
+      %td.left Sources:
+      %td.right
+        - layer.data_sources.each do |data_source|
+          = data_source
+          %br
+

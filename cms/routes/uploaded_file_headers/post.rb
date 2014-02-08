@@ -20,7 +20,6 @@ module CitySDK
         parameters_json = parameters.to_json
         import_file_command = "ruby utils/import_file.rb '#{parameters_json}'"
         import_log_command = "#{import_file_command} >> #{import_log_path} &"
-        puts "RUNNING IMPORT COMMAND: #{import_log_command}"
         system import_log_command
 
         parameters.delete(:email)
@@ -29,7 +28,6 @@ module CitySDK
         parameters.delete(:originalfile)
 
         api = CitySDK::API.new(@api_server)
-        puts JSON.pretty_generate(parameters)
 
         api.authenticate(session[:e], session[:p]) do
           d = { :data => Base64.encode64(parameters.to_json) }

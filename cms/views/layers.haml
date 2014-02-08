@@ -1,0 +1,18 @@
+.info
+  %div.pageheader
+    %h1
+      %a(href='/layers/') Layers
+    %br
+    Category:
+    = layer_category_select
+    - if current_user.can_create_layer
+      |
+      %a(href='/layers/new') New layer
+    %span.editlinks
+      - if logged_in?
+        %a(href='/logout') Sign out
+      - else
+        %a(href='/login') Sign in
+  - layers.each do |layer|
+    = haml :layer, locals: { layer: layer }
+

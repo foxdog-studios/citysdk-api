@@ -19,21 +19,32 @@ def main(argv = ARGV)
   args = Docopt.docopt(DOCOPT, argv: argv)
   server_config = load_json(args.fetch('SERVER_CONFIG'))
   setup_config = load_json(args.fetch('SETUP_CONFIG'))
-  get = lambda { |key| server_config.fetch("db_#{ key }") }
+  admin_email = setup_config.fetch('admin').fetch('email')
 
   # Connect to the database
   print 'Connecting to database ...'
-  conn = PG::Connection.new(
-    host:     get.call(:host),
-    dbname:   get.call(:name),
-    user:     get.call(:user),
-    password: get.call(:pass)
-  )
-  puts ' connected'
+  dba = lambda { |key| setup_config.fetch('database_admin').fetch(key.to_s) }
+  server = lambda { |key| server_config.fetch("db_#{ key }") }
 
+  connection_args = {
+    host:     server.call(:host),
+    dbname:   server.call(:name),
+    user:     dba.call(:username),
+    password: dba.call(:password)
+  }
+
+  PG::Connection.new(connection_args) do |conn|
+    puts ' connected'
+    conn.transaction { create_required_layers(conn, admin_email) }
+  end # do
+
+  puts 'All done, goodbye!'
+  0
+end # def
+
+def create_required_layers(conn, admin_email)
   # Get the ID of the admin user.
   print "Finding the admin user's ID ..."
-  admin_email = setup_config.fetch('admin').fetch('email')
   admin_id = find_user_id(conn, admin_email)
   puts ' found'
 
@@ -49,11 +60,10 @@ def main(argv = ARGV)
   insert_admr_layer(conn, admin_id)
   puts ' inserted'
 
-  puts 'All done, goodbye!'
-  0
-ensure
-  conn.finish unless conn.nil?
-end # def
+  print 'Resetting layer ID sequence ...'
+  reset_layer_id_seq(conn)
+  puts ' reset'
+end # end
 
 def find_user_id(conn, email)
   sql = 'SELECT id FROM users WHERE email = $1::text;'
@@ -81,14 +91,14 @@ end # def
 def insert_gtfs_layer(conn, owner_id)
   insert_layer(
     conn,
-    1,                                # id
-    'gtfs',                           # name
-    owner_id,                         # owner_id
-    'CitySDK',                        # organization
-    'mobility.public_transport',      # category
-    'Public transport',               # title
-    'Public transport information.',  # description
-    []                                # data_sources
+    1,                               # id
+    'gtfs',                          # name
+    owner_id,                        # owner_id
+    'CitySDK',                       # organization
+    'mobility.public_transport',     # category
+    'Public transport',              # title
+    'Public transport information.', # description
+    []                               # data_sources
   )
 end # def
 
@@ -159,6 +169,15 @@ def insert_layer(
     data_sources
   ])
   result[0].fetch('id')
+ensure
+  result.clear unless result.nil?
+end # def
+
+def reset_layer_id_seq(conn)
+  result = conn.exec('SELECT max(id) + 1 AS restart FROM layers;')
+  restart = result[0].fetch('restart')
+  sql = "ALTER SEQUENCE layers_id_seq RESTART WITH #{ restart };"
+  conn.exec(sql)
 ensure
   result.clear unless result.nil?
 end # def

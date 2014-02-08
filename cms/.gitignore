@@ -1,2 +1,6 @@
 /.bundle/
 /config.json
+/public/js/lib/vendor/
+/public/css/vendor/
+/bower_components/
+/node_modules/

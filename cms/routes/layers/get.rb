@@ -2,9 +2,8 @@
 
 module CitySDK
   class CMSApplication < Sinatra::Application
-    get '/layers' do
-      get_layers
-      erb :layers, :layout => @nolayout ? false : true
+    get '/layers/' do
+      render_layers_view(params['category'])
     end # do
   end # class
 end # module

@@ -28,7 +28,8 @@ CREATE TABLE IF NOT EXISTS users (
     created_at       timestamp without time zone,
     permission_level integer DEFAULT 1,
 
-    -- These columns are specific to CitySDK.
+    -- These columns are specific to the CitySDK.
+    organization     text NOT NULL,
     domains          text[] NOT NULL DEFAULT '{}'::text[]
 );
 

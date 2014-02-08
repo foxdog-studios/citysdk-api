@@ -2,32 +2,27 @@
 
 module CitySDK
   class CMSApplication < Sinatra::Application
-    get '/layer/:layer_id/data' do |layer_id|
+    get '/layers/:layer_name/data' do |layer_name|
       login_required
 
-      @layer = Layer[layer_id]
-      if @layer.nil? || current_user.id != @layer.owner_id || !current_user.admin?
+      layer = Layer.get_by_name(layer_name)
+      if layer.nil? || !current_user.can_retrieve_layer(layer)
         halt 401, 'Not authorized'
       end # if
 
-      @period = @layer.period_select()
       @props = {}
 
-      LayerProperty.where(:layer_id => layer_id).each do |property|
+      LayerProperty.where(layer_id: layer.id).each do |property|
         @props[property.key] = property.serialize
       end # do
 
       @langSelect  = Layer.languageSelect
       @ptypeSelect = Layer.propertyTypeSelect
-      @lType = @layer.rdf_type_uri
-      @epSelect,@eprops = Layer.epSelect
+      @lType = layer.rdf_type_uri
+      @epSelect, @eprops = Layer.epSelect
       @props = @props.to_json
 
-      if params.fetch(:nolayout)
-        erb :layer_data, layout: false
-      else
-        erb :layer_data
-      end # else
+      haml :layer_data, locals: { layer: layer }
     end # do
   end # class
 end # module

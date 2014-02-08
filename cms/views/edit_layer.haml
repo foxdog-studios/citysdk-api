@@ -1,0 +1,49 @@
+!!! 5
+.info
+  = haml :layer_errors, locals: { layer: layer }
+  .pageheader
+    %h1= "Edit #{ layer.name } layer"
+  %form{name:   'input',
+        action: "/layers/#{ layer.name }/",
+        method: 'post'}
+    .code
+      %h4 Organization
+      %div
+        %input.layer{type: 'text',
+                     size: '100',
+                     name: 'organization',
+                     value: layer.organization}
+    .code
+      %h4 Category
+      %div
+        %span.flexinput
+        %input.layer{type: 'text',
+                     size: '100',
+                     name: 'category',
+                     value: layer.category}
+    .code
+      %h4 Description
+      %textarea{name: 'description'}= layer.description
+    .code
+      %h4 Sample URL
+      %span.codecomment
+        Enter the <b>path</b> of a sample of data to display in the viewer.
+      %div
+        %input.layer{type: 'text',
+                     size: '100',
+                     name: 'sample_url',
+                     value: layer.sample_url}
+    .code
+      %h4 Data Sources
+      - layer.data_sources.each_with_index do |source, index|
+        %div
+          %input.layer{type:  'text',
+                       size:  '100',
+                       name:  "data_sources[#{ index }]",
+                       value: source}
+      %div
+        %input.layer{type: 'text',
+                     size: '100',
+                     name: 'data_sources_x'}
+    %input.submit(type='submit' value='Save')
+

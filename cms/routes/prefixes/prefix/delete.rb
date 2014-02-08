@@ -6,7 +6,7 @@ module CitySDK
       login_required
       LDPrefix.where(owner_id: current_user.id, prefix: p).delete
       @prefixes = LDPrefix.order(:name).all
-      erb :prefixz, :layout => false
+      haml :prefixz, :layout => false
     end # do
   end # class
 end # module

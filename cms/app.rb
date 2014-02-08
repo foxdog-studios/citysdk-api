@@ -29,7 +29,7 @@ module CitySDK
       set :session_expire, 60 * 60 * 24
       set :session_fail, '/login'
       set :session_secret, CONFIG.fetch(:session_secret)
-      set :template_engine, :erb
+      set :template_engine, :haml
       set :views, File.join(root_path, 'views')
       use Rack::MethodOverride
       register Sinatra::Session

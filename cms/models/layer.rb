@@ -2,8 +2,42 @@
 
 module CitySDK
   class Layer < Sequel::Model
-    many_to_one :owner, class: SequelUser
     plugin :validation_helpers
+
+    many_to_one :owner, class: SequelUser
+
+    def validate
+      super
+      validates_presence [
+        :name,
+        :description,
+        :organization,
+        :category
+      ]
+
+      validates_unique :name
+      validates_format /^\w+(\.\w+)*$/, :name
+      validates_format /^\w+\.\w+$/, :category
+
+      if (import_config.nil? || import_config.empty?) && !import_url.nil?
+        errors.add(
+          :import_url,
+          'Cannot be set without config. Upload file once, first.'
+        )
+      end # if
+    end # def
+
+    def self.get_by_name(name)
+      where(name: name).first
+    end # def
+
+    def self.get_layers_in_category(category)
+      where(Sequel.like(:category, "#{ category }%"))
+    end # def
+  end # class
+
+  # Everything Peter hasn't looked at yet.
+  class Layer < Sequel::Model
 
     @@eq_properties = {
      'rdfs:description' => 'string',
@@ -14,17 +48,6 @@ module CitySDK
      'dc:creator' => 'string',
      'dc:identifier' => 'string'
     }
-
-    def validate
-      super
-      validates_presence [:name, :description, :organization, :category]
-      validates_unique :name
-      validates_format /^\w+(\.\w+)*$/, :name
-      validates_format /^\w+\.\w+$/, :category
-      if (import_config.nil? or import_config=='') and import_url != nil
-        errors.add(:import_url,"Cannot be set without config. Upload file once, first.")
-      end
-    end
 
     def fieldDefsSelect() end
 
@@ -64,42 +87,6 @@ module CitySDK
       end
       s += '</select>'
     end
-
-    def self.category_select(sel=false, all=false)
-      s= all ?
-        "<select name='catprefix' onchange='layerSelect(this)'> " :
-        "<select name='catprefix'> "
-
-      s += "<option #{sel=='all' ? 'selected="selected"' : ''}>all</option>" if all
-      sel = 'administrative' if sel==false
-
-      Category.order(:name).all.each do |c|
-        s += "<option #{c.name==sel ? 'selected="selected"' : ''}>#{c.name}</option>"
-      end
-      s += "</select>"
-      s
-    end
-
-    def period_select()
-      period  = "<select name='period'> "
-      ['never','monthly','weekly','daily','hourly'].each do |p|
-        if import_period == p
-          period += "<option selected='selected'>#{p}</option>"
-        else
-          period += "<option>#{p}</option>"
-        end
-      end
-      period += "</select>"
-      period
-    end # def
-
-    def cat_select
-      self.category = '.' if self.category.nil?
-      pref = self.category.split('.')[0]
-      categories = Layer.category_select(pref)
-      self.category = self.category.split('.')[1]
-      return categories
-    end # def
 
     def self.selectTag
       r = "<select>"

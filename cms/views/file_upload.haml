@@ -1,0 +1,10 @@
+%h4 File Upload
+%span.codecomment Upload a CSV, JSON or Shape (zipped) file.
+#csvupl
+  %span.flex One-off file upload:
+  %span.flexinput
+    %input(name='file' type='file')
+    %input.nostretch{type: 'button',
+                     value: 'upload',
+                     onclick: "fileUpload(#{ layer.id },'#csvupl');"}
+

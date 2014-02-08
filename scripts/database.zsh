@@ -156,6 +156,7 @@ function create_admin()
 
 function create_required_layers()
 {
+    # Requires administrative rights to reset the layer ID sequence.
     local config=$CITYSDK_CONFIG_DIR
     ruby $db_dir/create_required_layers.rb \
          $config/server.json               \
