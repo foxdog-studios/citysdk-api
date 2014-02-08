@@ -1,6 +1,5 @@
 # encoding: utf-8
 
-require_relative 'category'
 require_relative 'layer'
 require_relative 'layer_property'
 require_relative 'ld_prefix'

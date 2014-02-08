@@ -1,6 +1,6 @@
 class CitySDKAPI < Sinatra::Application
   get '/layers/:name/' do |name|
-    layer = Layer[name: name]
+    layer = CitySDK::Layer[name: name]
     if layer.nil?
       halt 404, { error: "No layer named #{ name.inspect } exists." }.to_json
     end # if

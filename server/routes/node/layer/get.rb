@@ -8,7 +8,7 @@ class CitySDKAPI < Sinatra::Application
       halt 404, { error: "No node with ID '#{ cdk_id }'." }.to_json
     end # if
 
-    layer = Layer.where(name: layer_name).first
+    layer = CitySDK::Layer.where(name: layer_name).first
     if layer.nil?
       halt 404, { error: "No layer named '#{ layer_name }'."}.to_json
     end # if

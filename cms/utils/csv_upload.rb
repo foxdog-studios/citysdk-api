@@ -48,7 +48,7 @@ class CMSApplication < Sinatra::Application
 
     filename = File.join(tmp_file_dir, File.basename(file.path))
     File.open(filename, 'w') do |tmp_file|
-      tmp_file.write(file)
+      tmp_file.write(file.read())
     end
 
     @erb_uploaded_file_path

@@ -4,6 +4,7 @@ require 'json'
 require 'sinatra'
 require 'sinatra/sequel'
 
+
 require_relative 'config/environment'
 
 
@@ -24,8 +25,9 @@ class CitySDKAPI < Sinatra::Application
 end # class
 
 require_relative 'utils/init'
-require_relative 'models/init'
 require_relative 'helpers/init'
 require_relative 'routes/init'
 require_relative 'hooks/init'
+
+require 'citysdkserverdbutils'
 

@@ -1,7 +1,7 @@
 class CitySDKAPI < Sinatra::Application
   delete '/:cdk_id/:layer' do |cdk_id, layer|
     login_required
-    layer = Layer.where(name: layer, owner_id: current_user.id).first
+    layer = CitySDK::Layer.where(name: layer, owner_id: current_user.id).first
     if layer.nil?
       halt 422, { error: "Invalid layer spec: #{layer}" }.to_json
     end # if

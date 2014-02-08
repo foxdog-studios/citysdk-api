@@ -45,6 +45,9 @@ module CitySDK
       # Load database connection extensions.
       app.database.extension(:pg_array)
       app.database.extension(:pg_range)
+      app.database.extension(:pg_hstore)
+
+      Sequel.extension(:pg_array_ops)
 
       # Load Sinatra Authentication
       ::DB = app.database
