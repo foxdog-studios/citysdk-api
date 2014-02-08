@@ -2,7 +2,7 @@ class CitySDKAPI < Sinatra::Application
   get '/layers/' do
     params['count'] = ''
 
-    pgn = Layer.dataset
+    pgn = CitySDK::Layer.dataset
       .name_search(params)
       .category_search(params)
       .layer_geosearch(params)

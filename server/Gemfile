@@ -22,6 +22,8 @@ gem 'stringex'
 gem 'yajl-ruby'
 gem 'httpauth'
 
+gem 'citysdkserverdbutils', path: '../../citysdk-server-db-utils'
+
 group :development do
   gem 'capistrano', '~>2'
   gem 'capistrano-ext'

@@ -10,14 +10,15 @@ module CitySDK
 
       @layer = Layer[layer_id]
       p = params['0'] || params.fetch('file')
-      @original_file = p.fetch(:filename)
-      if p.nil? || p[:tempfile].nil?
+      original_file_name = p.fetch(:filename)
+      temp_file = p[:tempfile]
+      if p.nil? || temp_file.nil?
         return
       end
 
       @layerSelect = Layer.selectTag()
-      tmp_file_dir = CONFIG.get('cms_tmp_file_dir')
-      parseUploadedFile(p[:tempfile], @layer.name,tmp_file_dir)
+      tmp_file_dir = CONFIG.fetch(:cms_tmp_file_dir)
+      parseUploadedFile(temp_file, @layer.name, tmp_file_dir, original_file_name)
     end # do
   end # class
 end # module

@@ -1,45 +1,63 @@
 # encoding: utf-8
 
+require 'citysdkserverdbutils'
+
 module CitySDK
   class CMSApplication < Sinatra::Application
     post '/uploaded_file_headers' do
-      if params['add']
-        parameters = JSON.parse(Base64.decode64(params['parameters']),
-                                {:symbolize_names => true})
-        params.delete('parameters')
-        parameters = parameters.merge(params)
+      params.each do |k,v|
+        params.delete(k) if v =~ /^<no\s+/
+      end # do
 
-        parameters.each do |k,v|
-          parameters.delete(k) if v =~ /^<no\s+/
-        end # do
-        parameters[:host] = @api_server
-        parameters[:email] = session[:e]
-        parameters[:passw] = session[:p]
+      layer_name = params[:layer_name]
+      layer = Layer.where(name: layer_name, owner_id: current_user.id).first
 
-        import_log_path = $config['cms_import_log_path']
-        parameters_json = parameters.to_json
-        import_file_command = "ruby utils/import_file.rb '#{parameters_json}'"
-        import_log_command = "#{import_file_command} >> #{import_log_path} &"
-        system import_log_command
+      builder = CitySDK::NodeBuilder.new
 
-        parameters.delete(:email)
-        parameters.delete(:passw)
-        parameters.delete(:file_path)
-        parameters.delete(:originalfile)
+      file_name = params[:uploaded_file_path]
+      ext = File.extname(params[:original_file_name])
 
-        api = CitySDK::API.new(@api_server)
-
-        api.authenticate(session[:e], session[:p]) do
-          d = { :data => Base64.encode64(parameters.to_json) }
-          api.put("/layer/#{parameters[:layername]}/config",d)
-        end # do
-
-        redirect "/get_layer_stats/#{parameters[:layername]}"
+      case ext
+      when '.csv'
+        builder.load_data_set_from_csv!(file_name)
+      when '.json'
+        builder.load_data_set_from_json!(file_name)
+        builder.set_geometry_from_lat_lon!('lat', 'lon')
+      when '.zip'
+        builder.load_data_set_from_zip!(file_name)
       else
-        a = matchCSV(params)
-        a = JSON.pretty_generate(a)
-        return [200, {} ,"<hr/><pre>#{ a }</pre>"]
-      end # else
+        halt 422, { error: "Unknown file extension: #{ext}" }.to_json
+      end
+
+      begin
+        builder.set_geometry_from_lat_lon!(params[:x], params[:y])
+      rescue KeyError => e
+        halt 422, { error: 'Bad key for x or y' }.to_json
+      end
+      builder.set_node_id_from_data_field!(params[:unique_id])
+      builder.set_node_name_from_data_field!(params[:name])
+
+      nodes = builder.build
+
+      # XXX: Hack to un-sym the names in the hash for the bulk import
+      # function.
+      json = JSON.parse({
+        'create' => {
+          'params' => {
+            'create_type' => 'create',
+            'node_type' => 'ptstop'
+          }
+        },
+        'nodes' => nodes
+      }.to_json)
+
+      begin
+        CitySDKServerDBUtils.bulk_insert_nodes(json, layer)
+      rescue ArgumentError => e
+        halt 422, { error: e.message }.to_json
+      end
+
+      redirect "/get_layer_stats/#{params[:layer_name]}"
     end # do
   end # class
 end # module

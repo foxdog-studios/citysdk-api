@@ -1,7 +1,7 @@
 class CitySDKAPI < Sinatra::Application
   put '/layers/:layer/config' do |name|
     login_required
-    layer = Layer.where(name: name, owner_id: current_user.id).first
+    layer = CitySDK::Layer.where(name: name, owner_id: current_user.id).first
     if layer.nil?
       halt 422, {
         error: "Either the layer '#{name}' does not exist or you are not the " \

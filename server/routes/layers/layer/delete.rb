@@ -1,7 +1,7 @@
 class CitySDKAPI < Sinatra::Application
   delete '/layers/:layer' do |layer|
     login_required
-    layer = Layer.where(name: layer, owner_id: current_user.id).first
+    layer = CitySDK::Layer.where(name: layer, owner_id: current_user.id).first
     if layer.nil?
       halt 422, { error: "Invalid layer spec: #{layer}" }.to_json
     end # if
@@ -21,10 +21,11 @@ class CitySDKAPI < Sinatra::Application
     Node.where(:layer_id => layer_id).update(:layer_id => -1)
 
     if params['delete_layer'] == 'true'
-      Layer.where(:id => layer_id).delete
-      Layer.getLayerHashes
+      CitySDK::Layer.where(:id => layer_id).delete
+      CitySDK::Layer.getLayerHashes
     else
-      Layer.where(:id => layer_id).update(:import_status => 'all cleared')
+      CitySDK::Layer.where(:id => layer_id).update(
+        :import_status => 'all cleared')
     end # else
 
     [200, { status: 'success' }.to_json]

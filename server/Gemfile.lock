@@ -1,3 +1,10 @@
+PATH
+  remote: ../../citysdk-server-db-utils
+  specs:
+    citysdkserverdbutils (0.0.1)
+      rgeo-geojson
+      sequel
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -106,6 +113,7 @@ DEPENDENCIES
   base62
   capistrano (~> 2)
   capistrano-ext
+  citysdkserverdbutils!
   dalli
   docopt
   faraday

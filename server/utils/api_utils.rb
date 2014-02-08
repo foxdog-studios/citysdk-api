@@ -63,44 +63,7 @@ class CitySDKAPI < Sinatra::Application
     end
   end
 
-  ##############################################################################
-  # cdk_id generation                                                          #
-  ##############################################################################
 
-  # Create alphanumeric hashes, 22 characters long
-  # base62 = numbers + lower case + upper case = 10 + 26 + 26 = 62
-  # Example hash: 22pOqosrbX0KF6zCQiPj49
-  def self.md5_base62(s)
-    Digest::MD5.hexdigest(s).to_i(16).base62_encode
-  end
-
-  def self.generate_cdk_id_from_text(layer, text)
-    # Normalize text:
-    #  downcase, strip,
-    #  normalize (é = e, ü = u),
-    #  remove ', ", `,
-    #  replace sequences of non-word characters by '.',
-    #  Remove leading and trailing '.'
-
-    n = text.to_s.downcase.strip
-      .gsub(/['"`]/, '')
-      .gsub(/\W+/, '.')
-      .gsub(/((\.$)|(^\.))/, '')
-
-    [layer, n].join('.')
-  end
-
-  def self.generate_cdk_id_with_hash(layer, id)
-    return self.md5_base62(layer + "::" + id.to_s)
-  end
-
-  def self.generate_route_cdk_id(cdk_ids)
-    if cdk_ids.nil? or cdk_ids.length == 0
-      return nil
-    else
-      return self.md5_base62(cdk_ids.join)
-    end
-  end
 
   ##############################################################################
   # API request utilities                                                      #
