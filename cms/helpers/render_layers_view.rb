@@ -10,6 +10,7 @@ module CitySDK
           else
             Layer.get_layers_in_category(category)
           end # end
+        layers = layers.order(:name)
         haml :layers, locals: { layers: layers }
       end # def
     end # do
