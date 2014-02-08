@@ -1,70 +1,30 @@
 .info
   .pageheader
-    %span.layeredit
-      Layer:
-      = layer.name
-    - if current_user.update_layer?(layer)
-      %span.editlinks
-
+    %h1
+      %a(href="/layers/") Layers
+      &#8594;
+      %a(href="/layers/#{ layer.name }/")= layer.name
+      &#8594; Data
   .code
-    %h4 Statistics
-    %span.codecomment Information on current data in the layer.
-    #stats
-      %img(src='/css/img/progress.gif')
-
-  #mapping.code
-    = haml :mapping, locals: { layer: layer }
-
-  #prefix.code(style='display:none')
-
+    %h2 Statistics
+    #stats= render_layer_stats(layer)
   #fupl.code
     = haml :file_upload, locals: { layer: layer }
-
-  - if layer.import_config
-    .code
-      = haml :layer_errors
-      %h4 Periodic update
-      %span.codecomment
-        Download data periodically. Configuration above.
-      %form#pu(action="/layers/#{ layer.name }/periodic" method='post')
-        #csvupl2
-          %span.flex
-            = import_period_select(layer.import_period)
-            update url:
-          %span.flexinput
-            %input#update_url.layer{type: 'text',
-                                    name: 'update_url',
-                                    value: layer.import_url,
-                                    placeholder: 'URL of data set'}
-            %input.uurlb.submitb(type='submit' value='Save')
-
   .code
-    %h4 Webservice
-    %span.codecomment
-      Sends the layer data to a web service upon request.
-      Should return the (enhanced) data object.
-    %form#ws(action="/layers/#{ layer.name }/webservice" method='post')
+    %h2 Webservice
+    %p
+      Sends the layer data to a web service upon request. Should return
+      the (enhanced) data object.
+    %form(action="/layers/#{ layer.name }/webservice" method='post')
       .webservice
-        %span.flex url:
-        %span.flexinput
-          %input#wsurl.layer{type: 'text',
-                             name: 'wsurl',
-                             value: layer.webservice}
-      .webservice(style='padding-top: 5px')
-        %span.flex Cache for (seconds):
-        %span.flexinput
-          %input.layer{type: 'text',
-                       name: 'update_rate',
-                       value: layer.update_rate}
+        %label URL:
+        %input#wsurl.layer{type: 'text',
+                           name: 'wsurl',
+                           value: layer.webservice}
+      .webservice
+        %label Cache for (seconds):
+        %input.layer{type: 'text',
+                     name: 'update_rate',
+                     value: layer.update_rate}
       %input.submitb(type='submit' value='Save')
-
-:javascript
-  $(function () {
-    $('#stats').load('/layers/#{ layer.name }/stats');
-    $('#ws').submit(function () {
-      $(this).ajaxSubmit();
-      return false;
-    });
-    $.getScript('/js/units.js');
-  });
 

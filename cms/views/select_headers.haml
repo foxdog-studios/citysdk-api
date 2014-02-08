@@ -1,0 +1,42 @@
+#csvconf
+  %form#csvconf_f{name: 'input',
+                  action: "/layers/#{ layer.name }/upload",
+                  method: 'post'}
+    %input(type='hidden' name='uploaded_file_path' value=uploaded_file_path)
+    %input(type='hidden' name='original_file_name' value=original_file_name)
+
+    %div
+      File:
+      = original_file_name
+
+    %csvconfout
+      %table
+        %tr
+          %td Name*:
+          %td= @name
+        %tr
+          %td ID field*:
+          %td= @unique_id
+        - if @sel_x
+          %tr
+            %td.tdlabel Latitude / Y:
+            %td= @sel_y
+          %tr
+            %td.tdlabel Longitude / X:
+            %td= @sel_x
+          %tr
+            %td.tdlabel
+              %a(href='http://www.gaia-gis.it/gaia-sins/spatialite-cookbook/html/srid.html')
+                SRID
+              \:
+            %td
+              %input(type='text' name='srid' value=@srid)
+        %tr
+          %td Postcode:
+          %td= @postcode
+        %tr
+          %td House number:
+          %td= @house_nr
+      %input.submitb(type='submit' name='import' value='Import')
+      %p *required fields
+

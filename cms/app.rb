@@ -1,11 +1,11 @@
 # encoding: utf-8
 
+require 'base64'
 require 'json'
 
 require 'sinatra'
 require 'sinatra/session'
 require 'sinatra/sequel'
-
 
 module CitySDK
   class CMSApplication < ::Sinatra::Application
@@ -56,7 +56,8 @@ module CitySDK
   end # class
 end # module
 
-
+require 'citysdk'
+require 'citysdk/client'
 require_relative 'utils/init'
 require_relative 'models/init'
 require_relative 'helpers/init'
