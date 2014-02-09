@@ -1,7 +1,8 @@
 PATH
-  remote: ../../citysdk-server-db-utils
+  remote: ../../citysdk
   specs:
-    citysdkserverdbutils (0.0.1)
+    citysdk (0.0.1)
+      faraday
       rgeo-geojson
       sequel
 
@@ -113,7 +114,7 @@ DEPENDENCIES
   base62
   capistrano (~> 2)
   capistrano-ext
-  citysdkserverdbutils!
+  citysdk!
   dalli
   docopt
   faraday
