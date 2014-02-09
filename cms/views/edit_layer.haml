@@ -35,12 +35,13 @@
                      value: layer.sample_url}
     .code
       %h4 Data Sources
-      - layer.data_sources.each_with_index do |source, index|
-        %div
-          %input.layer{type:  'text',
-                       size:  '100',
-                       name:  "data_sources[#{ index }]",
-                       value: source}
+      - if layer.data_sources
+        - layer.data_sources.each_with_index do |source, index|
+          %div
+            %input.layer{type:  'text',
+                         size:  '100',
+                         name:  "data_sources[#{ index }]",
+                         value: source}
       %div
         %input.layer{type: 'text',
                      size: '100',

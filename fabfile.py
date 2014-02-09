@@ -949,6 +949,10 @@ def deploy():
     for app in env.apps.itervalues():
         cap(app, 'deploy')
 
+@task
+def deploy_cms():
+    cap(env.app_cms, 'deploy')
+
 
 # =============================================================================
 # = Non-setup tasks                                                           =
