@@ -160,35 +160,36 @@ def setup(start=1, end=None):
         install_rvm_requirements,       #  8 |
         install_ruby,                   #  9 |
         create_gemset,                  # 10 |
-        ensure_osm2pgsql_source,        # 11 | Build osm2psql
-        configure_osm2pgsql,            # 12 |
-        compile_osm2pgsql,              # 13 |
-        install_osm2pgsql,              # 14 |
-        ensure_superuser,               # 15 | Database (part 1)
-        ensure_database,                # 16 |
-        ensure_role,                    # 17 |
-        initialize_database,            # 18 |
-        download_osm_data,              # 19 | OSM (part 1)
-        import_osm_data,                # 20 |
-        grant_permissions,              # 21 | Database (part 2)
-        setup_admin_ruby_env,           # 22 |
-        ensure_citysdk_admin,           # 23 |
-        create_required_layers,         # 24 |
-        create_osm_nodes,               # 25 | OSM (part 2)
-        modify_osm_nodes,               # 26 |
-        update_modalities,              # 27 |
-        copy_ssl_files,                 # 28 | Nginx
-        configure_nginx,                # 29 |
-        configure_default_nginx_server, # 30 |
-        configure_nginx_servers,        # 31 |
-        ensure_deploy_user,             # 32 | Deploy user
-        write_deploy_scripts,           # 33 | Deploy directories
-        make_deploy_directories,        # 34 |
-        setup_deploy_directories,       # 35 |
-        check_deploy_directories,       # 36 |
-        copy_config,                    # 37 | Deploy
-        deploy,                         # 38 |
-        restart_nginx,                  # 39 |
+        install_bundler,                # 11 |
+        ensure_osm2pgsql_source,        # 12 | Build osm2psql
+        configure_osm2pgsql,            # 13 |
+        compile_osm2pgsql,              # 14 |
+        install_osm2pgsql,              # 15 |
+        ensure_superuser,               # 16 | Database (part 1)
+        ensure_database,                # 17 |
+        ensure_role,                    # 18 |
+        initialize_database,            # 19 |
+        download_osm_data,              # 20 | OSM (part 1)
+        import_osm_data,                # 21 |
+        grant_permissions,              # 22 | Database (part 2)
+        setup_admin_ruby_env,           # 23 |
+        ensure_citysdk_admin,           # 24 |
+        create_required_layers,         # 25 |
+        create_osm_nodes,               # 26 | OSM (part 2)
+        modify_osm_nodes,               # 27 |
+        update_modalities,              # 28 |
+        copy_ssl_files,                 # 29 | Nginx
+        configure_nginx,                # 30 |
+        configure_default_nginx_server, # 31 |
+        configure_nginx_servers,        # 32 |
+        ensure_deploy_user,             # 33 | Deploy user
+        write_deploy_scripts,           # 34 | Deploy directories
+        make_deploy_directories,        # 35 |
+        setup_deploy_directories,       # 36 |
+        check_deploy_directories,       # 37 |
+        copy_config,                    # 38 | Deploy
+        deploy_all,                     # 39 |
+        restart_nginx,                  # 40 |
     ]
 
     start = int(start) - 1
@@ -331,6 +332,11 @@ def create_gemset():
         quote(env.ruby_version),
         quote(env.ruby_gemset),
     ))
+
+
+@task
+def install_bundler():
+    return rvmsudo('gem install bundler')
 
 
 # =============================================================================
@@ -934,9 +940,9 @@ def copy_config():
 
 
 @task
-def deploy():
-    for app in env.apps.itervalues():
-        cap(app, 'deploy')
+def deploy_all():
+    return map(deploy, env.apps.itervalues())
+
 
 # =============================================================================
 # = Non-setup tasks                                                           =
@@ -981,6 +987,16 @@ def reload_nginx():
 @task
 def restart_nginx():
     return sudo('service nginx restart')
+
+
+@task
+def start_nginx():
+    return sudo('service nginx start')
+
+
+@task
+def stop_nginx():
+    return sudo('service nginx stop')
 
 
 # =============================================================================
@@ -1046,6 +1062,7 @@ def apt_get(apt_get_command):
     command_template = \
             'apt-get --assume-yes --no-install-recommends --quiet {}'
     return sudo(command_template.format(apt_get_command.strip()))
+
 
 def add_apt_repository(add_apt_repository_command):
     command_template = 'add-apt-repository --yes {}'
