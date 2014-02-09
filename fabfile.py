@@ -15,6 +15,7 @@ import subprocess
 from fabric.api import (
     cd,
     env,
+    execute,
     hide,
     local,
     put,
@@ -149,46 +150,45 @@ if env.host_string is None:
 @task(default=True)
 def setup(start=1, end=None):
     tasks = [
-        install_curl,                   # 1  | System packages
-        add_repositories,               # 2  |
-        update_package_lists,           # 3  |
-        install_packages,               # 4  |
-        upgrade_distribution,           # 5  |
-        remove_unused_packages,         # 6  |
-        install_nodejs,                 # 7  | nodejs
-        install_rvm,                    # 8  | RVM
-        install_rvm_requirements,       # 9  |
-        install_ruby,                   # 10 |
-        create_gemset,                  # 11 |
-        ensure_osm2pgsql_source,        # 12 | Build osm2psql
-        configure_osm2pgsql,            # 13 |
-        compile_osm2pgsql,              # 14 |
-        install_osm2pgsql,              # 15 |
-        ensure_superuser,               # 16 | Database (part 1)
-        ensure_database,                # 17 |
-        ensure_role,                    # 18 |
-        initialize_database,            # 19 |
-        download_osm_data,              # 20 | OSM (part 1)
-        import_osm_data,                # 21 |
-        grant_permissions,              # 22 | Database (part 2)
-        setup_admin_ruby_env,           # 23 |
-        ensure_citysdk_admin,           # 24 |
-        create_required_layers,         # 25 |
-        create_osm_nodes,               # 26 | OSM (part 2)
-        modify_osm_nodes,               # 27 |
-        update_modalities,              # 28 |
-        copy_ssl_files,                 # 29 | Nginx
-        configure_nginx,                # 30 |
-        configure_default_nginx_server, # 31 |
-        configure_nginx_servers,        # 32 |
-        ensure_deploy_user,             # 33 | Deploy user
-        write_deploy_scripts,           # 34 | Deploy directories
-        make_deploy_directories,        # 35 |
-        setup_deploy_directories,       # 36 |
-        check_deploy_directories,       # 37 |
-        copy_config,                    # 38 | Deploy
-        deploy,                         # 39 |
-        restart_nginx,                  # 40 |
+        install_bootstrap_packages,     #  1 | System packages
+        add_repositories,               #  2 |
+        update_package_lists,           #  3 |
+        install_packages,               #  4 |
+        upgrade_distribution,           #  5 |
+        remove_unused_packages,         #  6 |
+        install_rvm,                    #  7 | RVM
+        install_rvm_requirements,       #  8 |
+        install_ruby,                   #  9 |
+        create_gemset,                  # 10 |
+        ensure_osm2pgsql_source,        # 11 | Build osm2psql
+        configure_osm2pgsql,            # 12 |
+        compile_osm2pgsql,              # 13 |
+        install_osm2pgsql,              # 14 |
+        ensure_superuser,               # 15 | Database (part 1)
+        ensure_database,                # 16 |
+        ensure_role,                    # 17 |
+        initialize_database,            # 18 |
+        download_osm_data,              # 19 | OSM (part 1)
+        import_osm_data,                # 20 |
+        grant_permissions,              # 21 | Database (part 2)
+        setup_admin_ruby_env,           # 22 |
+        ensure_citysdk_admin,           # 23 |
+        create_required_layers,         # 24 |
+        create_osm_nodes,               # 25 | OSM (part 2)
+        modify_osm_nodes,               # 26 |
+        update_modalities,              # 27 |
+        copy_ssl_files,                 # 28 | Nginx
+        configure_nginx,                # 29 |
+        configure_default_nginx_server, # 30 |
+        configure_nginx_servers,        # 31 |
+        ensure_deploy_user,             # 32 | Deploy user
+        write_deploy_scripts,           # 33 | Deploy directories
+        make_deploy_directories,        # 34 |
+        setup_deploy_directories,       # 35 |
+        check_deploy_directories,       # 36 |
+        copy_config,                    # 37 | Deploy
+        deploy,                         # 38 |
+        restart_nginx,                  # 39 |
     ]
 
     start = int(start) - 1
@@ -196,7 +196,7 @@ def setup(start=1, end=None):
     selected_tasks = tasks[start:end]
 
     for task in selected_tasks:
-        task()
+        execute(task)
 
 
 # =============================================================================
@@ -204,8 +204,8 @@ def setup(start=1, end=None):
 # =============================================================================
 
 @task
-def install_curl():
-    apt_get('install curl')
+def install_bootstrap_packages():
+    apt_get('install curl python-software-properties')
 
 
 @task
@@ -222,6 +222,9 @@ def add_repositories():
     )
     append(path, text, use_sudo=True)
     sudo(r'chmod 600 {}'.format(quote(path)))
+
+    # Node.js
+    add_apt_repository('ppa:chris-lea/node.js')
 
     # PostgreSQL
     sudo(r'curl {} | apt-key add -'.format(quote(env.postgres_key)))
@@ -246,16 +249,15 @@ def install_packages():
             # Memcached
             'memcached',
 
-            # Nginx
-            'nginx-extras',
-
             # Mongodb
             'mongodb',
 
-            # nodejs
-            'python-software-properties',
-            'python',
+            # Nginx
+            'nginx-extras',
+
+            # Node.js
             'make',
+            'nodejs',
 
             #nrodimporter
             'unzip',
@@ -277,9 +279,6 @@ def install_packages():
             'proj',
             'protobuf-c-compiler',
             'zlib1g-dev',
-
-            # osm2pgsql (run)
-            'expect',
 
             # Passenger
             'passenger',
@@ -305,16 +304,6 @@ def upgrade_distribution():
 @task
 def remove_unused_packages():
     apt_get('autoremove')
-
-# =============================================================================
-# = nodejs                                                                    =
-# =============================================================================
-
-@task
-def install_nodejs():
-    add_apt_repository('ppa:chris-lea/node.js')
-    update_package_lists()
-    apt_get('install nodejs')
 
 
 # =============================================================================
@@ -949,14 +938,28 @@ def deploy():
     for app in env.apps.itervalues():
         cap(app, 'deploy')
 
-@task
-def deploy_cms():
-    cap(env.app_cms, 'deploy')
-
-
 # =============================================================================
 # = Non-setup tasks                                                           =
 # =============================================================================
+
+@task
+def deploy_api():
+    return deploy(env.app_server)
+
+
+@task
+def deploy_cms():
+    return deploy(env.app_cms)
+
+@task
+def deploy_dev():
+    return deploy(env.app_devsite)
+
+
+@task
+def deploy_rdf():
+    return deploy(env.app_rdf)
+
 
 @task
 def drop_database():
@@ -1050,7 +1053,7 @@ def add_apt_repository(add_apt_repository_command):
 
 
 def cap(app, task):
-    subprocess.check_call([
+    return subprocess.check_call([
         os.path.expanduser('~/.rvm/bin/rvm'),
         env.ruby_use,
         'do',
@@ -1060,6 +1063,10 @@ def cap(app, task):
         'production',
         task,
     ], cwd=app.local_dir)
+
+
+def deploy(app):
+    return cap(app, 'deploy')
 
 
 def groups(user=None):
