@@ -558,13 +558,12 @@ def copy_ssl_files():
 
         # Copy the certificate bundle and key into the server.
         def put_ssl(local_path, remote_path):
-            return put(
+            put(
                 local_path=local_path,
                 remote_path=remote_path,
-                mode=0400,
                 use_sudo=True,
             )
-
+            sudo('chmod 400 %s' % quote(remote_path))
         put_ssl(crt, app.ssl_crt)
         put_ssl(key_path, app.ssl_key)
 
@@ -618,15 +617,16 @@ def configure_nginx():
         uncomment(main_nginx_config, regex, use_sudo=True)
 
     # Write the http-scope Nginx configuration.
-    return put(
+    remote_path = posixpath.join(env.nginx_conf, 'conf.d', 'citysdk.conf')
+    put(
         local_path=StringIO(NGINX_CONF_TEMPLATE.format(
             passenger_user=env.passenger_user,
             passenger_group=env.passenger_group,
         )),
-        remote_path=posixpath.join(env.nginx_conf, 'conf.d', 'citysdk.conf'),
-        mode=0400,
+        remote_path=remote_path,
         use_sudo=True,
     )
+    sudo('chmod 400 %s' % quote(remote_path))
 
 
 @task

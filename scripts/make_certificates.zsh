@@ -10,7 +10,7 @@
 setopt err_exit
 source $0:h/library.zsh
 
-cnf_dir=$repo/local/config
+cnf_dir=$CITYSDK_CONFIG_DIR
 ssl=$repo/local/ssl
 
 
