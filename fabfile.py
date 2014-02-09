@@ -98,7 +98,8 @@ env_attr_templates = [
 ('setup' , 'deploy_key'          , 'server.deploy_user.local_key_path', True ),
 ('setup' , 'deploy_user'         , 'server.deploy_user.username'      , False),
 ('setup' , 'domain_name'         , 'server.domain_name'               , False),
-('setup' , 'osm_data_url'        , 'osm2pgsql.data_url'               , False),
+('setup' , 'osm_data_url'        , 'osm2pgsql.url'                    , False),
+('setup' , 'osm_data_file_name'  , 'osm2pgsql.file_name'              , False),
 ('setup' , 'password'            , 'server.admin.password'            , False),
 ('server', 'postgres_database'   , 'db_name'                          , False),
 ('server', 'postgres_password'   , 'db_pass'                          , False),
@@ -137,8 +138,8 @@ if env.host_string is None:
 # = Tasks                                                                     =
 # =============================================================================
 
-@task
-def setup(start=1):
+@task(default=True)
+def setup(start=1, end=None):
     tasks = [
         #
         # Installation
@@ -210,7 +211,11 @@ def setup(start=1):
         restart_nginx,                  # 36
     ]
 
-    for task in tasks[int(start) - 1:]:
+    start = int(start) - 1
+    end = len(tasks) if end is None else int(end)
+    selected_tasks = tasks[start:end]
+
+    for task in selected_tasks:
         task()
 
 
@@ -230,20 +235,20 @@ def add_repositories():
         apt-key adv --keyserver keyserver.ubuntu.com --recv-keys \
             561F9B9CAC40B2F7
     ''')
-    path = '/etc/apt/sources.list.d/passenger.list'
+    path = r'/etc/apt/sources.list.d/passenger.list'
     text = (
-        'deb https://oss-binaries.phusionpassenger.com/apt/passenger '
-        + 'precise main'
+        r'deb https://oss-binaries.phusionpassenger.com/apt/passenger '
+        r'precise main'
     )
     append(path, text, use_sudo=True)
-    sudo('chmod 600 {}'.format(quote(path)))
+    sudo(r'chmod 600 {}'.format(quote(path)))
 
     # PostgreSQL
-    sudo('curl {} | apt-key add -'.format(quote(env.postgres_key)))
-    path = '/etc/apt/sources.list.d/pgdg.list'
-    text = 'deb {} {}-pgdg main'.format(env.postgres_ppa, env.distro_codename)
+    sudo(r'curl {} | apt-key add -'.format(quote(env.postgres_key)))
+    path = r'/etc/apt/sources.list.d/pgdg.list'
+    text = r'deb {} {}-pgdg main'.format(env.postgres_ppa, env.distro_codename)
     append(path, text, use_sudo=True)
-    sudo('chmod 600 {}'.format(quote(path)))
+    sudo(r'chmod 600 {}'.format(quote(path)))
 
 
 @task
@@ -397,9 +402,11 @@ def install_osm2pgsql():
 @task
 def ensure_database():
     # If the database already exists, there is thing to do.
-    template = "SELECT 1 FROM pg_database WHERE datname = '{}';"
-    if '1' in psql('postgres', template.format(env.postgres_database)):
-        return
+    command = "SELECT 1 FROM pg_database WHERE datname = '{}';".format(
+        env.postgres_database,
+    )
+    psql_returns_1('postgres', 'postgres', command)
+    sys.exit()
 
     command = 'createdb {}'.format(quote(env.postgres_database))
     return sudo(command, user='postgres')
@@ -920,8 +927,9 @@ def drop_database():
 
 
 @task
-def drop_user():
-    return psql('postgres', 'DROP USER IF EXISTS {};'.format(env.postgres_user))
+def drop_role():
+    sql = 'DROP ROLE IF EXISTS {};'.format(env.postgres_user)
+    return psql('postgres', sql)
 
 
 @task
@@ -955,7 +963,10 @@ class App(object):
         self.server_root = posixpath.join(env.deploy_to, server_name)
         self.server_current = posixpath.join(self.server_root, 'current')
         self.server_public = posixpath.join(self.server_current, 'public')
-        self.server_config = posixpath.join(env.nginx_sites_available, server_name)
+        self.server_config = posixpath.join(
+            env.nginx_sites_available,
+            server_name
+        )
 
         self.server_enabled = posixpath.join(
             env.nginx_sites_enabled,
@@ -963,7 +974,10 @@ class App(object):
         )
 
         self.server_enabled_target = posixpath.join(
-            posixpath.relpath(env.nginx_sites_available, env.nginx_sites_enabled),
+            posixpath.relpath(
+                env.nginx_sites_available,
+                env.nginx_sites_enabled
+            ),
             self.server_name,
         )
 
@@ -1022,18 +1036,31 @@ def ln(target, link_name, use_sudo=False):
     )
 
 
-def psql(database, command, *args, **update_kwargs):
-    kwargs = {'user': 'postgres'}
-    kwargs.update(update_kwargs)
+def psql(database, username, psql_commands, echo_all=True, psql_opts=None,
+         **run_kwargs):
+    psql_opts = '' if psql_opts is None else ' '.join(map(quote, psql_opts))
+
+    run_command = r'''
+        psql {opts}               \
+             {echo_all}           \
+             --command={commands} \
+             {database}           \
+    '''
+
     return sudo(
-        'psql --command={command} {database}'.format(
-            command=quote(command),
+        run_command.format(
+            commands=quote(psql_commands),
             database=quote(database),
+            echo_all='--echo-all' if echo_all else '',
+            opts=psql_opts,
         ).strip(),
-        *args,
-        **kwargs
+        user='postgres'
     )
 
+def psql_returns_1(*args, **kwargs):
+    kwargs.setdefault('psql_opts', []).extend(['--no-align','--tuples-only'])
+    result = psql(*args, **kwargs)
+    print(result.stdout)
 
 def resolve(*parts):
     return os.path.abspath(os.path.join(os.path.dirname(__file__), *parts))
