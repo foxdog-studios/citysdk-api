@@ -22,8 +22,7 @@ gem 'stringex'
 gem 'yajl-ruby'
 gem 'httpauth'
 
-#gem 'citysdk', git: 'https://github.com/foxdog-studios/citysdk'
-gem 'citysdk', path: '../../citysdk'
+gem 'citysdk', git: 'https://github.com/foxdog-studios/citysdk'
 
 group :development do
   gem 'capistrano', '~>2'
