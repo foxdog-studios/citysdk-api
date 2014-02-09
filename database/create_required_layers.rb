@@ -30,7 +30,7 @@ def main(argv = ARGV)
     host:     server.call(:host),
     dbname:   server.call(:name),
     user:     dba.call(:username),
-    password: dba.call(:password)
+    password: dba.call(:password),
   }
 
   PG::Connection.new(connection_args) do |conn|
@@ -48,17 +48,9 @@ def create_required_layers(conn, admin_email)
   admin_id = find_user_id(conn, admin_email)
   puts ' found'
 
-  print 'Inserting OSM layer ...'
-  insert_osm_layer(conn, admin_id)
-  puts ' inserted'
-
-  print 'Inserting GTFS layer ...'
-  insert_gtfs_layer(conn, admin_id)
-  puts ' inserted'
-
-  print 'Inserting administrative layer ...'
-  insert_admr_layer(conn, admin_id)
-  puts ' inserted'
+  unless_layer(conn, 0, 'OSM') { insert_osm_layer(conn, 0, admin_id) }
+  unless_layer(conn, 1, 'GTFS') { insert_gtfs_layer(conn, 1, admin_id) }
+  unless_layer(conn, 2, 'administrive') { insert_admr_layer(conn, 2, admin_id) }
 
   print 'Resetting layer ID sequence ...'
   reset_layer_id_seq(conn)
@@ -73,11 +65,35 @@ ensure
   result.clear unless result.nil?
 end # def
 
-def insert_osm_layer(conn, owner_id)
+def unless_layer(conn, id, name)
+  print "Inserting #{ name } layer ..."
+  if layers_exits?(conn, id)
+    puts ' already exists'
+  else
+    yield
+    puts ' inserted'
+  end # def
+end # def
+
+def layers_exits?(conn, id)
+  sql = border <<-SQL
+   |SELECT EXISTS (
+   |    SELECT 1
+   |    FROM layers
+   |    WHERE id = $1::integer
+   |);
+  SQL
+  result = conn.exec_params(sql, [id])
+  result[0].fetch('exists') == 't'
+ensure
+  result.clear unless result.nil?
+end # def
+
+def insert_osm_layer(conn, id, owner_id)
   data_source = 'openstreetmap.org © OpenStreetMap contributors'
   insert_layer(
     conn,
-    0,                      # id
+    id,                     # id
     'osm',                  # name
     owner_id,               # owner_id
     'CitySDK',              # organization
@@ -88,10 +104,10 @@ def insert_osm_layer(conn, owner_id)
   )
 end # def
 
-def insert_gtfs_layer(conn, owner_id)
+def insert_gtfs_layer(conn, id, owner_id)
   insert_layer(
     conn,
-    1,                               # id
+    id,                              # id
     'gtfs',                          # name
     owner_id,                        # owner_id
     'CitySDK',                       # organization
@@ -102,10 +118,10 @@ def insert_gtfs_layer(conn, owner_id)
   )
 end # def
 
-def insert_admr_layer(conn, owner_id)
+def insert_admr_layer(conn, id, owner_id)
   insert_layer(
     conn,
-    2,                         # id
+    id,                        # id
     'admr',                    # name
      owner_id,                 # owner_id
     'CitySDK',                 # organization

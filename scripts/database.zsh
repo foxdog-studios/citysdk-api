@@ -97,20 +97,6 @@ function create_role()
 	SQL
 }
 
-function grant_permissions()
-{
-    psql_dba --echo-all --dbname=$db_name <<-SQL
-		\set ON_ERROR_STOP on
-
-		GRANT SELECT ON ALL TABLES IN SCHEMA public TO $db_user;
-		GRANT INSERT ON ALL TABLES IN SCHEMA public TO $db_user;
-		GRANT UPDATE ON ALL TABLES IN SCHEMA public TO $db_user;
-		GRANT DELETE ON ALL TABLES IN SCHEMA public TO $db_user;
-		GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO $db_user;
-		GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO $db_user;
-	SQL
-}
-
 function initialize_database()
 {
     psql_dba --dbname=$db_name --file=$db_dir/initialize_database.pgsql
@@ -125,7 +111,7 @@ function update_osm_data()
 
 function import_osm_data()
 {
-    # Without --siim the planet_osm_rels tables is not created. This
+    # Without --slim the planet_osm_rels tables is not created. This
     # table is required by create_osm_nodes.pgsql. I don't know why nor
     # do I understand the data held in that table.
 
@@ -146,6 +132,20 @@ function import_osm_data()
 		send "$db_password\r"
 		expect eof
 	EOF
+}
+
+function grant_permissions()
+{
+    psql_dba --echo-all --dbname=$db_name <<-SQL
+		\set ON_ERROR_STOP on
+
+		GRANT SELECT ON ALL TABLES IN SCHEMA public TO $db_user;
+		GRANT INSERT ON ALL TABLES IN SCHEMA public TO $db_user;
+		GRANT UPDATE ON ALL TABLES IN SCHEMA public TO $db_user;
+		GRANT DELETE ON ALL TABLES IN SCHEMA public TO $db_user;
+		GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO $db_user;
+		GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO $db_user;
+	SQL
 }
 
 function create_admin()

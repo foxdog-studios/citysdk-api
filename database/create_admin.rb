@@ -60,10 +60,11 @@ require 'sequel'
 
 DB = Sequel.postgres(
   host:     DB_HOST,
-  dbname:   DB_NAME,
+  database: DB_NAME,
   user:     DB_USER,
   password: DB_PASSWORD
 )
+
 
 DB.extension(:pg_array)
 
@@ -76,6 +77,7 @@ puts 'done'
 
 print 'Creating or updating admin user...'
 
+require 'sinatra/sequel'
 require 'sinatra-authentication'
 
 USER = User.set(

@@ -26,7 +26,8 @@
     %tr
       %td.left Sources:
       %td.right
-        - layer.data_sources.each do |data_source|
-          = data_source
-          %br
+        - if layer.data_sources
+          - layer.data_sources.each do |data_source|
+            = data_source
+            %br
 
