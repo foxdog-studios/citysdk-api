@@ -1,0 +1,3 @@
+[submodule "citysdk-webservice-server"]
+	path = webservice
+	url = https://github.com/foxdog-studios/citysdk-webservice-server.git
