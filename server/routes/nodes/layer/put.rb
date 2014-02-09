@@ -16,7 +16,7 @@ class CitySDKAPI < Sinatra::Application
     json = JSON.load(request.body)
 
     begin
-      CitySDKServerDBUtils.bulk_insert_nodes(json, layer)
+      CitySDK.bulk_insert_nodes(json, layer)
     rescue ArgumentError => e
       halt 422, { error: e.message }.to_json
     end
