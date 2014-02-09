@@ -153,62 +153,65 @@ def setup(start=1, end=None):
         upgrade_distribution,           # 5
         remove_unused_packages,         # 6
 
+        # nodejs
+        install_nodejs,                 # 7
+
         # RVM
-        install_rvm,                    # 7
-        install_rvm_requirements,       # 8
-        install_ruby,                   # 9
-        create_gemset,                  # 10
+        install_rvm,                    # 8
+        install_rvm_requirements,       # 9
+        install_ruby,                   # 10
+        create_gemset,                  # 11
 
         # Build osm2psql
-        ensure_osm2pgsql_source,        # 11
-        configure_osm2pgsql,            # 12
-        compile_osm2pgsql,              # 13
-        install_osm2pgsql,              # 14
+        ensure_osm2pgsql_source,        # 12
+        configure_osm2pgsql,            # 13
+        compile_osm2pgsql,              # 14
+        install_osm2pgsql,              # 15
 
         #
         # Configuration
         #
 
         # Database creation
-        ensure_database,                # 15
-        ensure_database_extensions,     # 16
-        ensure_user,                    # 17
+        ensure_database,                # 16
+        ensure_database_extensions,     # 17
+        ensure_user,                    # 18
 
         # OSM Data
-        ensure_osm_data,                # 18
-        run_osm2pgsql,                  # 19
-        copy_database_scripts,          # 20
-        create_osm_schema,              # 21
-        run_migrations,                 # 22
+        ensure_osm_data,                # 19
+        run_osm2pgsql,                  # 20
+        copy_database_scripts,          # 21
+        create_osm_schema,              # 22
+        run_migrations,                 # 23
 
         # Nginx
-        copy_ssl_files,                 # 23
-        configure_nginx,                # 24
-        configure_default_nginx_server, # 25
-        configure_nginx_servers,        # 26
+        copy_ssl_files,                 # 24
+        configure_nginx,                # 25
+        configure_default_nginx_server, # 26
+        configure_nginx_servers,        # 27
 
         # Deploy user
-        ensure_deploy_user,             # 27
+        ensure_deploy_user,             # 28
 
         # Deploy directories
-        write_deploy_scripts,           # 28
-        make_deploy_directories,        # 29
-        setup_deploy_directories,       # 30
-        check_deploy_directories,       # 31
+        write_deploy_scripts,           # 29
+        make_deploy_directories,        # 30
+        setup_deploy_directories,       # 31
+        check_deploy_directories,       # 32
 
         #
         # Deploy
         #
 
         # Deploy
-        update_gem_dependants,          # 32
-        copy_config,                    # 33
-        deploy,                         # 34
+        update_gem_dependants,          # 33
+        copy_config,                    # 34
+        deploy,                         # 35
 
         # Configure CMS
-        create_admin,                   # 35
+        create_admin,                   # 36
 
-        restart_nginx,                  # 36
+        restart_nginx,                  # 37
     ]
 
     start = int(start) - 1
@@ -269,6 +272,17 @@ def install_packages():
             # Nginx
             'nginx-extras',
 
+            # Mongodb
+            'mongodb',
+
+            # nodejs
+            'python-software-properties',
+            'python',
+            'make',
+
+            #nrodimporter
+            'unzip',
+
             # NTP
             'ntp',
 
@@ -314,6 +328,16 @@ def upgrade_distribution():
 @task
 def remove_unused_packages():
     apt_get('autoremove')
+
+# =============================================================================
+# = nodejs                                                                    =
+# =============================================================================
+
+@task
+def install_nodejs():
+    add_apt_repository('ppa:chris-lea/node.js')
+    update_package_lists()
+    apt_get('install nodejs')
 
 
 # =============================================================================
@@ -1005,6 +1029,10 @@ def apt_get(apt_get_command):
     command_template = \
             'apt-get --assume-yes --no-install-recommends --quiet {}'
     return sudo(command_template.format(apt_get_command.strip()))
+
+def add_apt_repository(add_apt_repository_command):
+    command_template = 'add-apt-repository --yes {}'
+    return sudo(command_template.format(add_apt_repository_command.strip()))
 
 
 def cap(app, task):
