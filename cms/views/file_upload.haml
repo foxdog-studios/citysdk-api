@@ -1,9 +1,10 @@
 %h2 File upload
-%p Upload a CSV, JSON or Shape (zipped) file.
+Upload a CSV, JSON or zipped shape file.
 %form{action: "/layers/#{ layer.name }/data",
       enctype: 'multipart/form-data',
       method: 'post'}
-  %label File:
-  %input(name='file' type='file')
+  %label
+    File:
+    %input(name='file' type='file')
   %input(type='submit' value='Upload')
 

@@ -1,30 +1,29 @@
 .info
   .pageheader
     %h1
-      %a(href="/layers/") Layers
+      %a(href='/layers/') Layers
       &#8594;
       %a(href="/layers/#{ layer.name }/")= layer.name
       &#8594; Data
+
   .code
     %h2 Statistics
-    #stats= render_layer_stats(layer)
-  #fupl.code
-    = haml :file_upload, locals: { layer: layer }
+    = render_layer_stats(layer)
+
   .code
-    %h2 Webservice
-    %p
-      Sends the layer data to a web service upon request. Should return
-      the (enhanced) data object.
+    = haml :file_upload, locals: { layer: layer }
+
+  .code
+    %h2 Web service
+    Send node data to a web service that returns enhanced data.
     %form(action="/layers/#{ layer.name }/webservice" method='post')
-      .webservice
-        %label URL:
-        %input#wsurl.layer{type: 'text',
-                           name: 'wsurl',
-                           value: layer.webservice}
-      .webservice
-        %label Cache for (seconds):
-        %input.layer{type: 'text',
-                     name: 'update_rate',
-                     value: layer.update_rate}
+      %label URL:
+      %input.layer{type: 'text',
+                   name: 'url',
+                   value: layer.webservice}
+      %label Cache for (seconds):
+      %input.layer{type: 'text',
+                   name: 'update_rate',
+                   value: layer.update_rate}
       %input.submitb(type='submit' value='Save')
 

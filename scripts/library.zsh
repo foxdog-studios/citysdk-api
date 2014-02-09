@@ -92,4 +92,3 @@ if [[ -d $env ]]; then
     unfunction active_virtual_env
 fi
 
-# vi: ft=zsh

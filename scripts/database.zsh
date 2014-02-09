@@ -56,7 +56,7 @@ function drop_role()
 {
     psql_dba --echo-all <<-SQL
 		\set ON_ERROR_STOP on
-		DROP USER IF EXISTS $db_user;
+		DROP ROLE IF EXISTS $db_user;
 	SQL
 }
 

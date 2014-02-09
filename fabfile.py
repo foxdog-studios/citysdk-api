@@ -1045,6 +1045,7 @@ def psql(database, username, psql_commands, echo_all=True, psql_opts=None,
              {echo_all}           \
              --command={commands} \
              {database}           \
+             {username}
     '''
 
     return sudo(

@@ -1,20 +1,16 @@
-%b
-  Number of nodes:
-  = num_nodes
-%br
-%b
-  Data set size:
-  = data_set_size
-%br
-%b
-  Last update:
-  = last_updated
-%br
-%b
-  Last import status:
-  - if layer.import_status
-    %span#statusstring= layer.import_status
-  - else
-    (none)
-%br
+%table
+  %tbody
+    %tr
+      %td Nodes:
+      %td= num_nodes
+    %tr
+      %td Data set size:
+      %td= data_set_size
+    %tr
+      %td Last updated:
+      %td= last_updated
+    - if layer.import_status
+      %tr
+        %td Import status:
+        %td= layer.import_status
 
