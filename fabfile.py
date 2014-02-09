@@ -916,7 +916,7 @@ def copy_config():
     local_path = os.path.join(os.environ[ENV_KEY], 'server.json')
 
     for app in env.apps.itervalues():
-        remote_dir = posixpath.join(app.server_root, 'shared/config')
+        remote_dir = posixpath.join(app.server_shared, 'config')
         remote_path = posixpath.join(remote_dir, 'config.json')
         sudo('mkdir --parents {}'.format(quote(remote_dir)))
         sudo('chown -R {}:{} {}'.format(
@@ -1020,6 +1020,7 @@ class App(object):
         self.server_root = posixpath.join(env.deploy_to, server_name)
         self.server_current = posixpath.join(self.server_root, 'current')
         self.server_public = posixpath.join(self.server_current, 'public')
+        self.server_shared = posixpath.join(self.server_root, 'shared')
         self.server_config = posixpath.join(
             env.nginx_sites_available,
             server_name
