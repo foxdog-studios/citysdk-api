@@ -142,7 +142,7 @@ var deleteLayer = function (name) {
   });
 };
 
-var fileUpload = function (l, u) {
+var fileUpload = function (layer_name, u) {
   var data = new FormData();
   jQuery.each($("input[type='file']")[0].files, function (i, file) {
     data.append(i, file);
@@ -150,7 +150,7 @@ var fileUpload = function (l, u) {
   $.ajax({
     type: 'post',
     data: data,
-    url: '/layer/' + l + '/upload_file',
+    url: '/layers/' + layer_name + '/data',
     cache: false,
     contentType: false,
     processData: false,

@@ -1,0 +1,20 @@
+%b
+  Number of nodes:
+  = num_nodes
+%br
+%b
+  Data set size:
+  = data_set_size
+%br
+%b
+  Last update:
+  = last_updated
+%br
+%b
+  Last import status:
+  - if layer.import_status
+    %span#statusstring= layer.import_status
+  - else
+    (none)
+%br
+
