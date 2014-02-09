@@ -1,0 +1,5 @@
+routes:
+  - citysdk_webservice_met_office
+datapointkey: your-data-point-key
+resolution: 3hourly
+unitaryauthority: Greater Manchester
