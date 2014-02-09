@@ -1,22 +1,23 @@
 GIT
-  remote: https://github.com/foxdog-studios/citysdk-client
-  revision: 93e4396856fe0de261352a42a786ad671ce770d8
+  remote: https://github.com/foxdog-studios/citysdk
+  revision: aec018bf28c01883b780f6886f981fc2cc39b6c6
   specs:
-    citysdk (0.1.2.1)
+    citysdk (0.0.1)
+      faraday
+      rgeo-geojson
+      sequel
+
+GIT
+  remote: https://github.com/foxdog-studios/citysdk-client
+  revision: 7fd29c55b83c36d576fa40d7704c6a981dc61240
+  specs:
+    citysdk-client (0.1.2.1)
       addressable (~> 2.3.5)
       charlock_holmes (~> 0.6.9.4)
       dbf
       faraday (~> 0.8.5)
       georuby (~> 2.0.0)
       nokogiri (~> 1.6.1)
-
-GIT
-  remote: https://github.com/foxdog-studios/citysdk-server-db-utils
-  revision: 9ffe840b4895cb26056fa9466224f178992b6118
-  specs:
-    citysdkserverdbutils (0.0.1)
-      rgeo-geojson
-      sequel
 
 GEM
   remote: https://rubygems.org/
@@ -134,7 +135,7 @@ DEPENDENCIES
   capistrano (~> 2)
   capistrano-ext
   citysdk!
-  citysdkserverdbutils!
+  citysdk-client!
   faraday
   haml
   i18n

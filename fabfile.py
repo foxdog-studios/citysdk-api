@@ -9,11 +9,13 @@ from pipes import quote
 import json
 import os
 import posixpath
+import re
 import subprocess
 
 from fabric.api import (
     cd,
     env,
+    hide,
     local,
     put,
     reboot,
@@ -30,7 +32,7 @@ from fabric.contrib.files import (
 
 
 # =============================================================================
-# = Configuration                                                            =
+# = Configuration                                                             =
 # =============================================================================
 
 # = Fabric ====================================================================
@@ -95,6 +97,8 @@ env_attr_templates = [
 ('setup' , 'admin_name'          , 'admin.name'                       , False),
 ('setup' , 'admin_organization'  , 'admin.organization'               , False),
 ('setup' , 'admin_password'      , 'admin.password'                   , False),
+('setup' , 'dba_username'        , 'database_admin.username'          , False),
+('setup' , 'dba_password'        , 'database_admin.password'          , False),
 ('setup' , 'deploy_key'          , 'server.deploy_user.local_key_path', True ),
 ('setup' , 'deploy_user'         , 'server.deploy_user.username'      , False),
 ('setup' , 'domain_name'         , 'server.domain_name'               , False),
@@ -113,11 +117,15 @@ env_attr_templates = [
 ]
 
 # Ensure that the environment has values for all keys.
-for config_name, name, path, expander_user in env_attr_templates:
+
+def resolve(*parts):
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), *parts))
+
+for config_name, name, path, is_path in env_attr_templates:
     if getattr(env, name, None) is None:
         value = get_config(config_name, path)
-        if expander_user:
-            value = os.path.expanduser(value)
+        if is_path:
+            value = resolve(os.path.expanduser(value))
         env[name] = value
 
 # Derived environmental variables
@@ -141,74 +149,45 @@ if env.host_string is None:
 @task(default=True)
 def setup(start=1, end=None):
     tasks = [
-        #
-        # Installation
-        #
-
-        # System packages
-        install_curl,                   # 1
-        add_repositories,               # 2
-        update_package_lists,           # 3
-        install_packages,               # 4
-        upgrade_distribution,           # 5
-        remove_unused_packages,         # 6
-
-        # RVM
-        install_rvm,                    # 7
-        install_rvm_requirements,       # 8
-        install_ruby,                   # 9
-        create_gemset,                  # 10
-
-        # Build osm2psql
-        ensure_osm2pgsql_source,        # 11
-        configure_osm2pgsql,            # 12
-        compile_osm2pgsql,              # 13
-        install_osm2pgsql,              # 14
-
-        #
-        # Configuration
-        #
-
-        # Database creation
-        ensure_database,                # 15
-        ensure_database_extensions,     # 16
-        ensure_user,                    # 17
-
-        # OSM Data
-        ensure_osm_data,                # 18
-        run_osm2pgsql,                  # 19
-        copy_database_scripts,          # 20
-        create_osm_schema,              # 21
-        run_migrations,                 # 22
-
-        # Nginx
-        copy_ssl_files,                 # 23
-        configure_nginx,                # 24
-        configure_default_nginx_server, # 25
-        configure_nginx_servers,        # 26
-
-        # Deploy user
-        ensure_deploy_user,             # 27
-
-        # Deploy directories
-        write_deploy_scripts,           # 28
-        make_deploy_directories,        # 29
-        setup_deploy_directories,       # 30
-        check_deploy_directories,       # 31
-
-        #
-        # Deploy
-        #
-
-        # Deploy
-        update_gem_dependants,          # 32
-        copy_config,                    # 33
-        deploy,                         # 34
-
-        # Configure CMS
-        create_admin,                   # 35
-
-        restart_nginx,                  # 36
+        install_curl,                   # 1  | System packages
+        add_repositories,               # 2  |
+        update_package_lists,           # 3  |
+        install_packages,               # 4  |
+        upgrade_distribution,           # 5  |
+        remove_unused_packages,         # 6  |
+        install_rvm,                    # 7  | RVM
+        install_rvm_requirements,       # 8  |
+        install_ruby,                   # 9  |
+        create_gemset,                  # 10 |
+        ensure_osm2pgsql_source,        # 11 | Build osm2psql
+        configure_osm2pgsql,            # 12 |
+        compile_osm2pgsql,              # 13 |
+        install_osm2pgsql,              # 14 |
+        ensure_superuser,               # 15 | Database (part 1)
+        ensure_database,                # 16 |
+        ensure_role,                    # 17 |
+        initialize_database,            # 18 |
+        download_osm_data,              # 19 | OSM (part 1)
+        import_osm_data,                # 20 |
+        grant_permissions,              # 21 | Database (part 2)
+        setup_admin_ruby_env,           # 22 |
+        ensure_citysdk_admin,           # 23 |
+        create_required_layers,         # 24 |
+        create_osm_nodes,               # 25 | OSM (part 2)
+        modify_osm_nodes,               # 26 |
+        update_modalities,              # 27 |
+        copy_ssl_files,                 # 28 | Nginx
+        configure_nginx,                # 29 |
+        configure_default_nginx_server, # 30 |
+        configure_nginx_servers,        # 31 |
+        ensure_deploy_user,             # 32 | Deploy user
+        write_deploy_scripts,           # 33 | Deploy directories
+        make_deploy_directories,        # 34 |
+        setup_deploy_directories,       # 35 |
+        check_deploy_directories,       # 36 |
+        copy_config,                    # 37 | Deploy
+        deploy,                         # 38 |
+        restart_nginx,                  # 39 |
     ]
 
     start = int(start) - 1
@@ -396,55 +375,73 @@ def install_osm2pgsql():
 
 
 # =============================================================================
-# = Database                                                                  =
+# = Database (part 1)                                                         =
 # =============================================================================
+
+@task
+def ensure_superuser():
+    # Only attempt to create a superuser if does not already exists.
+    psql_commands = margin(r'''
+       |\set ON_ERROR_STOP on
+       |SELECT 1 FROM pg_roles WHERE rolname='{role_name}';
+    ''').format(role_name=env.dba_username)
+    command = 'psql --no-align --tuples-only <<< {commands}'
+    command = command.format(commands=quote(psql_commands))
+    result = sudo(command, user='postgres')
+    if result.stdout == '1':
+        return
+
+    psql_commands = margin(r'''
+       |\set ON_ERROR_STOP on
+       |CREATE ROLE {role} WITH
+       |    LOGIN
+       |    SUPERUSER
+       |    PASSWORD '{password}';
+    ''').format(role=env.dba_username, password=env.dba_password)
+    command = 'psql --echo-hidden <<< {psql_commands}'
+    command = command.format(psql_commands=quote(psql_commands))
+    with hide('everything'):
+        sudo(command, user='postgres')
+
 
 @task
 def ensure_database():
     # If the database already exists, there is thing to do.
-    command = "SELECT 1 FROM pg_database WHERE datname = '{}';".format(
-        env.postgres_database,
-    )
-    psql_returns_1('postgres', 'postgres', command)
-    sys.exit()
+    commands = margin(r'''
+       |\set ON_ERROR_STOP on
+       |SELECT 1 FROM pg_database WHERE datname = '{}';
+    ''').format(env.postgres_database)
+    if psql_returns_1('postgres', env.dba_username, commands):
+        return
 
-    command = 'createdb {}'.format(quote(env.postgres_database))
-    return sudo(command, user='postgres')
-
-
-@task
-def ensure_database_extensions():
-    return psql(env.postgres_database, r'''
-        CREATE EXTENSION IF NOT EXISTS hstore;
-        CREATE EXTENSION IF NOT EXISTS pg_trgm;
-        CREATE EXTENSION IF NOT EXISTS postgis;
-    ''')
+    # Create the database.
+    commands = margin(r'''
+       |\set ON_ERROR_STOP on
+       |CREATE DATABASE {database};
+    ''').format(database=env.postgres_database)
+    return psql('postgres', env.dba_username, commands)
 
 
 @task
-def ensure_user():
-    # If the user already exists, there is nothing to do.
-    query_template = "SELECT 1 FROM pg_roles WHERE rolname='{rolname}';"
-    query = query_template.format(rolname=env.postgres_user)
-    if '1' in psql('postgres', query):
+def ensure_role():
+    if role_exists(env.postgres_user):
         return
 
     # Create the user
-    create = psql('postgres', "CREATE USER {} WITH PASSWORD '{}';".format(
-        env.postgres_user,
-        env.postgres_password,
-    ))
-
-    # Give the user full control over the database
-    grant = psql(
-        env.postgres_database,
-        'GRANT ALL ON DATABASE {} TO {};'.format(
-            env.postgres_database,
-            env.postgres_user,
-        )
+    commands = margin(r'''
+        \set ON_ERROR_STOP on
+        CREATE ROLE {role} WITH LOGIN PASSWORD '{password}';
+    ''').format(
+        role=env.postgres_user,
+        password=env.postgres_password,
     )
+    with hide():
+        return psql('postgres', env.dba_username, commands, echo_all=False)
 
-    return create, grant
+
+@task
+def initialize_database():
+    return psql_script('initialize_database.pgsql')
 
 
 # =============================================================================
@@ -452,89 +449,139 @@ def ensure_user():
 # =============================================================================
 
 @task
-def ensure_osm_data():
-    # If the data has already been downloaded, there is nothing to do.
-    already_downloaded = run(
-        '[[ -f {} ]]'.format(quote(env.osm_data)),
-        warn_only=True,
-    ).succeeded
+def download_osm_data():
+    run('wget --timestamping {url}'.format(url=quote(env.osm_data_url)))
 
-    if already_downloaded:
-        return
 
-    return run('curl --location --output {} {}'.format(
-        quote(env.osm_data),
-        quote(env.osm_data_url),
+@task
+def import_osm_data():
+    osm2pgsql_expect = margin(r'''
+       |osm2pgsql \
+       |    --cache 800 \
+       |    --database {database} \
+       |    --host /var/run/postgresql \
+       |    --hstore-all \
+       |    --latlong \
+       |    --slim \
+       |    --style citysdk.style \
+       |    {data}
+    ''')
+
+    put(local_path='database/citysdk.style')
+
+    return run(osm2pgsql_expect.format(
+        data=quote(env.osm_data_file_name),
+        database=quote(env.postgres_database),
     ))
 
 
-OSM2PGSQL_EXPECT = r'''
-set timeout -1
-spawn osm2pgsql           \
-    --cache 800           \
-    --database {database} \
-    --host localhost      \
-    --hstore-all          \
-    --latlong             \
-    --password            \
-    --slim                \
-    --username {username} \
-    {data}
-expect "Password:"
-send "{password}\r"
-expect eof
-'''[1:-1]
+# =============================================================================
+# = Database (part 2)                                                         =
+# =============================================================================
 
 @task
-def run_osm2pgsql():
-    return run('expect -f - <<< {}'.format(
-        quote(OSM2PGSQL_EXPECT.format(
-            data=quote(env.osm_data),
-            database=quote(env.postgres_database),
-            password=quote(env.postgres_password),
-            username=quote(env.postgres_user),
-        )),
+def grant_permissions():
+    commands = margin(r'''
+       |\set ON_ERROR_STOP on
+       |GRANT SELECT ON ALL TABLES IN SCHEMA public TO {role_name};
+       |GRANT INSERT ON ALL TABLES IN SCHEMA public TO {role_name};
+       |GRANT UPDATE ON ALL TABLES IN SCHEMA public TO {role_name};
+       |GRANT DELETE ON ALL TABLES IN SCHEMA public TO {role_name};
+       |GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO {role_name};
+       |GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO {role_name};
+    ''').format(role_name=env.postgres_user)
+    return psql(env.postgres_database, env.dba_username, commands)
+
+
+@task
+def setup_admin_ruby_env():
+    gemfile = StringIO(margin(r'''
+       |source 'https://rubygems.org'
+       |ruby '{ruby_version}'
+       |#ruby-gemset={ruby_gemset}
+       |gem 'docopt'
+       |gem 'pg'
+       |gem 'sequel'
+       |gem 'sinatra'
+       |gem 'sinatra-sequel'
+       |gem 'sinatra-authentication'
+    ''').format(
+        ruby_gemset=env.ruby_gemset,
+        ruby_version=env.ruby_version,
     ))
 
+    gemfile_path = 'Gemfile'
+
+    server_config = {
+        'db_name': env.postgres_database,
+        'db_host': 'localhost',
+        'db_user': env.postgres_user,
+        'db_pass': env.postgres_password,
+    }
+
+    server_config_path = 'server.json'
+
+    setup_config = {
+        'admin': {
+            'email':        env.admin_email,
+            'password':     env.admin_password,
+            'organization': env.admin_organization,
+            'domains':      env.admin_domains,
+        },
+        'database_admin': {
+            'username': env.dba_username,
+            'password': env.dba_password,
+        }
+    }
+
+    setup_config_path = 'setup.json'
+
+    def put_db(file_name):
+        put(local_path=os.path.join('database', file_name))
+
+    def put_json(obj, remote_path):
+        put(
+            local_path=StringIO(json.dumps(obj)),
+            remote_path=remote_path,
+        )
+        return run('chmod 600 {}'.format(quote(remote_path)))
+
+    put_db('create_admin.rb')
+    put_db('create_required_layers.rb')
+    put_db('update_modalities.rb')
+    put(local_path=gemfile, remote_path=gemfile_path)
+    put_json(server_config, server_config_path)
+    put_json(setup_config, setup_config_path)
+    rvmsudo('bundle install')
+
 
 @task
-def copy_database_scripts():
-    # Copy the database script to the target machine
-    put(local_path='database')
-
-    # Install the gems required by the scripts
-    with cd('database'):
-        rvmsudo('bundle')
+def ensure_citysdk_admin():
+    return rvmdo('ruby create_admin.rb server.json setup.json')
 
 
 @task
-def create_osm_schema():
-    command = 'psql {} < {}'.format(env.postgres_database, 'osm_schema.sql')
-    with cd('database'):
-        return sudo(command, user='postgres')
+def create_required_layers():
+    return rvmdo('ruby create_required_layers.rb server.json setup.json')
+
+
+# =============================================================================
+# = OSM (part 2)                                                              =
+# =============================================================================
+
+@task
+def create_osm_nodes():
+    psql_script('create_osm_nodes.pgsql')
 
 
 @task
-def run_migrations():
-    psql(env.postgres_database,
-         'GRANT ALL ON SCHEMA osm TO {}'.format(env.postgres_user))
+def modify_osm_nodes():
+    psql_script('modify_osm_nodes.pgsql')
 
-    # Create the PostgreSQL connection string
-    conn = 'postgres://{user}:{password}@localhost/{name}'.format(
-        user=env.postgres_user,
-        password=env.postgres_password,
-        name=env.postgres_database,
-    )
 
-    def migration(*args):
-        with cd('database'):
-            rvmdo('bundle exec sequel -m migrations {} {}'.format(
-                ' '.join(quote(arg) for arg in args),
-                conn,
-            ))
-
-    migration('-M', '0')
-    migration()
+@task
+def update_modalities():
+    rvmdo('ruby update_modalities.rb server.json')
 
 
 # =============================================================================
@@ -832,23 +879,20 @@ def make_deploy_directories():
 @task
 def setup_deploy_directories():
     for app in env.apps.itervalues():
+        print(app.local_dir)
         cap(app, 'deploy:setup')
 
 
 @task
 def check_deploy_directories():
     for app in env.apps.itervalues():
+        print(app.local_dir)
         cap(app, 'deploy:check')
 
 
 # =============================================================================
 # = Deploy                                                                    =
 # =============================================================================
-
-@task
-def update_gem_dependants():
-    local(resolve('gem/update_dependants.zsh'))
-
 
 @task
 def copy_config():
@@ -885,51 +929,19 @@ def deploy():
 
 
 # =============================================================================
-# = Configure CMS                                                             =
-# =============================================================================
-
-CREATE_ADMIN_TEMPLATE = r"""
-bundle exec racksh "
-    owner = Owner[0]
-    owner.createPW('{password}')
-    owner.name='{name}'
-    owner.email='{email}'
-    owner.organization='{organization}'
-    owner.domains='{domains}'
-    owner.save_changes()
-"
-"""[1:-1]
-
-@task
-def create_admin():
-    with cd(env.app_server.server_current):
-        return rvmsudo(
-            CREATE_ADMIN_TEMPLATE.format(
-                domains=env.admin_domains,
-                email=env.admin_email,
-                name=env.admin_name,
-                organization=env.admin_organization,
-                password=env.admin_password,
-            ),
-            user=env.deploy_user,
-        )
-
-
-# =============================================================================
 # = Non-setup tasks                                                           =
 # =============================================================================
 
 @task
 def drop_database():
-    return psql('postgres', 'DROP DATABASE IF EXISTS {};'.format(
-        env.postgres_database,
-    ))
+    command = 'DROP DATABASE IF EXISTS {};'.format(env.postgres_database)
+    return psql('postgres', env.dba_username, command)
 
 
 @task
 def drop_role():
     sql = 'DROP ROLE IF EXISTS {};'.format(env.postgres_user)
-    return psql('postgres', sql)
+    return psql('postgres', env.dba_username, sql)
 
 
 @task
@@ -1036,35 +1048,52 @@ def ln(target, link_name, use_sudo=False):
     )
 
 
-def psql(database, username, psql_commands, echo_all=True, psql_opts=None,
-         **run_kwargs):
-    psql_opts = '' if psql_opts is None else ' '.join(map(quote, psql_opts))
+def margin(text, strip=True):
+    text = re.sub(r'^ *\|', '', text, flags=re.MULTILINE)
+    if strip:
+        text = text.strip()
+    return text
 
-    run_command = r'''
-        psql {opts}               \
-             {echo_all}           \
-             --command={commands} \
-             {database}           \
-             {username}
-    '''
 
-    return sudo(
-        run_command.format(
-            commands=quote(psql_commands),
-            database=quote(database),
-            echo_all='--echo-all' if echo_all else '',
-            opts=psql_opts,
-        ).strip(),
-        user='postgres'
-    )
+def psql(database, username, psql_commands, echo_all=True, psql_opts=None):
+    echo_all = '--echo-all' if echo_all else ''
+    if psql_opts is None:
+        psql_opts = ''
+    else:
+        psql_opts = ' '.join(quote(opt) for opt in psql_opts)
+    run_command = margin(r'''
+       |psql {opts} {echo_all} {database} {username} <<< {commands}
+    ''')
+    return run(run_command.format(
+        commands=quote(psql_commands),
+        database=quote(database),
+        echo_all=echo_all,
+        opts=psql_opts,
+        username=username,
+    ).strip())
+
+
+def psql_script(script):
+    put(local_path=os.path.join('database', script))
+    return run('psql --dbname={dbname} --file={filename}'.format(
+        dbname=quote(env.postgres_database),
+        filename=quote(script),
+    ))
+
 
 def psql_returns_1(*args, **kwargs):
     kwargs.setdefault('psql_opts', []).extend(['--no-align','--tuples-only'])
+    kwargs['echo_all'] = False
     result = psql(*args, **kwargs)
-    print(result.stdout)
+    return result.stdout == '1'
 
-def resolve(*parts):
-    return os.path.abspath(os.path.join(os.path.dirname(__file__), *parts))
+
+def role_exists(role):
+    commands = margin(r'''
+       |\set ON_ERROR_STOP on
+       |SELECT 1 FROM pg_roles WHERE rolname='{role}';
+    ''').format(role=role)
+    return psql_returns_1('postgres', env.user, commands)
 
 
 def rvmdo(rvmdo_command, use_sudo=False, **runner_kwargs):
