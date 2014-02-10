@@ -1,0 +1,9 @@
+.info
+  .pageheader
+    %h1 New user
+
+  = haml :'user/errors'
+
+  %form(name='input' action='/signup' method='post')
+    = haml :'user/edit_form_body'
+

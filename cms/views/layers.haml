@@ -3,11 +3,11 @@
     %h1
       %a(href='/layers/') Layers
     %br
+    - if current_user.create_layer?
+      %a(href='/layers/new') New layer
+      |
     Category:
     = layer_category_select
-    - if current_user.create_layer?
-      |
-      %a(href='/layers/new') New layer
     %span.editlinks
       - if logged_in?
         %a(href="/users/#{ current_user.id }/edit")= current_user.email

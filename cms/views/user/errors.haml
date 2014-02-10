@@ -1,5 +1,5 @@
--unless current_user.errors.empty?
+-if current_user.errors.is_a?(String) && !current_user.errors.empty?
   .errormsg
     %p Your account could not be updated for the following reason:
-    %p= current_user.errors.message
+    %p= current_user.errors
 

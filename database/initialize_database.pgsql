@@ -20,7 +20,7 @@ CREATE EXTENSION IF NOT EXISTS postgis;
 -- -----------------------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS users (
-    -- These columns are expected by sinatra-authentication.
+    -- These columns would be created by sinatra-authentication.
     id               serial PRIMARY KEY,
     email            text UNIQUE,
     hashed_password  text,
