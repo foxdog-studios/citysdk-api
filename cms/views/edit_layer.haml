@@ -1,50 +1,48 @@
 !!! 5
 .info
   = haml :layer_errors, locals: { layer: layer }
+
   .pageheader
-    %h1= "Edit #{ layer.name } layer"
+    %a(href='/layers/') Home
+    &#8594;
+    %a(href='/layers/#{ layer.name }/')= layer.name
+
   %form{name:   'input',
         action: "/layers/#{ layer.name }/",
         method: 'post'}
+
     .code
-      %h4 Organization
-      %div
+      %label
+        Organization
         %input.layer{type: 'text',
-                     size: '100',
                      name: 'organization',
                      value: layer.organization}
     .code
-      %h4 Category
-      %div
-        %span.flexinput
+      %label
+        Category
         %input.layer{type: 'text',
-                     size: '100',
                      name: 'category',
                      value: layer.category}
     .code
-      %h4 Description
-      %textarea{name: 'description'}= layer.description
-    .code
-      %h4 Sample URL
-      %span.codecomment
-        Enter the <b>path</b> of a sample of data to display in the viewer.
-      %div
-        %input.layer{type: 'text',
-                     size: '100',
-                     name: 'sample_url',
-                     value: layer.sample_url}
-    .code
-      %h4 Data Sources
-      - if layer.data_sources
-        - layer.data_sources.each_with_index do |source, index|
-          %div
-            %input.layer{type:  'text',
-                         size:  '100',
-                         name:  "data_sources[#{ index }]",
-                         value: source}
-      %div
-        %input.layer{type: 'text',
-                     size: '100',
-                     name: 'data_sources_x'}
-    %input.submit(type='submit' value='Save')
+      %label
+        Description
+        %textarea(name='description')= layer.description
 
+    .code
+      %label Data sources
+      - unless layer.data_sources.nil? || layer.data_sources.empty?
+        - layer.data_sources.each_with_index do |source, index|
+          %input.layer{type:  'text',
+                       name:  "data_sources[#{ index }]",
+                       value: source}
+
+      %input.layer(type='text' name='data_sources_x')
+
+    .code
+      %label(for='sample_url') Example URL
+      %p Enter a URL that return an example data set to display in the viewer.
+      %input#sample_url.layer{type: 'text',
+                              name: 'sample_url',
+                              value: layer.sample_url}
+
+    %input(type='submit' value='Save')

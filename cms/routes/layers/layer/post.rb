@@ -3,7 +3,7 @@
 module CitySDK
   class CMSApplication < Sinatra::Application
     post '/layers/:layer_name/' do |layer_name|
-      layer = Layer.get_by_name(layer_name)
+      layer = Layer.for_name(layer_name)
 
       if layer.nil?
         halt 404, "No layer named #{ layer_name.inspect } exists."
@@ -38,7 +38,7 @@ module CitySDK
       end # else
 
       # Data sources
-      data_sources = params.fetch('data_sources').to_a
+      data_sources = params.fetch('data_sources', []).to_a
       data_sources.map! { |index, data_source|  [index.to_i, data_source] }
       data_sources.sort!.map! { |_, data_source| data_source }
 
@@ -68,12 +68,8 @@ module CitySDK
       end # if
 
       # Save or report errors.
-      if layer.valid?
-        layer.save
-        redirect '/layers/'
-      else
-        haml :edit_layer, locals: { layer: layer }
-      end # else
+      layer.save if layer.valid?
+      haml :edit_layer, locals: { layer: layer }
     end # do
   end # class
 end # module

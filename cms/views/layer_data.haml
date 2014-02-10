@@ -1,10 +1,9 @@
 .info
   .pageheader
-    %h1
-      %a(href='/layers/') Layers
-      &#8594;
-      %a(href="/layers/#{ layer.name }/")= layer.name
-      &#8594; Data
+    %a(href='/layers/') Home
+    &#8594;
+    %a(href="/layers/#{ layer.name }/")= layer.name
+    &#8594; Data
 
   .code
     %h2 Statistics
@@ -17,10 +16,11 @@
     %h2 Web service
     Send node data to a web service that returns enhanced data.
     %form(action="/layers/#{ layer.name }/webservice" method='post')
-      %label URL:
-      %input.layer{type: 'text',
-                   name: 'url',
-                   value: layer.webservice}
+      %label(for='url')
+        URL:
+        %input#url.layer{type: 'text',
+                         name: 'url',
+                         value: layer.webservice}
       %label Cache for (seconds):
       %input.layer{type: 'text',
                    name: 'update_rate',

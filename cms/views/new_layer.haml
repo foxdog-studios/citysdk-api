@@ -1,7 +1,10 @@
 .info
   .pageheader
-    %h1 New Layer
+    %a(href='/layers/') Home
+    &#8594; New layer
+
   = haml :layer_errors, locals: { layer: layer }
+
   %form#cl(name='input' method='post')
     %input(type='hidden' name='category' value=@category)
     .code

@@ -1,0 +1,11 @@
+.info
+  .pageheader
+    %a(href='/layers/') Home
+    &#8594;
+    %a(href="/users/#{ current_user.id }/edit")= current_user.email
+
+  = haml :'user/errors'
+
+  %form(name='input' action="/users/#{ current_user.id }/edit" method='post')
+    = haml :'user/edit_form_body'
+

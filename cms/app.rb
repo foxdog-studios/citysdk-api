@@ -2,6 +2,7 @@
 
 require 'base64'
 require 'json'
+require 'pathname'
 
 require 'sinatra'
 require 'sinatra/session'
@@ -9,6 +10,8 @@ require 'sinatra/sequel'
 
 module CitySDK
   class CMSApplication < ::Sinatra::Application
+    register Sinatra::Session
+
     configure :production do |app|
       PhusionPassenger.on_event(:starting_worker_process) do |forked|
         # Disconnect if we're in smart spawning mode.
@@ -17,7 +20,7 @@ module CitySDK
     end # do
 
     configure do |app|
-      root_path = File.dirname(__FILE__)
+      root_path = Pathname(__FILE__).dirname
 
       # Load external configuration.
       config_path = File.join(root_path, 'config.json')
@@ -25,14 +28,15 @@ module CitySDK
         JSON.load(config_file, nil, symbolize_names: true)
       end # do
 
+      # Views
+      views_path = root_path.join('views')
+      set :views, views_path
+
+      # Sessions
       enable :sessions
       set :session_expire, 60 * 60 * 24
       set :session_fail, '/login'
       set :session_secret, CONFIG.fetch(:session_secret)
-      set :template_engine, :haml
-      set :views, File.join(root_path, 'views')
-      use Rack::MethodOverride
-      register Sinatra::Session
 
       # Establish a connection to the database.
       user     = CONFIG.fetch(:db_user)
@@ -49,9 +53,17 @@ module CitySDK
 
       Sequel.extension(:pg_array_ops)
 
-      # Load Sinatra Authentication
+      #
+      # Sinatra Authentication (SA)
+      #
+
+      # SA requires that DB be defined before you require it.
       ::DB = app.database
       require 'sinatra-authentication'
+
+      # Use our own views
+      set :sinatra_authentication_view_path, views_path.join('user')
+
     end # end
   end # class
 end # module
