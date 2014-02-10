@@ -191,13 +191,12 @@ def setup(start=1, end=None):
         configure_default_nginx_server, # 33 |
         configure_nginx_servers,        # 34 |
         ensure_deploy_user,             # 35 | Deploy user
-        write_deploy_scripts,           # 36 | Deploy directories
-        make_deploy_directories,        # 37 |
-        setup_deploy_directories,       # 38 |
-        check_deploy_directories,       # 39 |
-        deploy_all,                     # 40 | Deploy
-        copy_config,                    # 41 |
-        restart_nginx,                  # 42 |
+        make_deploy_directories,        # 36 | Deploy apps
+        setup_deploy_directories,       # 37 |
+        check_deploy_directories,       # 38 |
+        deploy_all,                     # 39 | Deploy
+        copy_config,                    # 40 |
+        restart_nginx,                  # 41 |
     ]
 
     start = int(start) - 1
@@ -872,16 +871,18 @@ server '{host}', :app, :web, :primary => true
 @task
 def write_deploy_scripts():
     for app in env.apps.itervalues():
-        if not os.path.exists(app.local_deploy):
-            os.makedirs(app.local_deploy)
+        write_deploy_script(app)
 
-        with open(app.local_deploy_script, 'w') as script_file:
-            script_file.write(DEPLOY_SCRIPT_TEMPLATE.format(
-                deploy_to=app.server_root,
-                host=env.host,
-                user=env.deploy_user,
-            ))
+def write_deploy_script(app):
+    if not os.path.exists(app.local_deploy):
+        os.makedirs(app.local_deploy)
 
+    with open(app.local_deploy_script, 'w') as script_file:
+        script_file.write(DEPLOY_SCRIPT_TEMPLATE.format(
+            deploy_to=app.server_root,
+            host=env.host,
+            user=env.deploy_user,
+        ))
 
 @task
 def make_deploy_directories():
@@ -1135,6 +1136,7 @@ def cap(app, task):
 
 
 def deploy(app):
+    write_deploy_script(app)
     return cap(app, 'deploy')
 
 
