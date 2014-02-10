@@ -73,6 +73,9 @@ env.deploy_to        = '/var/www'
 env.distro_codename  = 'precise'
 env.nginx_conf       = '/etc/nginx'
 env.nginx_log        = '/var/log/nginx'
+env.nodejs_dir       = '/opt/nodejs'
+env.nodejs_bin       = '/opt/nodejs/bin/node'
+env.nodejs_tag       = '0.10.24'
 env.osm2pgsql_tag    = '0.84.0'
 env.osm_data         = 'osm.pbf'
 env.passenger_group  = 'www-data'
@@ -136,6 +139,7 @@ env.deploy_key            = os.path.expanduser(env.deploy_key)
 env.nginx_sites_available = posixpath.join(env.nginx_conf, 'sites-available')
 env.nginx_sites_enabled   = posixpath.join(env.nginx_conf, 'sites-enabled')
 env.nginx_ssl             = posixpath.join(env.nginx_conf, 'ssl')
+env.nodejs_path           = 'node-v{}-linux-x64'.format(env.nodejs_tag)
 env.osm2pgsql_path        = 'osm2pgsql-{}'.format(env.osm2pgsql_tag)
 env.ruby_use              = '@'.join([env.ruby_version, env.ruby_gemset])
 
@@ -158,40 +162,42 @@ def setup(start=1, end=None):
         install_packages,               #  4 |
         upgrade_distribution,           #  5 |
         remove_unused_packages,         #  6 |
-        install_rvm,                    #  7 | RVM
-        install_rvm_requirements,       #  8 |
-        install_ruby,                   #  9 |
-        create_gemset,                  # 10 |
-        install_bundler,                # 11 |
-        ensure_osm2pgsql_source,        # 12 | Build osm2psql
-        configure_osm2pgsql,            # 13 |
-        compile_osm2pgsql,              # 14 |
-        install_osm2pgsql,              # 15 |
-        ensure_superuser,               # 16 | Database (part 1)
-        ensure_database,                # 17 |
-        ensure_role,                    # 18 |
-        initialize_database,            # 19 |
-        download_osm_data,              # 20 | OSM (part 1)
-        import_osm_data,                # 21 |
-        grant_permissions,              # 22 | Database (part 2)
-        setup_admin_ruby_env,           # 23 |
-        ensure_citysdk_admin,           # 24 |
-        create_required_layers,         # 25 |
-        create_osm_nodes,               # 26 | OSM (part 2)
-        modify_osm_nodes,               # 27 |
-        update_modalities,              # 28 |
-        copy_ssl_files,                 # 29 | Nginx
-        configure_nginx,                # 30 |
-        configure_default_nginx_server, # 31 |
-        configure_nginx_servers,        # 32 |
-        ensure_deploy_user,             # 33 | Deploy user
-        write_deploy_scripts,           # 34 | Deploy directories
-        make_deploy_directories,        # 35 |
-        setup_deploy_directories,       # 36 |
-        check_deploy_directories,       # 37 |
-        deploy_all,                     # 38 | Deploy
-        copy_config,                    # 39 |
-        restart_nginx,                  # 40 |
+        download_nodejs,                #  7 | nodejs
+        install_nodejs,                 #  8 |
+        install_rvm,                    #  9 | RVM
+        install_rvm_requirements,       # 10 |
+        install_ruby,                   # 11 |
+        create_gemset,                  # 12 |
+        install_bundler,                # 13 |
+        ensure_osm2pgsql_source,        # 14 | Build osm2psql
+        configure_osm2pgsql,            # 15 |
+        compile_osm2pgsql,              # 16 |
+        install_osm2pgsql,              # 17 |
+        ensure_superuser,               # 18 | Database (part 1)
+        ensure_database,                # 19 |
+        ensure_role,                    # 20 |
+        initialize_database,            # 21 |
+        download_osm_data,              # 22 | OSM (part 1)
+        import_osm_data,                # 23 |
+        grant_permissions,              # 24 | Database (part 2)
+        setup_admin_ruby_env,           # 25 |
+        ensure_citysdk_admin,           # 26 |
+        create_required_layers,         # 27 |
+        create_osm_nodes,               # 28 | OSM (part 2)
+        modify_osm_nodes,               # 29 |
+        update_modalities,              # 30 |
+        copy_ssl_files,                 # 31 | Nginx
+        configure_nginx,                # 32 |
+        configure_default_nginx_server, # 33 |
+        configure_nginx_servers,        # 34 |
+        ensure_deploy_user,             # 35 | Deploy user
+        write_deploy_scripts,           # 36 | Deploy directories
+        make_deploy_directories,        # 37 |
+        setup_deploy_directories,       # 38 |
+        check_deploy_directories,       # 39 |
+        deploy_all,                     # 40 | Deploy
+        copy_config,                    # 41 |
+        restart_nginx,                  # 42 |
     ]
 
     start = int(start) - 1
@@ -310,6 +316,36 @@ def remove_unused_packages():
 
 
 # =============================================================================
+# = nodejs                                                                    =
+# =============================================================================
+
+@task
+def download_nodejs():
+    if already_downloaded(env.nodejs_path):
+        return
+
+    # Download nodejs binaries
+    url = 'http://nodejs.org/dist/v0.10.24/node-v{}-linux-x64.tar.gz'
+    return run('curl --location {} | tar xz'.format(
+        quote(url.format(env.nodejs_tag)),
+    ))
+
+
+@task
+def install_nodejs():
+    sudo('cp -r {src} {dst}'.format(
+        src=quote(env.nodejs_path),
+        dst=quote(env.nodejs_dir)
+    ))
+
+
+def already_downloaded(path):
+    return run(
+        '[[ -d {} ]]'.format(quote(path)),
+        warn_only=True,
+    ).succeeded
+
+# =============================================================================
 # = RVM                                                                       =
 # =============================================================================
 
@@ -348,11 +384,7 @@ def install_bundler():
 @task
 def ensure_osm2pgsql_source():
     # If the source  has already been downloaded, there is not to do.
-    already_downloaded = run(
-        '[[ -d {} ]]'.format(quote(env.osm2pgsql_path)),
-        warn_only=True,
-    ).succeeded
-    if already_downloaded:
+    if already_downloaded(env.osm2pgsql_path):
         return
 
     # Download osm2pgsql source
@@ -662,6 +694,8 @@ upstream memcached {{
 passenger_user {passenger_user};
 passenger_group {passenger_group};
 
+passenger_nodejs {nodejs_bin};
+
 
 # SSL
 
@@ -688,6 +722,7 @@ def configure_nginx():
         local_path=StringIO(NGINX_CONF_TEMPLATE.format(
             passenger_user=env.passenger_user,
             passenger_group=env.passenger_group,
+            nodejs_bin=env.nodejs_bin
         )),
         remote_path=remote_path,
         use_sudo=True,
