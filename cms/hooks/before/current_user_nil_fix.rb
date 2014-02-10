@@ -9,7 +9,8 @@ module CitySDK
   class CMSApplication < Sinatra::Application
     before do
       return unless current_user.nil?
-      session[:user] = nil
+      logger.info('current_user was nil, ending session')
+      session_end!
     end # do
   end # class
 end # module
