@@ -10,6 +10,10 @@
       %a(href='/layers/new') New layer
     %span.editlinks
       - if logged_in?
+        %a(href="/users/#{ current_user.id }/edit")= current_user.email
+        |
+        %a(href="/users/#{ current_user.id }/edit") My account
+        |
         %a(href='/logout') Sign out
       - else
         %a(href='/login') Sign in

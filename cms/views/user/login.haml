@@ -1,0 +1,13 @@
+.info
+  #box
+    %h1 CitySDK Login
+    %form(name='input' method='post')
+      %input.login(type='text' name='email' placeholder='Email')
+      %input.login(type='password' name='password' placeholder='Password')
+      %input.submit(type='submit' value='Sign in')
+
+:javascript
+  $(document).ready(function () {
+    $('input[name="email"]').focus();
+  });
+

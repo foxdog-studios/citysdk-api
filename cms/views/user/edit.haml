@@ -1,0 +1,36 @@
+.info
+  .pageheader
+    %h1= current_user.email
+
+  = haml :'user/errors'
+
+  %form(name='input' action="/users/#{ current_user.id }/edit" method='post')
+    .code
+      %label(for='email')
+        Email
+        %input#email.layer{type: 'text',
+                           name: 'user[email]',
+                           value: current_user.email}
+    .code
+      %label(for='password')
+        Password
+        %input#password.layer{type: 'password',
+                              name: 'user[password]',
+                              placeholder: 'Password'}
+      %label(for='password_confirmation')
+        Confirmation password
+        %input#password_confirmation.layer{type: 'password',
+                                           name: 'user[password_confirmation]',
+                                           placeholder: 'Confirm password'}
+    .code
+      %label(for='organization')
+        Organization
+        %input#organization.layer{type: 'text',
+                                  name: 'user[organization]',
+                                  value: current_user.organization}
+    .code
+      %h2 Domains
+      = domains_to_s(current_user.domains)
+
+    %input(type='submit' value='Save')
+
