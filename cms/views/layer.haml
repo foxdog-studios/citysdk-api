@@ -22,7 +22,7 @@
     %tr
       %td Maintainer:
       %td= layer.owner.email
-    - unless layer.data_sources.empty?
+    - unless layer.data_sources.nil? || layer.data_sources.empty?
       %tr
         %td Sources:
         %td= layer.data_sources.join('\n')
