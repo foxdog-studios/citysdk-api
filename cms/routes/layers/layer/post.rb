@@ -63,13 +63,17 @@ module CitySDK
 
       # Sample URL
       sample_url = params['sample_url']
-      if !sample_url.nil? && sample_url.empty?
+      unless sample_url.nil? || sample_url.empty?
         layer.sample_url = sample_url
       end # if
 
       # Save or report errors.
-      layer.save if layer.valid?
-      haml :edit_layer, locals: { layer: layer }
+      if layer.valid?
+        layer.save
+        redirect '/layers/'
+      else
+        haml :edit_layer, locals: { layer: layer }
+      end # else
     end # do
   end # class
 end # module

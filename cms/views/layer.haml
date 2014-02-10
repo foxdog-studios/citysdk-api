@@ -8,26 +8,28 @@
       %a(href="/layers/#{ layer.name }/") Edit
       - if current_user.delete_layer?(layer)
         |
-        %a(href='#' onclick="deleteLayer('#{ layer.name }');")
-          Delete
-  %table.twotable
+        %a(href='#' onclick="deleteLayer('#{ layer.name }');") Delete
+  %table
     %tr
-      %td.left Category:
-      %td.right= layer.category
+      %td Category:
+      %td= layer.category
     %tr
-      %td.left Description:
-      %td.right= layer.description
+      %td Description:
+      %td= layer.description
     %tr
-      %td.left Organization:
-      %td.right= layer.organization
+      %td Organization:
+      %td= layer.organization
     %tr
-      %td.left Maintainer:
-      %td.right= layer.owner.email
-    %tr
-      %td.left Sources:
-      %td.right
-        - if layer.data_sources
-          - layer.data_sources.each do |data_source|
-            = data_source
-            %br
+      %td Maintainer:
+      %td= layer.owner.email
+    - unless layer.data_sources.empty?
+      %tr
+        %td Sources:
+        %td= layer.data_sources.join('\n')
+    - unless layer.sample_url.nil?
+      %tr
+        %td Example:
+        %td
+          - example_url = make_example_url(layer)
+          %a{href: example_url, target: '_blank'}=example_url
 

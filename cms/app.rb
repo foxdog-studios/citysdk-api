@@ -3,6 +3,7 @@
 require 'base64'
 require 'json'
 require 'pathname'
+require 'uri'
 
 require 'sinatra'
 require 'sinatra/session'
