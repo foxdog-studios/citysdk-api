@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/foxdog-studios/citysdk
-  revision: aec018bf28c01883b780f6886f981fc2cc39b6c6
+  revision: 35e79b257d563fb7209c4a228deedf39bc479c7e
   specs:
     citysdk (0.0.1)
       faraday
@@ -9,7 +9,7 @@ GIT
 
 GIT
   remote: https://github.com/foxdog-studios/citysdk-client
-  revision: 7fd29c55b83c36d576fa40d7704c6a981dc61240
+  revision: 94836d919f3fe6b21af526a08b221ee7da96eac6
   specs:
     citysdk-client (0.1.2.1)
       addressable (~> 2.3.5)
@@ -78,7 +78,7 @@ GEM
       mini_portile (~> 0.5.0)
     pg (0.17.1)
     polyglot (0.3.3)
-    pony (1.6.2)
+    pony (1.8)
       mail (>= 2.0)
     rack (1.5.2)
     rack-flash (0.1.2)
