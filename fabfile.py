@@ -45,6 +45,8 @@ env.colorize_errors = True
 
 ENV_KEY = 'CITYSDK_CONFIG_DIR'
 
+CONFIG_DIR = os.environ[ENV_KEY]
+
 def get_config(name, path):
     value = globals()['config_{}'.format(name)]
     for key in path.split('.'):
@@ -54,7 +56,7 @@ def get_config(name, path):
 
 def load_config(name):
     file_name = posixpath.extsep.join([name, 'json'])
-    config_path = os.path.join(os.environ[ENV_KEY], file_name)
+    config_path = os.path.join(CONFIG_DIR, file_name)
     with open(config_path) as config_file:
         return json.load(config_file)
 
@@ -791,7 +793,7 @@ def configure_nginx_servers():
             ssl_certificate_key=app.ssl_key,
         ))
 
-        put(config, app.server_config, use_sudo=True)
+        put(config, app.site_config, use_sudo=True)
         ln(app.server_enabled_target, app.server_enabled, use_sudo=True)
 
 
@@ -911,32 +913,33 @@ def check_deploy_directories():
 # = Deploy                                                                    =
 # =============================================================================
 
+def write_conf_file(local_path, remote_path):
+    remote_dir = posixpath.dirname(remote_path)
+    sudo('mkdir --parents {}'.format(quote(remote_dir)))
+    sudo('chown -R {}:{} {}'.format(
+        quote(env.deploy_user),
+        quote(env.passenger_group),
+        quote(remote_dir),
+    ))
+    put(local_path=local_path, remote_path=remote_path, use_sudo=True)
+
+    sudo('chown {}:{} {}'.format(
+        quote(env.deploy_user),
+        quote(env.passenger_group),
+        quote(remote_path)),
+    )
+
+    #        Read Write Execute
+    # Owner: X
+    # Group: X
+    # Other:
+    sudo('chmod 440 {}'.format(remote_path))
+
+
 @task
 def copy_config():
-    local_path = os.path.join(os.environ[ENV_KEY], 'server.json')
-
     for app in env.apps.itervalues():
-        remote_dir = posixpath.join(app.server_shared, 'config')
-        remote_path = posixpath.join(remote_dir, 'config.json')
-        sudo('mkdir --parents {}'.format(quote(remote_dir)))
-        sudo('chown -R {}:{} {}'.format(
-            quote(env.deploy_user),
-            quote(env.passenger_group),
-            quote(remote_dir),
-        ))
-        put(local_path=local_path, remote_path=remote_path, use_sudo=True)
-
-        sudo('chown {}:{} {}'.format(
-            quote(env.deploy_user),
-            quote(env.passenger_group),
-            quote(remote_path)),
-        )
-
-        #        Read Write Execute
-        # Owner: X
-        # Group: X
-        # Other:
-        sudo('chmod 440 {}'.format(remote_path))
+        write_conf_file(app.local_config, app.server_config)
 
 
 @task
@@ -965,6 +968,10 @@ def deploy_dev():
 @task
 def deploy_rdf():
     return deploy(env.app_rdf)
+
+@task
+def deploy_webservice():
+    return deploy(env.app_webservice)
 
 
 @task
@@ -1004,7 +1011,8 @@ def stop_nginx():
 # =============================================================================
 
 class App(object):
-    def __init__(self, name, priority=None, subdomain=None, ssl=False):
+    def __init__(self, name, priority=None, subdomain=None, ssl=False,
+                 local_config=None, server_config=None):
         if priority is None:
             priority = '99'
 
@@ -1021,10 +1029,14 @@ class App(object):
         self.server_current = posixpath.join(self.server_root, 'current')
         self.server_public = posixpath.join(self.server_current, 'public')
         self.server_shared = posixpath.join(self.server_root, 'shared')
-        self.server_config = posixpath.join(
+        self.site_config = posixpath.join(
             env.nginx_sites_available,
             server_name
         )
+
+        if server_config is None:
+            server_config = 'shared/config/config.json'
+        self.server_config = posixpath.join(self.server_root, server_config)
 
         self.server_enabled = posixpath.join(
             env.nginx_sites_enabled,
@@ -1050,6 +1062,10 @@ class App(object):
         self.local_deploy = os.path.join(self.local_dir, 'config/deploy')
         self.local_deploy_script = os.path.join(self.local_deploy,
                                                 'production.rb')
+
+        if local_config is None:
+            local_config = 'server.json'
+        self.local_config = os.path.join(CONFIG_DIR, local_config)
 
         self.ssl_crt = posixpath.join(env.nginx_conf, 'ssl', '{}.crt'.format(
             self.server_name,
@@ -1167,5 +1183,9 @@ for name, subdomain, ssl in app_templates:
     app = App(name, subdomain=subdomain, ssl=ssl)
     apps[name] = app
     setattr(env, 'app_%s' % (name,), app)
+env.app_webservice = App('webservice', subdomain='webservice',
+                         local_config='webservice.yml',
+                         server_config='current/config.yml')
+apps['webservice'] = env.app_webservice
 env.apps = apps
 
