@@ -189,8 +189,8 @@ def setup(start=1, end=None):
         make_deploy_directories,        # 35 |
         setup_deploy_directories,       # 36 |
         check_deploy_directories,       # 37 |
-        copy_config,                    # 38 | Deploy
-        deploy_all,                     # 39 |
+        deploy_all,                     # 38 | Deploy
+        copy_config,                    # 39 |
         restart_nginx,                  # 40 |
     ]
 
@@ -913,6 +913,11 @@ def check_deploy_directories():
 # = Deploy                                                                    =
 # =============================================================================
 
+@task
+def deploy_all():
+    return map(deploy, env.apps.itervalues())
+
+
 def write_conf_file(local_path, remote_path):
     remote_dir = posixpath.dirname(remote_path)
     sudo('mkdir --parents {}'.format(quote(remote_dir)))
@@ -940,11 +945,6 @@ def write_conf_file(local_path, remote_path):
 def copy_config():
     for app in env.apps.itervalues():
         write_conf_file(app.local_config, app.server_config)
-
-
-@task
-def deploy_all():
-    return map(deploy, env.apps.itervalues())
 
 
 # =============================================================================
