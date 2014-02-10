@@ -53,13 +53,18 @@
 
 <script>
   $(document).ready(function() {
+    var getLocation = function(href) {
+        var l = document.createElement("a");
+        l.href = href;
+        return l;
+    };
 
-    // var tileUrl = 'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-    //var tileUrl = 'http://test-api.citysdk.waag.org:8888/v2/citysdk/{z}/{x}/{y}.png';
-    var server  = "<%= @config[:ep_api_url] %>".split('http://')[1] + '/';
+    var epApiUrl = "<%= @config[:ep_api_url] %>";
+    var epApiUrlLocation = getLocation(epApiUrl);
+    var server  = epApiUrlLocation.hostname + '/';
     var tileUrl = "<%= @config[:ep_tileserver_url] %>" + '/{z}/{x}/{y}.png';
     var curr_location = "<%= @config[:ep_mapxyz] %>".split(',');
-    var http = 'http://';
+    var http = epApiUrlLocation.protocol + '//';
 
     var spinnerOpts = {
       lines: 12, // The number of lines to draw
