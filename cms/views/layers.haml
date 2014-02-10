@@ -1,7 +1,7 @@
 .info
   %div.pageheader
     %h1
-      %a(href='/layers/') Layers
+      %a(href='/layers/') Home
     %br
     - if current_user.create_layer?
       %a(href='/layers/new') New layer
@@ -16,6 +16,8 @@
         |
         %a(href='/logout') Sign out
       - else
+        %a(href='/signup') Sign up
+        |
         %a(href='/login') Sign in
   - layers.each do |layer|
     = haml :layer, locals: { layer: layer }
