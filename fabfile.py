@@ -75,7 +75,7 @@ env.nginx_conf       = '/etc/nginx'
 env.nginx_log        = '/var/log/nginx'
 env.nodejs_dir       = '/opt/nodejs'
 env.nodejs_bin       = '/opt/nodejs/bin/node'
-env.nodejs_tag       = '0.10.24'
+env.nodejs_tag       = '0.10.25'
 env.osm2pgsql_tag    = '0.84.0'
 env.osm_data         = 'osm.pbf'
 env.passenger_group  = 'www-data'
@@ -324,7 +324,8 @@ def download_nodejs():
         return
 
     # Download nodejs binaries
-    url = 'http://nodejs.org/dist/v0.10.24/node-v{}-linux-x64.tar.gz'
+    url = 'http://nodejs.org/dist/v%s/node-v{}-linux-x64.tar.gz' \
+            % env.nodejs_tag
     return run('curl --location {} | tar xz'.format(
         quote(url.format(env.nodejs_tag)),
     ))
@@ -332,6 +333,8 @@ def download_nodejs():
 
 @task
 def install_nodejs():
+    # remove old version
+    sudo('rm -rf {dst}'.format(dst=quote(env.nodejs_dir)))
     sudo('cp -r {src} {dst}'.format(
         src=quote(env.nodejs_path),
         dst=quote(env.nodejs_dir)
