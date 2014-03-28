@@ -1,8 +1,9 @@
 #!/usr/bin/env zsh
 
-setopt err_exit
-source ${0:h}/library.zsh
+setopt ERR_EXIT
+setopt NO_UNSET
 
+source -- ${0:h}/library.zsh
 
 # ==============================================================================
 # = Configuration                                                              =
@@ -10,7 +11,6 @@ source ${0:h}/library.zsh
 
 require_bundler=(
     cms
-    database
     devsite
     rdf
     server
@@ -37,6 +37,8 @@ pacman_packages=(
     libyaml
     memcached
     nodejs
+    postgresql
+    postgis
     python2-virtualenv
     wget
     yaourt
@@ -81,7 +83,7 @@ function install_rvm()
 {
     # /etc/gemrc is part of Arch Linux's Ruby package
     if [[ -f /etc/gemrc ]]; then
-        sudo sed -i '/gem: --user-install/d' /etc/gemrc
+        sudo sed --in-place '/gem: --user-install/d' /etc/gemrc
     fi
 
     curl --location https://get.rvm.io | bash -s stable
@@ -89,12 +91,17 @@ function install_rvm()
 
 function install_ruby()
 {
+    unsetopt NO_UNSET
     rvm install ruby-$ruby_version
+    rvm use $ruby_version@$ruby_gemset
+    setopt NO_UNSET
 }
 
 function install_gemset()
 {
+    unsetopt NO_UNSET
     rvm gemset create $ruby_gemset
+    setopt NO_UNSET
 
     local dirname
     for dirname in $require_bundler; do
@@ -104,7 +111,9 @@ function install_gemset()
 
 function create_ve()
 {
-    virtualenv-2.7 $env
+    if [[ ! -d $env ]]; then
+        virtualenv --python=python2.7 $env
+    fi
 }
 
 function install_python_packages()
@@ -184,7 +193,7 @@ function manual()
 function ve()
 {
     setopt local_options
-    unsetopt no_unset
+    unsetopt NO_UNSET
 
     source $env/bin/activate
     $@

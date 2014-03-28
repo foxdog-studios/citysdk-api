@@ -68,11 +68,20 @@ function serve()
 # = Ruby                                                                       =
 # ==============================================================================
 
-source ~/.rvm/scripts/rvm
+if [[ -r ~/.rvm/scripts/rvm ]]; then
+    unsetopt NO_UNSET
+    source ~/.rvm/scripts/rvm
+    setopt NO_UNSET
+fi
 
 ruby_version=1.9.3
 ruby_gemset=citysdk
-rvm use $ruby_version@$ruby_gemset
+
+if $(( $+commands[rvm] )); then
+    unsetopt NO_UNSET
+    rvm use $ruby_version@$ruby_gemset
+    setopt NO_UNSET
+fi
 
 
 # ==============================================================================
