@@ -14,6 +14,7 @@ require_bundler=(
     devsite
     rdf
     server
+    webservice
 )
 
 aur_packages=(

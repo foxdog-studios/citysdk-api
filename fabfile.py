@@ -324,8 +324,7 @@ def download_nodejs():
         return
 
     # Download nodejs binaries
-    url = 'http://nodejs.org/dist/v%s/node-v{}-linux-x64.tar.gz' \
-            % env.nodejs_tag
+    url = 'http://nodejs.org/dist/v{0}/node-v{0}-linux-x64.tar.gz'
     return run('curl --location {} | tar xz'.format(
         quote(url.format(env.nodejs_tag)),
     ))
@@ -342,10 +341,8 @@ def install_nodejs():
 
 
 def already_downloaded(path):
-    return run(
-        '[[ -d {} ]]'.format(quote(path)),
-        warn_only=True,
-    ).succeeded
+    return run('[[ -d {} ]]'.format(quote(path)), warn_only=True).succeeded
+
 
 # =============================================================================
 # = RVM                                                                       =
@@ -482,8 +479,8 @@ def ensure_role():
 
     # Create the user
     commands = margin(r'''
-        \set ON_ERROR_STOP on
-        CREATE ROLE {role} WITH LOGIN PASSWORD '{password}';
+       |\set ON_ERROR_STOP on
+       |CREATE ROLE {role} WITH LOGIN PASSWORD '{password}';
     ''').format(
         role=env.postgres_user,
         password=env.postgres_password,

@@ -19,7 +19,7 @@ GEM
     georuby (2.2.1)
     multipart-post (2.0.0)
     pg (0.17.1)
-    sequel (4.6.0)
+    sequel (4.8.0)
     trollop (2.0)
 
 PLATFORMS
