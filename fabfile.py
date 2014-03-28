@@ -934,14 +934,12 @@ def make_deploy_directories():
 @task
 def setup_deploy_directories():
     for app in env.apps.itervalues():
-        print(app.local_dir)
         cap(app, 'deploy:setup')
 
 
 @task
 def check_deploy_directories():
     for app in env.apps.itervalues():
-        print(app.local_dir)
         cap(app, 'deploy:check')
 
 
@@ -953,6 +951,10 @@ def check_deploy_directories():
 def deploy_all():
     return map(deploy, env.apps.itervalues())
 
+@task
+def copy_config():
+    for app in env.apps.itervalues():
+        write_conf_file(app.local_config, app.server_config)
 
 def write_conf_file(local_path, remote_path):
     remote_dir = posixpath.dirname(remote_path)
@@ -963,24 +965,17 @@ def write_conf_file(local_path, remote_path):
         quote(remote_dir),
     ))
     put(local_path=local_path, remote_path=remote_path, use_sudo=True)
-
     sudo('chown {}:{} {}'.format(
         quote(env.deploy_user),
         quote(env.passenger_group),
-        quote(remote_path)),
-    )
+        quote(remote_path),
+    ))
 
     #        Read Write Execute
     # Owner: X
     # Group: X
     # Other:
-    sudo('chmod 440 {}'.format(remote_path))
-
-
-@task
-def copy_config():
-    for app in env.apps.itervalues():
-        write_conf_file(app.local_config, app.server_config)
+    sudo('chmod 440 {}'.format(quote(remote_path)))
 
 
 # =============================================================================
