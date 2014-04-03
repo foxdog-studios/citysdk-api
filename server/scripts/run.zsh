@@ -1,8 +1,6 @@
 #!/usr/bin/env zsh
 
-setopt err_exit
+setopt ERR_EXIT
 source ${0:h}/../../scripts/library.zsh
-cd $repo/server
-
-bundle exec rerun 'rackup --server thin'
+serve server api
 

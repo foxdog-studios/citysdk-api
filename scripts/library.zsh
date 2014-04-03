@@ -59,8 +59,10 @@ function serve()
     local dirname=$1
     local app=${2:-$dirname}
 
+    unsetopt NO_UNSET
     cd $repo/$dirname
     bundle exec rackup --port $(config-dev $app.port) --server thin
+    setopt NO_UNSET
 }
 
 
