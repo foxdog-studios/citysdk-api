@@ -80,6 +80,13 @@ function install_aur_packages()
     done
 }
 
+function init_submodules()
+{(
+    cd $repo
+    git submodule init
+    git submodule update
+)}
+
 function install_rvm()
 {
     # /etc/gemrc is part of Arch Linux's Ruby package
@@ -88,13 +95,16 @@ function install_rvm()
     fi
 
     curl --location https://get.rvm.io | bash -s stable
+
+    unsetopt NO_UNSET
+    source ~/.rvm/scripts/rvm
+    setopt NO_UNSET
 }
 
 function install_ruby()
 {
     unsetopt NO_UNSET
     rvm install ruby-$ruby_version
-    rvm use $ruby_version@$ruby_gemset
     setopt NO_UNSET
 }
 
@@ -113,7 +123,7 @@ function install_gemset()
 function create_ve()
 {
     if [[ ! -d $env ]]; then
-        virtualenv --python=python2.7 $env
+        virtualenv2 --python=python2.7 $env
     fi
 }
 
@@ -210,6 +220,7 @@ tasks=(
     add_archlinuxfr_repo
     install_pacman_packages
     install_aur_packages
+    init_submodules
     install_rvm
     install_ruby
     install_gemset
@@ -236,6 +247,7 @@ function usage()
 		    add_archlinuxfr_repo
 		    install_pacman_packages
 		    install_aur_packages
+		    init_submodules
 		    install_rvm
 		    install_ruby
 		    install_gemset

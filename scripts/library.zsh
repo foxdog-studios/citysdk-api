@@ -77,7 +77,7 @@ fi
 ruby_version=1.9.3
 ruby_gemset=citysdk
 
-if $(( $+commands[rvm] )); then
+if (( $+commands[rvm] )); then
     unsetopt NO_UNSET
     rvm use $ruby_version@$ruby_gemset
     setopt NO_UNSET

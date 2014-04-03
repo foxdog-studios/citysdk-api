@@ -10,12 +10,16 @@ GIT
 GEM
   remote: https://rubygems.org/
   specs:
-    active_support (3.0.0)
-      activesupport (= 3.0.0)
-    activesupport (3.0.0)
+    activesupport (4.0.4)
+      i18n (~> 0.6, >= 0.6.9)
+      minitest (~> 4.2)
+      multi_json (~> 1.3)
+      thread_safe (~> 0.1)
+      tzinfo (~> 0.3.37)
     addressable (2.3.6)
     amatch (0.3.0)
       tins (~> 1.0)
+    atomic (1.1.16)
     base62 (1.0.0)
     capistrano (2.15.5)
       highline
@@ -54,6 +58,8 @@ GEM
       rb-fsevent (>= 0.9.3)
       rb-inotify (>= 0.9)
     logger (1.2.8)
+    minitest (4.7.5)
+    multi_json (1.9.2)
     multipart-post (2.0.0)
     net-scp (1.1.2)
       net-ssh (>= 2.6.5)
@@ -83,7 +89,7 @@ GEM
     rgeo-geojson (0.2.3)
       rgeo (>= 0.3.7)
     rufus-tokyo (1.0.7)
-    sequel (4.8.0)
+    sequel (4.9.0)
     sinatra (1.4.4)
       rack (~> 1.4)
       rack-protection (~> 1.4)
@@ -102,21 +108,24 @@ GEM
       sinatra (>= 0.9.4)
     sinbook (0.1.9)
       yajl-ruby
-    stringex (2.4.2)
+    stringex (2.5.0)
     thin (1.6.2)
       daemons (>= 1.0.9)
       eventmachine (>= 1.0.0)
       rack (>= 1.0.0)
+    thread_safe (0.3.1)
+      atomic (>= 1.1.7, < 2)
     tilt (1.4.1)
     timers (1.1.0)
     tins (1.0.1)
+    tzinfo (0.3.39)
     yajl-ruby (1.2.0)
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
-  active_support
+  activesupport
   amatch
   base62
   capistrano (~> 2)
