@@ -85,6 +85,49 @@ ALTER TABLE layers ADD CONSTRAINT constraint_bbox_4326 CHECK (
 
 
 -- -----------------------------------------------------------------------------
+-- - Node table                                                                -
+-- -----------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS nodes (
+    id         SERIAL PRIMARY KEY,
+    cdk_id     TEXT NOT NULL UNIQUE,
+    name       TEXT,
+    members    BIGINT[],
+    related    BIGINT[],
+    layer_id   INTEGER NOT NULL REFERENCES layers(id),
+    node_type  INTEGER NOT NULL DEFAULT 0,
+    modalities INTEGER[],
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+    geom       geometry
+);
+
+-- Additional constraints
+ALTER TABLE nodes
+    ADD CONSTRAINT constraint_geom_4326
+    CHECK (ST_SRID(geom) = 4326)
+;
+
+ALTER TABLE nodes
+    ADD CONSTRAINT constraint_geom_no_geomcoll
+    CHECK (GeometryType(geom) != 'GEOMETRYCOLLECTION')
+;
+
+-- Indices
+CREATE INDEX ON nodes USING btree (id);
+CREATE INDEX ON nodes USING btree (cdk_id);
+CREATE INDEX ON nodes USING gin (members);
+CREATE INDEX ON nodes USING gin (modalities);
+CREATE INDEX ON nodes USING gist (geom);
+CREATE INDEX ON nodes USING btree (node_type);
+CREATE INDEX ON nodes USING btree (layer_id);
+CREATE INDEX ON nodes USING gist (name gist_trgm_ops);
+CREATE INDEX ON nodes USING btree(lower(name));
+CREATE INDEX ON nodes USING btree ((members[array_lower(members, 1)]));
+CREATE INDEX ON nodes USING btree ((members[array_upper(members, 1)]));
+
+
+-- -----------------------------------------------------------------------------
 -- - Other tables                                                              -
 -- -----------------------------------------------------------------------------
 
@@ -96,20 +139,6 @@ CREATE TABLE IF NOT EXISTS categories (
 CREATE TABLE IF NOT EXISTS modalities (
     id   SERIAL PRIMARY KEY,
     name TEXT NOT NULL UNIQUE
-);
-
-CREATE TABLE IF NOT EXISTS nodes (
-    id         SERIAL PRIMARY KEY,
-    cdk_id     TEXT NOT NULL UNIQUE,
-    name       TEXT,
-    members    BIGINT[],
-    related    BIGINT[],
-    layer_id   INTEGER NOT NULL,
-    node_type  INTEGER NOT NULL DEFAULT 0,
-    modalities INTEGER[],
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-    geom       geometry
 );
 
 
@@ -145,6 +174,11 @@ CREATE TABLE IF NOT EXISTS node_data_types (
     name TEXT NOT NULL
 );
 
+
+-- -----------------------------------------------------------------------------
+-- - Node data table                                                           -
+-- -----------------------------------------------------------------------------
+
 CREATE TABLE IF NOT EXISTS node_data (
     id             SERIAL PRIMARY KEY,
     node_id        INTEGER NOT NULL REFERENCES nodes (id),
@@ -157,6 +191,12 @@ CREATE TABLE IF NOT EXISTS node_data (
     created_at     TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
     updated_at     TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
+
+CREATE INDEX ON node_data USING btree (node_id);
+CREATE INDEX ON node_data USING gin (data);
+CREATE INDEX ON node_data USING gin (modalities);
+CREATE INDEX ON node_data USING gist (validity);
+CREATE INDEX ON node_data USING btree (layer_id);
 
 
 -- -----------------------------------------------------------------------------
@@ -550,77 +590,35 @@ END;
 $$ LANGUAGE plpgsql IMMUTABLE;
 
 
-CREATE FUNCTION update_layer_bounds(layer integer)
+CREATE OR REPLACE FUNCTION update_layer_bounds(_layer_id integer)
     RETURNS void
 AS $$
-DECLARE ext1 geometry;
-DECLARE ext2 geometry;
+DECLARE _ext1 geometry;
+DECLARE _ext2 geometry;
 BEGIN
-    ext1 := (
-        SELECT ST_SetSRID(ST_Extent(geom)::geometry, 4326)
-        FROM nodes
-        JOIN node_data ON
-            nodes.id = node_data.node_id
-            AND node_data.layer_id = layer
+    _ext1 := (
+        SELECT ST_SetSRID(ST_Extent(geom), 4326)
+            FROM nodes
+            JOIN node_data ON
+                nodes.id = node_data.node_id
+                AND node_data.layer_id = _layer_id
     );
 
-    ext2 := (
-        SELECT ST_SetSRID(ST_Extent(geom)::geometry, 4326)
-        FROM nodes
-        WHERE layer_id = layer
+    _ext2 := (
+        SELECT ST_SetSRID(ST_Extent(geom), 4326)
+            FROM nodes
+            WHERE layer_id = _layer_id
     );
 
     UPDATE layers
-    SET bbox = ST_Envelope(St_Collect(ext1,ext2))
-    WHERE id = layer;
+        SET bbox = ST_Envelope(ST_Collect(_ext1, _ext2))
+        WHERE id = _layer_id
+    ;
 END;
 $$ LANGUAGE plpgsql;
 
 
-CREATE FUNCTION node_ulb()
-    RETURNS trigger
-AS $$
-DECLARE
-    lid integer := NEW.layer_id;
-    box geometry := (SELECT bbox FROM layers WHERE id = NEW.layer_id);
-BEGIN
-    IF box IS NULL THEN
-        UPDATE layers
-        SET bbox = ST_Envelope(st_buffer(ST_SetSRID(NEW.geom, 4326), 0.0000001))
-        WHERE id = lid;
-    ELSE
-        UPDATE layers
-        SET bbox = ST_Envelope(St_Collect(NEW.geom, box))
-        WHERE id = lid;
-    END IF;
-    RETURN NULL;
-END;
-$$ LANGUAGE plpgsql;
-
-
-CREATE FUNCTION nodedata_ulb()
-    RETURNS trigger
-AS $$
-DECLARE
-    lid integer := NEW.layer_id;
-    box geometry := (SELECT bbox FROM layers WHERE id = NEW.layer_id);
-    geo geometry := (SELECT geom FROM nodes WHERE id = NEW.node_id);
-BEGIn
-    IF box IS NULL THEN
-        UPDATE layers
-        SET bbox = ST_Envelope(st_buffer(ST_SetSRID(geo, 4326), 0.0000001))
-        WHERE id = lid;
-    ELSE
-        UPDATE layers
-        SET bbox = ST_Envelope(St_Collect(geo, box))
-        WHERE id = lid;
-    END IF;
-    RETURN NULL;
-END;
-$$ LANGUAGE plpgsql;
-
-
-CREATE FUNCTION keys_for_layer(layer integer)
+CREATE OR REPLACE FUNCTION keys_for_layer(layer integer)
     RETURNS text[]
 AS $$
 BEGIN
