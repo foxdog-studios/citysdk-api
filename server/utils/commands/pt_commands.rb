@@ -1,4 +1,4 @@
-class CitySDKAPI < Sinatra::Base
+class CitySDKAPI < Sinatra::Application
 
   module PublicTransport
 
@@ -44,10 +44,10 @@ class CitySDKAPI < Sinatra::Base
           h[key][:times] << self.getRealTime(mckey,g[:data]['stop_id'],t[:departure])
           h[key][:times].uniq!
 
-          line = Node.where(:cdk_id=>key).first
+          line = CitySDK::Node.where(:cdk_id=>key).first
           if line
             members = line.members.to_a
-            lstops = Node.where(:nodes__id => members).all
+            lstops = CitySDK::Node.where(:nodes__id => members).all
             lstops = lstops.sort_by { |a| members.index(a.values[:id]) }
             seen_current = false
             h[key][:stops] = []
@@ -173,7 +173,7 @@ class CitySDKAPI < Sinatra::Base
         if(stop)
           case params[:cmd]
           when 'ptlines'
-            lines = Node.where("members @> '{ #{stop.id} }' ").eager_graph(:node_data).where(:node_id => :nodes__id)
+            lines = CitySDK::Node.where("members @> '{ #{stop.id} }' ").eager_graph(:node_data).where(:node_id => :nodes__id)
             lines = lines.all.map { |a| a.values.merge(:node_data=>a.node_data.map{|al| al.values}) }
 
             # TODO: gebruik  CitySDKAPI.json_simple_results(res, req)
@@ -182,7 +182,7 @@ class CitySDKAPI < Sinatra::Base
               :pages => 1,
               :per_page => lines.length,
               :record_count => lines.length,
-              :results => lines.each {|l| Node.serialize(l,params)}
+              :results => lines.each {|l| CitySDK::Node.serialize(l,params)}
             }.to_json
           when 'schedule'
             return scheduleForStop(stop)
@@ -212,7 +212,7 @@ class CitySDKAPI < Sinatra::Base
           case params[:cmd]
           when 'ptstops'
             members = line.members.to_a
-            stops = Node.where(:nodes__id => members).eager_graph(:node_data).where(:node_data__node_id => :nodes__id).all
+            stops = CitySDK::Node.where(:nodes__id => members).eager_graph(:node_data).where(:node_data__node_id => :nodes__id).all
             stops = stops.sort_by { |a| members.index(a.values[:id]) }.map { |a|
               a.values.merge( :node_data =>
                a.node_data.map{ |al|
@@ -225,7 +225,7 @@ class CitySDKAPI < Sinatra::Base
               :pages => 1,
               :per_page => stops.length,
               :record_count => stops.length,
-              :results => stops.each {|l| Node.serialize(l,params)}
+              :results => stops.each {|l| CitySDK::Node.serialize(l,params)}
             }.to_json
           when 'schedule'
             return scheduleForLine(line,params[:day]||0)
