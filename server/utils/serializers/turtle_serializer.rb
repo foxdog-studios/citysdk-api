@@ -7,11 +7,7 @@ module CitySDK
       @prefixes = Set.new()
     end # def
 
-    def add_node(node, params)
-      turtelize_node(node, params)
-    end # def
-
-        def add_layer(layer, params, request)
+    def add_layer(layer, params, request)
       config = lambda { |key| CONFIG.fetch(key) }
       prefixes = Set.new
       rdf_url = config.call(:ep_rdf_url)
@@ -21,7 +17,7 @@ module CitySDK
       prfs << "@prefix : <#{ rdf_url }> ."
       res = turtelize_layer(layer, params)
       prefixes.each do |p|
-        prfs << "@prefix #{p} <#{Prefix.where(prefix: p).first[:url]}> ."
+        prfs << "@prefix #{p} <#{ Prefix.where(prefix: p).first[:url] }> ."
       end
       parts = [
         prfs.join("\n"),
@@ -31,6 +27,12 @@ module CitySDK
       parts.join("\n")
     end # def
 
+    def add_node(node, params)
+      turtelize_node(node, params)
+    end # def
+
+
+
     def serialize(params, request, pagination = {})
         parts = [
           prefixes().join("\n"),
@@ -38,6 +40,17 @@ module CitySDK
           @noderesults.join("\n")
         ]
         parts.join("\n")
+    end # def
+
+    protected
+
+    def serialize_data_datum(node, node_datum, field, params)
+      @noderesults = NodeDatum.turtelizeOneField(
+        node[:cdk_id],
+        node_datum,
+        field,
+        params
+      )
     end # def
 
     private
@@ -193,6 +206,19 @@ module CitySDK
       triples
     end # def
 
+    def turtelize_node_data(cdk_id, h, params)
+      triples = []
+      gdatas = []
+      if params[:layerdataproperties].nil?
+        params[:layerdataproperties] = Set.new()
+      end # if
+      base_uri = "#{ cdk_id }/"
+      h.each do |nd|
+        gdatas += self.turtelize_one(nd, triples, base_uri, params, cdk_id)
+      end # do
+      return triples, gdatas
+    end # def
+
     def process_predicate(n, params)
       p = params[:p]
       layer,field = p.split('/')
@@ -206,13 +232,17 @@ module CitySDK
         when'application/json'
           @noderesults << {field => nd[:data][field.to_sym]}
         when'text/turtle'
-          @noderesults = NodeDatum.turtelizeOneField(n[:cdk_id],
-                                                      nd,
-                                                      field,
-                                                      params)
+          @noderesults = NodeDatum.turtelizeOneField(
+            n[:cdk_id],
+            nd,
+            field,
+            params
+          )
         end
       end
     end # def
+
+
   end # class
 end # module
 
