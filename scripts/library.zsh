@@ -61,7 +61,7 @@ function serve()
 
     unsetopt NO_UNSET
     cd $repo/$dirname
-    bundle exec rackup --port $(config-dev $app.port) --server thin
+    bundle exec rerun "rackup --port $(config-dev $app.port) --server thin"
     setopt NO_UNSET
 }
 
