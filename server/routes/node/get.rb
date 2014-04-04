@@ -11,7 +11,7 @@ class CitySDKAPI < Sinatra::Application
       halt 404, { error: "No node with cdk_id '#{ cdk_id }'." }.to_json
     end
 
-    serializer = CitySDK::Serializer.new()
+    serializer = CitySDK::Serializer.create_serializer(params[:request_format])
 
     if params[:p]
       serializer.process_predicate(results.first, params)

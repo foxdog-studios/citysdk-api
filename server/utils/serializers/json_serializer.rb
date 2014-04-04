@@ -18,8 +18,8 @@ module CitySDK
 
     def serialize(params, request, pagination = {})
         hash = { status: 'success', url: request.url }
-        hash = json.merge(pagination)
-        hash.merge(results: @noderesults)
+        hash = hash.merge(pagination)
+        hash = hash.merge(results: @noderesults)
         hash.to_json()
     end # def
 
