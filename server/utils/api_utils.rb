@@ -82,7 +82,7 @@ class CitySDKAPI < Sinatra::Application
 
   def self.nodes_results(dataset, params, req)
     res = 0
-    serializer = CitySDK::Serializer.new()
+    serializer = CitySDK::Serializer.create_serializer(params[:request_format])
     dataset.nodes(params).each do |h|
       serializer.add_node(h, params)
       res += 1

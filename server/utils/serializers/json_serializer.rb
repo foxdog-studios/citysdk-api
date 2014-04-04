@@ -23,6 +23,12 @@ module CitySDK
         hash.to_json()
     end # def
 
+    protected
+
+    def serialize_data_datum(node, node_datum, field, params)
+      @noderesults << { field => node_datum[:data][field.to_sym()] }
+    end # def
+
     private
 
     def hash_node(h, params)
