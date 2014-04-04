@@ -184,7 +184,17 @@ def insert_layer(
     description,
     data_sources
   ])
-  result[0].fetch('id')
+  layer_id = result[0].fetch('id')
+  update_layer_minimum_bounding_box(conn, layer_id)
+  layer_id
+ensure
+  result.clear unless result.nil?
+end # def
+
+def update_layer_minimum_bounding_box(conn, layer_id)
+  sql = 'SELECT update_layer_bounds($1::integer);'
+  result = conn.exec_params(sql, [layer_id]);
+  return # nothing
 ensure
   result.clear unless result.nil?
 end # def

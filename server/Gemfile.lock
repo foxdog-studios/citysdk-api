@@ -1,8 +1,8 @@
 GIT
   remote: https://github.com/foxdog-studios/citysdk
-  revision: 35e79b257d563fb7209c4a228deedf39bc479c7e
+  revision: ace97b93d763f8e5b42bace1f50e9bc0b4b65a78
   specs:
-    citysdk (0.0.1)
+    citysdk (0.0.2)
       faraday
       rgeo-geojson
       sequel

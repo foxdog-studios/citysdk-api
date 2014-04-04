@@ -20,6 +20,7 @@ dba_username=postgres
 
 osm_dir=$repo/local/data_sets
 osm_file_name=$(config-setup osm2pgsql.file_name)
+osm_file_path=$osm_dir/$osm_file_name
 osm_layer=osm
 osm_url=$(config-setup osm2pgsql.url)
 
@@ -177,6 +178,29 @@ function modify_osm_nodes()
          --username=$db_user
 }
 
+function set_osm_imported_at()
+{
+    local imported_at="$(stat -c %y $osm_file_path)"
+    psql --echo-all --dbname=$db_name <<-SQL
+		\set ON_ERROR_STOP on
+		UPDATE layers
+		    SET imported_at = '$imported_at'::timestamptz
+		    -- 0 is the predefined ID of the OSM layer.
+		    WHERE id = 0
+		;
+	SQL
+}
+
+function update_osm_bounds()
+{
+    psql --echo-all --dbname=$db_name <<-'SQL'
+		\set ON_ERROR_STOP on
+
+		-- 0 is the predefined ID of the OSM layer.
+		SELECT update_layer_bounds(0);
+	SQL
+}
+
 function update_modalities()
 {
     local config=$CITYSDK_CONFIG_DIR/server.json
@@ -201,6 +225,8 @@ tasks=(
     create_required_layers
     create_osm_nodes
     modify_osm_nodes
+    set_osm_imported_at
+    update_osm_bounds
     update_modalities
 )
 
@@ -228,6 +254,8 @@ function usage()
 		    create_osm_tuples
 		    create_osm_nodes
 		    modify_osm_nodes
+		    set_osm_imported_at
+		    update_osm_bounds
 		    update_modalities
 	EOF
     exit 1
