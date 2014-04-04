@@ -9,6 +9,120 @@ module CitySDK
       @layers = []
     end
 
+    def add_node(node, params)
+      case params[:request_format]
+      when 'application/json'
+        hash_node(node, params)
+      when 'text/turtle'
+        turtelize_node(node, params)
+      end
+    end
+
+    def hash_node(h, params)
+      if h[:node_data]
+        h[:layers] = NodeDatum.serialize(h[:cdk_id], h[:node_data], params)
+      end
+      # members not directly exposed,
+      # call ../ptstops form members of route, f.i.
+      h.delete(:members)
+
+      h[:layer] = Layer.nameFromId(h[:layer_id])
+      if h[:name].nil?
+        h[:name] = ''
+      end
+      if params.has_key? "geom"
+        if h[:member_geometries] && h[:node_type] != 3
+          h[:geom] = RGeo::GeoJSON.encode(
+            CitySDKAPI.rgeo_factory.parse_wkb(h[:member_geometries]))
+        elsif h[:geom]
+          h[:geom] = RGeo::GeoJSON.encode(
+            CitySDKAPI.rgeo_factory.parse_wkb(h[:geom]))
+        end
+      else
+        h.delete(:geom)
+      end
+
+      if h[:modalities]
+        h[:modalities] = h[:modalities].map { |m| Modality.name_for_id(m) }
+      else
+        h.delete(:modalities)
+      end
+
+      h.delete(:related) if h[:related].nil?
+      h.delete(:member_geometries)
+      h[:node_type] = @node_types[h[:node_type]]
+      h.delete(:layer_id)
+      h.delete(:id)
+      h.delete(:node_data)
+      h.delete(:created_at)
+      h.delete(:updated_at)
+
+      if h.has_key? :collect_member_geometries
+        h.delete(:collect_member_geometries)
+      end
+      @noderesults << h
+      h
+    end
+
+
+    def turtelize_node(h, params)
+      @prefixes << 'rdfs:'
+      @prefixes << 'rdf:'
+      @prefixes << 'geos:'
+      @prefixes << 'dc:'
+      @prefixes << 'owl:'
+      @prefixes << 'lgdo:' if h[:layer_id] == 0
+      triples = []
+
+      if not @layers.include?(h[:layer_id])
+        @layers << h[:layer_id]
+        triples << "<layer/#{Layer.nameFromId(h[:layer_id])}> a :Layer ."
+        triples << ""
+      end
+
+      triples << "<#{h[:cdk_id]}>"
+      triples << "\t a :#{@node_types[h[:node_type]].capitalize} ;"
+      if h[:name] and h[:name] != ''
+        triples << "\t dc:title \"#{h[:name].gsub('"','\"')}\" ;"
+      end
+      layer_name = Layer.nameFromId(h[:layer_id])
+      triples << "\t :createdOnLayer <layer/#{layer_name}> ;"
+
+      if h[:modalities]
+        h[:modalities].each { |modality|
+          m = Modality.name_for_id(modality)
+          triples << "\t :hasTransportmodality :transportModality_#{m} ;"
+        }
+      end
+
+      if params.has_key? "geom"
+        if h[:member_geometries] and h[:node_type] != 3
+          triples << "\t geos:hasGeometry \"" \
+            + RGeo::WKRep::WKTGenerator.new.generate(
+                CitySDKAPI.rgeo_factory.parse_wkb(h[:member_geometries])) \
+            + '" ;'
+        elsif h[:geom]
+          triples << "\t geos:hasGeometry \"" \
+            + RGeo::WKRep::WKTGenerator.new.generate(
+                CitySDKAPI.rgeo_factory.parse_wkb(h[:geom])) \
+            + '" ;'
+        end
+      end
+
+      if h[:node_data]
+        t,d =  NodeDatum.turtelize(h[:cdk_id], h[:node_data], params)
+        triples += t if t
+        triples += d if d
+      end
+
+      @noderesults += triples
+      if @noderesults[-1] && @noderesults[-1][-1] == ';'
+        @noderesults[-1][-1]='.'
+      end
+      triples
+    end # def
+
+
     def add_layer(layer, params, request)
       case params[:request_format]
       when 'text/turtle'
@@ -99,6 +213,28 @@ module CitySDK
       triples << ""
       @noderesults += triples
       triples
+    end
+
+
+    def process_predicate(n, params)
+      p = params[:p]
+      layer,field = p.split('/')
+      if 0 == Layer.where(:name=>layer).count
+        CitySDKAPI.do_abort(422,"Layer not found: 'layer'")
+      end
+      layer_id = Layer.idFromText(layer)
+      nd = NodeDatum.where({:node_id => n[:id], :layer_id => layer_id}).first
+      if nd
+        case params[:request_format]
+        when'application/json'
+          @noderesults << {field => nd[:data][field.to_sym]}
+        when'text/turtle'
+          @noderesults = NodeDatum.turtelizeOneField(n[:cdk_id],
+                                                      nd,
+                                                      field,
+                                                      params)
+        end
+      end
     end
 
     def prefixes
