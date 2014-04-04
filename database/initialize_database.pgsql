@@ -141,14 +141,12 @@ CREATE TABLE IF NOT EXISTS modalities (
     name TEXT NOT NULL UNIQUE
 );
 
-
 CREATE TABLE IF NOT EXISTS ldprefix (
     prefix   TEXT PRIMARY KEY,
     name     TEXT NOT NULL,
     url      TEXT NOT NULL,
     owner_id INTEGER NOT NULL REFERENCES users (id)
 );
-
 
 CREATE TABLE IF NOT EXISTS ldprops (
     layer_id INTEGER NOT NULL REFERENCES layers (id),
@@ -162,12 +160,10 @@ CREATE TABLE IF NOT EXISTS ldprops (
     PRIMARY KEY (layer_id, key)
 );
 
-
 CREATE TABLE IF NOT EXISTS node_types (
     id   SERIAL PRIMARY KEY,
     name TEXT NOT NULL
 );
-
 
 CREATE TABLE IF NOT EXISTS node_data_types (
     id   SERIAL PRIMARY KEY,
