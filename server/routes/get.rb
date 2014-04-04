@@ -1,6 +1,7 @@
 class CitySDKAPI < Sinatra::Application
   get '/' do
     request_format = params.fetch(:request_format)
+    puts request_format, params
     case request_format
     when 'application/json' then make_json_status
     when 'text/turtle'      then make_turtle_status

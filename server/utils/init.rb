@@ -6,5 +6,6 @@ require_relative 'commands/route_commands'
 require_relative 'commands/pt_commands'
 require_relative 'paths'
 require_relative 'query_filters'
+require_relative 'serializers'
 require_relative 'utils'
 
