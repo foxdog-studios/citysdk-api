@@ -7,7 +7,11 @@ module CitySDK
       @prefixes = Set.new()
     end # def
 
-    def add_layer(layer, params, request)
+    def add_node(node, params)
+      turtelize_node(node, params)
+    end # def
+
+        def add_layer(layer, params, request)
       config = lambda { |key| CONFIG.fetch(key) }
       prefixes = Set.new
       rdf_url = config.call(:ep_rdf_url)
@@ -130,6 +134,84 @@ module CitySDK
       triples << ""
       @noderesults += triples
       triples
+    end # def
+
+    def turtelize_node(h, params)
+      @prefixes << 'rdfs:'
+      @prefixes << 'rdf:'
+      @prefixes << 'geos:'
+      @prefixes << 'dc:'
+      @prefixes << 'owl:'
+      @prefixes << 'lgdo:' if h[:layer_id] == 0
+      triples = []
+
+      if not @layers.include?(h[:layer_id])
+        @layers << h[:layer_id]
+        triples << "<layer/#{Layer.nameFromId(h[:layer_id])}> a :Layer ."
+        triples << ""
+      end
+
+      triples << "<#{h[:cdk_id]}>"
+      triples << "\t a :#{@node_types[h[:node_type]].capitalize} ;"
+      if h[:name] and h[:name] != ''
+        triples << "\t dc:title \"#{h[:name].gsub('"','\"')}\" ;"
+      end
+      layer_name = Layer.nameFromId(h[:layer_id])
+      triples << "\t :createdOnLayer <layer/#{layer_name}> ;"
+
+      if h[:modalities]
+        h[:modalities].each { |modality|
+          m = Modality.name_for_id(modality)
+          triples << "\t :hasTransportmodality :transportModality_#{m} ;"
+        }
+      end
+
+      if params.has_key? "geom"
+        if h[:member_geometries] and h[:node_type] != 3
+          triples << "\t geos:hasGeometry \"" \
+            + RGeo::WKRep::WKTGenerator.new.generate(
+                CitySDKAPI.rgeo_factory.parse_wkb(h[:member_geometries])) \
+            + '" ;'
+        elsif h[:geom]
+          triples << "\t geos:hasGeometry \"" \
+            + RGeo::WKRep::WKTGenerator.new.generate(
+                CitySDKAPI.rgeo_factory.parse_wkb(h[:geom])) \
+            + '" ;'
+        end
+      end
+
+      if h[:node_data]
+        t,d =  NodeDatum.turtelize(h[:cdk_id], h[:node_data], params)
+        triples += t if t
+        triples += d if d
+      end
+
+      @noderesults += triples
+      if @noderesults[-1] && @noderesults[-1][-1] == ';'
+        @noderesults[-1][-1]='.'
+      end
+      triples
+    end # def
+
+    def process_predicate(n, params)
+      p = params[:p]
+      layer,field = p.split('/')
+      if 0 == Layer.where(:name=>layer).count
+        CitySDKAPI.do_abort(422,"Layer not found: 'layer'")
+      end
+      layer_id = Layer.idFromText(layer)
+      nd = NodeDatum.where({:node_id => n[:id], :layer_id => layer_id}).first
+      if nd
+        case params[:request_format]
+        when'application/json'
+          @noderesults << {field => nd[:data][field.to_sym]}
+        when'text/turtle'
+          @noderesults = NodeDatum.turtelizeOneField(n[:cdk_id],
+                                                      nd,
+                                                      field,
+                                                      params)
+        end
+      end
     end # def
   end # class
 end # module
