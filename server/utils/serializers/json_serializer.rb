@@ -3,13 +3,7 @@
 module CitySDK
   class JsonSerializer < Serializer
     def add_layer(layer, params, request)
-      {
-        status: 'success',
-        url: request.url,
-        results: [
-          layer.make_hash(params)
-        ]
-      }.to_json()
+        hash_layer(layer, params)
     end # def
 
     def add_node(node, params)
@@ -25,11 +19,74 @@ module CitySDK
 
     protected
 
-    def serialize_data_datum(node, node_datum, field, params)
+    def serialize_node_datum_field(node, node_datum, field, params)
       @noderesults << { field => node_datum[:data][field.to_sym()] }
     end # def
 
     private
+
+    def hash_layer(layer, params)
+      data_sources =
+        if layer.data_sources.nil?
+          []
+        else
+          layer.data_sources.map do |data_source|
+            indexOfEquals = data_source.index('=')
+            if indexOfEquals
+              data_source[indexOfEquals+1..-1]
+            else
+              data_source
+            end # if
+          end # do
+        end # if
+
+      h = {
+        name: layer.name,
+        category: layer.category,
+        organization: layer.organization,
+        owner: layer.owner.email,
+        description: layer.description,
+        data_sources: data_sources,
+        imported_at: layer.imported_at
+      }
+
+      res = LayerProperty.where(layer_id: layer.id)
+      h[:fields] = [] if res.count > 0
+      res.each do |r|
+        a = {
+          :key => r.key,
+          :type => r.type
+        }
+        if r.type =~ /(integer|float|double)/ && r.unit != ''
+          a[:valueUnit] = r.unit
+        end # if
+        if r.lang != '' && r.type == 'xsd:string'
+          a[:valueLanguange] = r.lang
+        end # if
+        if r.eqprop && r.eqprop != ''
+          a[:equivalentProperty] = r.eqprop
+        end # if
+        unless r.descr.empty?
+          a[:description] = r.descr
+        end # unless
+        h[:fields] << a
+      end # do
+
+      if layer.sample_url
+        h[:sample_url] = layer.sample_url
+      end # if
+
+      if layer.realtime
+        h[:update_rate] = layer.update_rate
+      end # if
+
+      if !layer.bbox.nil? && params.has_key?('geom')
+         h[:bbox] = RGeo::GeoJSON.encode(
+           CitySDKAPI.rgeo_factory.parse_wkb(layer.bbox))
+      end # if
+      @noderesults << h
+      h
+    end
 
     def hash_node(h, params)
       if h[:node_data]

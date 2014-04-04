@@ -29,7 +29,7 @@ module CitySDK
       layer_id = Layer.idFromText(layer)
       node_datum = NodeDatum.where(node_id: n[:id], layer_id: layer_id).first()
       unless node_datum.nil?
-        serialize_data_datum(node, node_datum, field, params)
+        serialize_node_datum_field(node, node_datum, field, params)
       end # unless
     end # def
 

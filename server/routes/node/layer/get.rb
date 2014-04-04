@@ -15,15 +15,16 @@ class CitySDKAPI < Sinatra::Application
 
     nd = NodeDatum.where(node_id: node.id, layer_id: layer.id).first
 
+    serializer = CitySDK::Serializer.create_serializer(params[:request_format])
+
     case params.fetch(:request_format)
     when 'application/json'
       {
         status: 'success',
         url: request.url,
-        results: [NodeDatum.serialize(cdk_id, [nd.values], params)]
+        results: [serializer.serialize_node_datum(cdk_id, [nd.values], params)]
       }.to_json
     when 'text/turtle'
-      Node.serializeStart(params, request)
       t, d = NodeDatum.turtelize(cdk_id, [nd.values], params)
       [
         Node.prefixes.join("\n"),

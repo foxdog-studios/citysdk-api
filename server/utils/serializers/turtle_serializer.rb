@@ -44,7 +44,7 @@ module CitySDK
 
     protected
 
-    def serialize_data_datum(node, node_datum, field, params)
+    def serialize_node_datum_field(node, node_datum, field, params)
       @noderesults = NodeDatum.turtelizeOneField(
         node[:cdk_id],
         node_datum,
