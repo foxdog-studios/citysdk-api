@@ -85,7 +85,7 @@ def find_route_type_names(conn)
   result = conn.exec(sql)
   result.map { |row| row.fetch('route') }
 ensure
-  result.clear if defined? result
+  result.clear unless result.nil?
 end # def
 
 def ignore_route_type_names(route_type_names)
