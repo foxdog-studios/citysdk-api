@@ -8,7 +8,7 @@ class CitySDKAPI < Sinatra::Application
       .layer_geosearch(params)
       .do_paginate(params)
 
-    serializer = CitySDK::Serializer.new()
+    serializer = CitySDK::Serializer.create_serializer(params[:request_format])
 
     res = 0
     pgn.each do |layer|
