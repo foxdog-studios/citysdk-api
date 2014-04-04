@@ -1,4 +1,4 @@
-class CitySDKAPI < Sinatra::Base
+class CitySDKAPI < Sinatra::Application
 
   module Nodes
 
@@ -11,7 +11,7 @@ class CitySDKAPI < Sinatra::Base
 
       if params[:cmd] == 'routes'
 
-        pgn = Node.dataset
+        pgn = CitySDK::Node.dataset
           .where("members @> ARRAY[cdk_id_to_internal('#{cdk_id}')]")
           .name_search(params)
           .route_members(params)
@@ -34,7 +34,7 @@ class CitySDKAPI < Sinatra::Base
           array_function = :array_upper
         end
 
-        pgn = Node.dataset
+        pgn = CitySDK::Node.dataset
           .where(Sequel.function(:cdk_id_to_internal, cdk_id) =>  Sequel.pg_array(:members)[Sequel.function(array_function, :members, 1)])
           .name_search(params)
           .route_members(params)
@@ -54,8 +54,8 @@ class CitySDKAPI < Sinatra::Base
 
         # TODO: also filter on node_data, name etc!
         # TODO: hard-coded layer_id of admr = 2!
-        Node.serializeStart(params,req)
-        res = Node.dataset
+        CitySDK::Node.serializeStart(params,req)
+        res = CitySDK::Node.dataset
           .join_table(:inner, :nodes, Sequel.function(:ST_Intersects, :nodes__geom, :containing_node__geom), {:table_alias=>:containing_node})
           .where(:containing_node__cdk_id=>cdk_id)
           .where(:nodes__layer_id=>2)
@@ -67,10 +67,10 @@ class CitySDKAPI < Sinatra::Base
               al.values
             } )
           }
-          .each { |item| Node.serialize(item,params) }
+          .each { |item| CitySDK::Node.serialize(item,params) }
 
           # .map { |item| Node.serialize(item,params) }
-          Node.serializeEnd(params, req)
+          CitySDK::Node.serializeEnd(params, req)
 
         #
         #
