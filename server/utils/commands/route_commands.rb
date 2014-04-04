@@ -10,7 +10,8 @@ class CitySDKAPI < Sinatra::Application
       cdk_id = params['cdk_id']
       if params[:cmd] == 'nodes'
         pgn = CitySDK::Node.dataset
-          .where(:nodes__id => Sequel.function(:ANY, Sequel.function(:get_members, cdk_id)))
+          .where(:nodes__id =>
+                 Sequel.function(:ANY, Sequel.function(:get_members, cdk_id)))
           .nodedata(params)
           .node_layers(params)
           .do_paginate(params)
@@ -20,7 +21,9 @@ class CitySDKAPI < Sinatra::Application
         CitySDKAPI.nodes_results(pgn, params, req)
       elsif params[:cmd] == 'start_end'
         pgn = CitySDK::Node.dataset
-          .where(:nodes__id => Sequel.function(:ANY, Sequel.function(:get_start_end, cdk_id)))
+          .where(:nodes__id =>
+                 Sequel.function(:ANY,
+                                 Sequel.function(:get_start_end, cdk_id)))
           .nodedata(params)
           .node_layers(params)
 
@@ -36,7 +39,7 @@ class CitySDKAPI < Sinatra::Application
         SQL
 
         pgn = CitySDK::Node.dataset
-          .where(sql_where.lit(cdk_id, cdk_id))
+          .where(Sequel::LiteralString.new(sql_where).lit(cdk_id, cdk_id))
           .name_search(params)
           .route_members(params)
           .nodedata(params)
