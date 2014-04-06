@@ -1,4 +1,6 @@
-class CitySDKAPI < Sinatra::Base
+# encoding: utf-8
+
+class CitySDKAPI < Sinatra::Application
   GEOMETRY_TYPE_POINT   = 'point'
   GEOMETRY_TYPE_LINE    = 'line'
   GEOMETRY_TYPE_POLYGON = 'polygon'

@@ -22,6 +22,7 @@ class CitySDKAPI < Sinatra::Application
 end # class
 
 require 'citysdk'
+require_relative 'constants'
 require_relative 'utils/init'
 require_relative 'helpers/init'
 require_relative 'routes/init'
