@@ -24,13 +24,34 @@ module CitySDK
       @nodes << node
     end # def
 
-    def serialize()
-      results = serialize_layers() + serialize_nodes()
-      pod = { results: results }
+    def serialize(options)
+      pod = { status: 'success' }
+      metadata = make_metadata(options)
+      pod.merge!(metadata)
+      pod[:results] = serialize_layers() + serialize_nodes()
       pod.to_json()
     end # def
 
     private
+
+    def make_metadata(options)
+      keys = [
+        :next_page,
+        :pages,
+        :per_page,
+        :record_count,
+        :url
+      ]
+
+      pod = {}
+
+      keys.each do |key|
+        value = options[key]
+        pod[key] = value unless value.nil?
+      end # do
+
+      pod
+    end # def
 
     def serialize_layers()
       serialize_objects(@layers, @layer_serializer)

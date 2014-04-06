@@ -18,7 +18,13 @@ class CitySDKAPI < Sinatra::Application
       num_layers += 1
     end # do
 
-    serializer.serialize()
+    options = self.class.make_serialize_options(
+      pgn,
+      num_layers,
+      params,
+      request
+    )
+    serializer.serialize(options)
   end # do
 end # class
 

@@ -30,7 +30,7 @@ module CitySDK
       add_layer_for_node(node)
     end # def
 
-    def serialize()
+    def serialize(url)
       [
         serialize_directives(),
         serialize_layers(),
