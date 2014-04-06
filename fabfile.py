@@ -185,18 +185,22 @@ def setup(start=1, end=None):
         create_required_layers,         # 27 |
         create_osm_nodes,               # 28 | OSM (part 2)
         modify_osm_nodes,               # 29 |
-        update_modalities,              # 30 |
-        copy_ssl_files,                 # 31 | Nginx
-        configure_nginx,                # 32 |
-        configure_default_nginx_server, # 33 |
-        configure_nginx_servers,        # 34 |
-        ensure_deploy_user,             # 35 | Deploy user
-        make_deploy_directories,        # 36 | Deploy apps
-        setup_deploy_directories,       # 37 |
-        check_deploy_directories,       # 38 |
-        deploy_all,                     # 39 | Deploy
-        copy_config,                    # 40 |
-        restart_nginx,                  # 41 |
+        set_osm_imported_at,            # 30 |
+        update_osm_bounds,              # 31 |
+        update_modalities,              # 32 |
+        ensure_turtle_prefixes,         # 33 |
+        insert_osm_properties,          # 34 |
+        copy_ssl_files,                 # 35 | Nginx
+        configure_nginx,                # 36 |
+        configure_default_nginx_server, # 37 |
+        configure_nginx_servers,        # 38 |
+        ensure_deploy_user,             # 39 | Deploy user
+        make_deploy_directories,        # 40 | Deploy apps
+        setup_deploy_directories,       # 41 |
+        check_deploy_directories,       # 42 |
+        deploy_all,                     # 43 | Deploy
+        copy_config,                    # 44 |
+        restart_nginx,                  # 45 |
     ]
 
     start = int(start) - 1
@@ -348,6 +352,8 @@ def already_downloaded(path):
 # = RVM                                                                       =
 # =============================================================================
 
+RVM_BIN = '/usr/local/rvm/bin/rvm'
+
 @task
 def install_rvm():
     return sudo('curl --location https://get.rvm.io | bash -s stable')
@@ -355,17 +361,21 @@ def install_rvm():
 
 @task
 def install_rvm_requirements():
-    return sudo('rvm requirements')
+    return sudo('{} requirements'.format(RVM_BIN))
 
 
 @task
 def install_ruby():
-    return sudo('rvm install {}'.format(quote(env.ruby_version)))
+    return sudo('{} install {}'.format(
+        RVM_BIN,
+        quote(env.ruby_version)
+    ))
 
 
 @task
 def create_gemset():
-    return sudo('rvm {} gemset create {}'.format(
+    return sudo('{} {} gemset create {}'.format(
+        RVM_BIN,
         quote(env.ruby_version),
         quote(env.ruby_gemset),
     ))
@@ -598,7 +608,9 @@ def setup_admin_ruby_env():
 
     put_db('create_admin.rb')
     put_db('create_required_layers.rb')
+    put_db('ensure_turtle_prefixes.rb')
     put_db('update_modalities.rb')
+    put_db('osm_properties.csv')
     put(local_path=gemfile, remote_path=gemfile_path)
     put_json(server_config, server_config_path)
     put_json(setup_config, setup_config_path)
@@ -630,8 +642,53 @@ def modify_osm_nodes():
 
 
 @task
+def set_osm_imported_at():
+    imported_at = run('stat -c %y {}'.format(env.osm_data_file_name)).stdout
+    commands = margin(r'''
+       |\set ON_ERROR_STOP on
+       |UPDATE layers
+       |    SET imported_at = '{imported_at}'::timestamptz
+       |    WHERE id = 0
+       |;
+    ''').format(imported_at=imported_at)
+    return psql(env.postgres_database, env.dba_username, commands)
+
+
+@task
+def update_osm_bounds():
+    commands = margin(r'''
+       |\set ON_ERROR_STOP on
+       |-- 0 is the predefined ID of the OSM layer.
+       |SELECT update_layer_bounds(0);
+    ''')
+    return psql(env.postgres_database, env.dba_username, commands)
+
+
+@task
 def update_modalities():
     rvmdo('ruby update_modalities.rb server.json')
+
+
+@task
+def ensure_turtle_prefixes():
+    command = "ruby ensure_turtle_prefixes.rb dbname={dbname} {admin_email}"
+    command = command.format(
+        dbname=quote(env.postgres_database),
+        admin_email=quote(env.admin_email),
+    )
+    return rvmdo(command)
+
+@task
+def insert_osm_properties():
+    src = 'osm_properties.csv'
+    dst = posixpath.join('/tmp', src)
+    run('cp {} {}'.format(src, dst))
+    commands = margin(r'''
+       |\set ON_ERROR_STOP on
+       |COPY osmprops FROM '{}' WITH CSV HEADER;
+    ''').format(dst)
+    psql(env.postgres_database, env.dba_username, commands)
+    run('rm --force {}'.format(dst))
 
 
 # =============================================================================
@@ -1202,7 +1259,7 @@ def role_exists(role):
 def rvmdo(rvmdo_command, use_sudo=False, **runner_kwargs):
     runner = sudo if use_sudo else run
     rvmdo_command = rvmdo_command.strip()
-    command = 'rvm {} do {}'.format(env.ruby_use, rvmdo_command)
+    command = '{} {} do {}'.format(RVM_BIN, env.ruby_use, rvmdo_command)
     return runner(command, **runner_kwargs)
 
 
