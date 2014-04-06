@@ -1,6 +1,5 @@
-require 'dalli'
-require 'set'
-require 'rgeo'
+# encoding: utf-8
+
 
 class CitySDKAPI < Sinatra::Application
 
@@ -78,25 +77,15 @@ class CitySDKAPI < Sinatra::Application
     ])
   end
 
-
-
   def self.nodes_results(dataset, params, req)
-    res = 0
-    serializer = CitySDK::Serializer.create_serializer(params[:request_format])
-    dataset.nodes(params).each do |h|
-      serializer.add_node(h, params)
-      res += 1
-    end
-    serializer.serialize(
-      params,
-      req,
-      pagination_results(
-        params,
-        dataset.get_pagination_data(params),
-        res
-      )
-    )
-  end
+    num_nodes = 0
+    serializer = CitySDK::Serializer.create(params)
+    dataset.nodes(params).each do |node|
+      serializer.add_node(node)
+      num_nodes += 1
+    end # do
+    serializer.serialize()
+  end # def
 
   def self.pagination_results(params, pagination_data, res_length)
     if pagination_data

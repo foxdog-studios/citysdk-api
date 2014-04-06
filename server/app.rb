@@ -1,5 +1,6 @@
 # encoding: utf-8
 
+require 'dalli'
 require 'json'
 require 'sinatra'
 require 'sinatra/sequel'

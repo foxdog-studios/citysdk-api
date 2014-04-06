@@ -2,58 +2,73 @@
 
 module CitySDK
   class TurtleSerializer < Serializer
-    def initialize()
+    def self.create(options)
+      TurtleSerializer.new(
+        TurtleDirectiveSerializer.new(options),
+        TurtleLayerSerializer.new(options),
+        TurtleNodeSerializer.new(options)
+      )
+    end # def
+
+    def initialize(directive_serializer, layer_serializer, node_serializer)
       super()
-      @prefixes = Set.new()
+
+      @layers = {}
+      @nodes = {}
+
+      @directive_serializer = directive_serializer
+      @layer_serializer = layer_serializer
+      @node_serializer = node_serializer
     end # def
 
-    def add_layer(layer, params, request)
-      config = lambda { |key| CONFIG.fetch(key) }
-      prefixes = Set.new
-      rdf_url = config.call(:ep_rdf_url)
-      prfs = [
-        "@base <#{ rdf_url }#{ config.call(:ep_code) }/> ."
-      ]
-      prfs << "@prefix : <#{ rdf_url }> ."
-      res = turtelize_layer(layer, params)
-      prefixes.each do |p|
-        prfs << "@prefix #{p} <#{ Prefix.where(prefix: p).first[:url] }> ."
-      end
-      parts = [
-        prfs.join("\n"),
-        '',
-        res.join("\n")
-      ]
-      parts.join("\n")
+    def add_layer(layer)
+      @layers[layer.id] = layer
     end # def
 
-    def add_node(node, params)
-      turtelize_node(node, params)
+    def add_node(node)
+      @nodes[node.fetch(:id)] = node
+      add_layer_for_node(node)
     end # def
 
-
-
-    def serialize(params, request, pagination = {})
-        parts = [
-          prefixes().join("\n"),
-          layer_props(params),
-          @noderesults.join("\n")
-        ]
-        parts.join("\n")
+    def serialize()
+      [
+        serialize_directives(),
+        serialize_layers(),
+        serialize_nodes()
+      ].join("\n\n")
     end # def
 
     protected
 
     def serialize_node_datum_field(node, node_datum, field, params)
-      @noderesults = NodeDatum.turtelizeOneField(
-        node[:cdk_id],
-        node_datum,
-        field,
-        params
-      )
+      cdk_id = node[:cdk_id]
+      field = turtelize_one_field(cdk_id, node_datum, field, params)
+      @noderesults = field
     end # def
 
     private
+
+    def add_layer_for_node(node)
+      layer_id = node.fetch(:layer_id)
+      layer = Layer.where(id: layer_id).first()
+      add_layer(layer)
+    end # def
+
+    def serialize_directives()
+      @directive_serializer.serialize()
+    end # def
+
+    def serialize_layers()
+      layers = @layers.values().map do |layer|
+        @layer_serializer.serialize(layer)
+      end # do
+      layers.join("\n\n")
+    end # def
+
+    def serialize_nodes()
+      nodes = @nodes.values().map { |node| @node_serializer.serialize(node) }
+      nodes.join("\n\n")
+    end # def
 
     def layer_props(params)
       pr = []
@@ -64,147 +79,6 @@ module CitySDK
       pr
     end # def
 
-    def prefixes()
-      config = lambda { |key| CONFIG.fetch(key) }
-      rdf_url = config.call(:ep_rdf_url)
-      prfs = [
-        "@base <#{ rdf_url }#{ config.call( :ep_code )}/> ."
-      ]
-      prfs << "@prefix : <#{ rdf_url }> ."
-      @prefixes.each do |p|
-        prefix = Prefix.where(prefix: p).first()
-        unless prefix.nil?
-          prfs << "@prefix #{ p } <#{ prefix[:url] }> ."
-        end # unless
-      end # do
-      prfs << ''
-    end # def
-
-    def turtelize_layer(layer, params)
-      @prefixes << 'rdf:'
-      @prefixes << 'rdfs:'
-      @prefixes << 'foaf:'
-      @prefixes << 'geos:'
-      triples = []
-
-      triples << "<layer/#{layer.name}>"
-      triples << "  a :Layer ;"
-
-      d = layer.description ? layer.description.strip : ''
-      if d =~ /\n/
-        triples << "  rdfs:description \"\"\"#{d}\"\"\" ;"
-      else
-        triples << "  rdfs:description \"#{d}\" ;"
-      end
-
-      triples << "  :createdBy ["
-      triples << "    foaf:name \"#{layer.organization.strip}\" ;"
-      triples << "    foaf:mbox \"#{layer.owner.email.strip}\""
-      triples << "  ] ;"
-
-
-      if layer.data_sources
-        layer.data_sources.each { |s|
-          a = s.index('=') ? s[s.index('=')+1..-1] : s
-          triples << "  :dataSource \"#{a}\" ;"
-        }
-      end
-
-      res = CitySDK::LayerProperty.where(:layer_id => layer.id)
-      res.each do |r|
-        triples << "  :hasDataField ["
-        triples << "    rdfs:label #{r.key} ;"
-        triples << "    :valueType #{r.type} ;"
-        if r.type =~ /(integer|float|double)/ && r.unit != ''
-          triples << "    :valueUnit #{r.unit} ;"
-        end
-        if r.lang != '' && r.type == 'xsd:string'
-          triples << "    :valueLanguange \"#{r.lang}\" ;"
-        end
-        if r.eqprop && r.eqprop != ''
-          triples << "    owl:equivalentProperty \"#{r.eqprop}\" ;"
-        end
-        unless r.descr.empty?
-          if r.descr =~ /\n/
-            triples << "    rdfs:description \"\"\"#{r.descr}\"\"\" ;"
-          else
-            triples << "    rdfs:description \"#{r.descr}\" ;"
-          end
-        end
-        triples[-1] = triples[-1][0...-1]
-        triples << "  ] ;"
-      end
-
-
-      if params.has_key? 'geom' && !layer.bbox.nil?
-        triples << '  geos:hasGeometry "' \
-          + RGeo::WKRep::WKTGenerator.new.generate(
-              CitySDKAPI.rgeo_factory.parse_wkb(layer.bbox)) \
-          + '" ;'
-      end
-
-      triples[-1][-1] = '.'
-      triples << ""
-      @noderesults += triples
-      triples
-    end # def
-
-    def turtelize_node(h, params)
-      @prefixes << 'rdfs:'
-      @prefixes << 'rdf:'
-      @prefixes << 'geos:'
-      @prefixes << 'dc:'
-      @prefixes << 'owl:'
-      @prefixes << 'lgdo:' if h[:layer_id] == 0
-      triples = []
-
-      if not @layers.include?(h[:layer_id])
-        @layers << h[:layer_id]
-        triples << "<layer/#{Layer.nameFromId(h[:layer_id])}> a :Layer ."
-        triples << ""
-      end
-
-      triples << "<#{h[:cdk_id]}>"
-      triples << "\t a :#{@node_types[h[:node_type]].capitalize} ;"
-      if h[:name] and h[:name] != ''
-        triples << "\t dc:title \"#{h[:name].gsub('"','\"')}\" ;"
-      end
-      layer_name = Layer.nameFromId(h[:layer_id])
-      triples << "\t :createdOnLayer <layer/#{layer_name}> ;"
-
-      if h[:modalities]
-        h[:modalities].each { |modality|
-          m = Modality.name_for_id(modality)
-          triples << "\t :hasTransportmodality :transportModality_#{m} ;"
-        }
-      end
-
-      if params.has_key? "geom"
-        if h[:member_geometries] and h[:node_type] != 3
-          triples << "\t geos:hasGeometry \"" \
-            + RGeo::WKRep::WKTGenerator.new.generate(
-                CitySDKAPI.rgeo_factory.parse_wkb(h[:member_geometries])) \
-            + '" ;'
-        elsif h[:geom]
-          triples << "\t geos:hasGeometry \"" \
-            + RGeo::WKRep::WKTGenerator.new.generate(
-                CitySDKAPI.rgeo_factory.parse_wkb(h[:geom])) \
-            + '" ;'
-        end
-      end
-
-      if h[:node_data]
-        t,d =  NodeDatum.turtelize(h[:cdk_id], h[:node_data], params)
-        triples += t if t
-        triples += d if d
-      end
-
-      @noderesults += triples
-      if @noderesults[-1] && @noderesults[-1][-1] == ';'
-        @noderesults[-1][-1]='.'
-      end
-      triples
-    end # def
 
     def turtelize_node_data(cdk_id, h, params)
       triples = []
@@ -214,35 +88,231 @@ module CitySDK
       end # if
       base_uri = "#{ cdk_id }/"
       h.each do |nd|
-        gdatas += self.turtelize_one(nd, triples, base_uri, params, cdk_id)
+        gdatas += turtelize_one(nd, triples, base_uri, params, cdk_id)
       end # do
       return triples, gdatas
     end # def
 
-    def process_predicate(n, params)
-      p = params[:p]
-      layer,field = p.split('/')
-      if 0 == Layer.where(:name=>layer).count
-        CitySDKAPI.do_abort(422,"Layer not found: 'layer'")
-      end
-      layer_id = Layer.idFromText(layer)
-      nd = NodeDatum.where({:node_id => n[:id], :layer_id => layer_id}).first
-      if nd
-        case params[:request_format]
-        when'application/json'
-          @noderesults << {field => nd[:data][field.to_sym]}
-        when'text/turtle'
-          @noderesults = NodeDatum.turtelizeOneField(
-            n[:cdk_id],
-            nd,
-            field,
-            params
-          )
+    def turtelize_one(nd, triples, base_uri, params, cdk_id)
+      datas = []
+      layer_id = nd[:layer_id]
+      name = Layer.nameFromId(layer_id)
+      layer = Layer.where(:id=>layer_id).first
+      subj = base_uri + name
+
+      if layer_id == 0
+        osmprops(nd[:data].to_hash, datas, triples, params)
+      else
+        if layer.rdf_type_uri and layer.rdf_type_uri != ''
+          if layer.rdf_type_uri =~ /^http:/
+            triples << "\t a <#{layer.rdf_type_uri}> ;"
+          else
+            @@prefixes << $1 if layer.rdf_type_uri =~ /^([a-z]+\:)/
+            triples << "\t a  #{layer.rdf_type_uri} ;"
+          end
+        end
+
+        if Layer.isWebservice?(layer_id) and !params.has_key?('skip_webservice')
+          nd[:data] = WebService.load(layer_id, cdk_id, nd[:data])
+        end
+
+        nd[:data].to_hash.each do |k,v|
+
+          res = LayerProperty.where({:layer_id => layer_id, :key => k.to_s }).first
+          if res
+            lang = res[:lang]  == '' ? nil : res[:lang]
+            type = res[:type]  == '' ? nil : res[:type]
+            unit = res[:unit]  == '' ? nil : res[:unit]
+            desc = res[:descr] == '' ? nil : res[:descr]
+            eqpr = res[:eqprop] == '' ? nil : res[:eqprop]
+          else
+            lang = type = unit = desc = eqpr = nil
+          end
+          prop = "<#{name}/#{k.to_s}>"
+
+          lp  = "#{prop}"
+          lp += "\n\t :definedOnLayer <layer/#{Layer.nameFromId(layer_id)}> ;"
+          lp += "\n\t rdfs:subPropertyOf :layerProperty ;"
+          lp += "\n\t owl:equivalentProperty #{eqpr} ;" if eqpr
+
+          @@prefixes << $1 if eqpr and (eqpr =~ /^([a-z]+\:)/)
+
+          if desc and desc =~ /\n/
+            lp += "\n\t rdfs:description \"\"\"#{desc}\"\"\" ;"
+          elsif desc
+            lp += "\n\t rdfs:description \"#{desc}\" ;"
+          end
+          lp += "\n\t :hasValueUnit #{unit} ;" if unit and type =~ /xsd:(integer|float|double)/
+          lp[-1] = '.'
+          params[:layerdataproperties] << lp
+
+          s  = "\t #{prop} \"#{v}\""
+          s += "^^#{type}" if type and type !~ /^xsd:string/
+          s += "#{lang}" if lang and type == 'xsd:string'
+
+
+          if type =~ /xsd:anyURI/i
+            s  = "\t #{prop} <#{v}>"
+          else
+            s  = "\t #{prop} \"#{v}\""
+            s += "^^#{type}" if type and type !~ /^xsd:string/
+            s += "#{lang}" if lang and type == 'xsd:string'
+          end
+          datas << s + " ;"
         end
       end
+
+      if datas.length > 1
+        datas[-1][-1] = '.'
+        datas << ""
+      else
+        datas = []
+      end # else
+      return datas
     end # def
 
+    def turtelize_one_field(cdk_id, nd, field, params)
+      ret = []
 
+      is_webservice = Layer.isWebservice?(nd[:layer_id])
+      use_webservice = !params.key?('skip_webservice')
+      if is_webservice && use_webservice
+        nd[:data] = WebService.load(nd[:layer_id], cdk_id, nd[:data])
+      end # if
+
+      name = Layer.nameFromId(nd[:layer_id])
+      prop = "<#{name}/#{field}>"
+
+      res = LayerProperty.where(layer_id: nd[:layer_id], key: field).first()
+      if res
+        lang = res[:lang] == '' ? nil : res[:lang]
+        type = res[:type] == '' ? nil : res[:type]
+        unit = res[:unit] == '' ? nil : res[:unit]
+        desc = res[:descr] == '' ? nil : res[:descr]
+        eqpr = res[:eqprop] == '' ? nil : res[:eqprop]
+      else
+        lang = type = unit = desc = eqpr = nil
+      end # else
+
+      @prefixes << $1 if eqpr && (eqpr =~ /^([a-z]+\:)/)
+      @prefixes << $1 if type && (type =~ /^([a-z]+\:)/)
+
+      @prefixes << 'xsd:'
+      @prefixes << 'rdfs:'
+
+      lp  = "#{prop}"
+      lp += "\n\t :definedOnLayer <layer/#{Layer.nameFromId(nd[:layer_id])}> ;"
+      lp += "\n\t rdfs:subPropertyOf :layerProperty ;"
+      lp += "\n\t owl:equivalentProperty #{eqpr} ;" if eqpr
+
+      if desc && desc =~ /\n/
+        lp += "\n\t rdfs:description \"\"\"#{ desc }\"\"\" ;"
+      elsif desc
+        lp += "\n\t rdfs:description \"#{ desc }\" ;"
+      end # elseif
+
+      if unit && type =~ /xsd:(integer|float|double)/
+        lp += "\n\t :hasValueUnit #{ unit.gsub(/^csdk\:/, ':') } ;"
+      end # if
+
+      lp[-1] = '.'
+      ret << lp
+      ret << ""
+      ret << "<#{cdk_id}> a :Node ;"
+
+      if type =~ /xsd:anyURI/i
+        s  = "\t #{prop} <#{nd[:data][field]}>"
+      else
+        s  = "\t #{prop} \"#{nd[:data][field]}\""
+        s += "^^#{type}" if type and type !~ /^xsd:string/
+        s += "#{lang}" if lang and type == 'xsd:string'
+      end # else
+
+      ret << s + " ."
+      return ret
+    end # def
+
+    # deal with osm rdf mapping separately...
+    def osmprops(h, datas, triples, params)
+      h.each do |k,v|
+        t = osmprop(k, v)
+        if t
+          triples << t
+        else
+          prop = "<osm/#{ k.to_s() }>"
+          param = "#{ prop } rdfs:subPropertyOf :layerProperty ."
+          params[:layerdataproperties] << param
+          datas << "\t #{ prop } \"#{ v }\" ;"
+        end # else
+      end # do
+    end # def
+
+    def osmprop(k, v)
+      o = OSMProps.where(key: k, val: v ).first()
+      return "\t #{ o[:type] } #{ o[:uri] } ;" unless o.nil?
+
+      o = OSMProps.where(key: k)
+          .where(Sequel.~(lang: nil))
+          .first()
+      return "\t #{ o[:uri] } \"#{ v }\"@#{ o[:lang] } ;" unless o.nil?
+
+      o = OSMProps
+        .where(type: 'string', key: k)
+        .where(Sequel.~(uri: nil))
+        .first()
+      return "\t #{ o[:uri] } \"#{ v }\" ;" unless o.nil?
+
+      o = OSMProps
+        .where(type: 'a', key: k)
+        .where(Sequel.~(uri: nil))
+        .first()
+      return "\t #{ o[:type] } #{ o[:uri] } ;" unless o.nil?
+
+      o = OSMProps
+        .where(key: k)
+        .where(Sequel.~(type: nil))
+        .first()
+      unless o.nil?
+        return "\t #{ o[:uri] } \"#{ v }\"^^xsd:#{ o[:type] } ;"
+      end # unless
+
+      nil
+    end # def
+
+    KEY_SEPARATOR = ':'
+
+    def nest(h)
+      xtra = {}
+      h.each_key do |k|
+        i = k.to_s.index(KEY_SEPARATOR)
+        if i
+          a = k.to_s.split(KEY_SEPARATOR)
+          atonestedh(a, h[k], xtra)
+          h.delete(k)
+          h.delete(a[0]) if h[a[0]]
+          xtra.each_key do |k|
+            xtra[k]['->'] = h[k] if (h[k] and h[k].class == String)
+          end
+          h = h.merge(xtra)
+        end
+      end
+      h
+    end
+
+    def atonestedh(a, v, h)
+      g = h
+      while a.length > 1
+        aa = a.shift.to_sym
+        if g[aa].nil?
+          g[aa] = {}
+        elsif g[aa].class == String
+          g[aa] = {'->' => g[aa]}
+        end # elsif
+        g = g[aa]
+      end # while
+      g[a[0].to_sym] = v
+      h
+    end # def
   end # class
 end # module
 

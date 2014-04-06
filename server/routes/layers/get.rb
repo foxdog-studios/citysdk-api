@@ -1,5 +1,7 @@
+# encoding: utf-8
+
 class CitySDKAPI < Sinatra::Application
-  get '/layers/' do
+  get '/layers/?' do
     params['count'] = ''
 
     pgn = CitySDK::Layer.dataset
@@ -8,23 +10,15 @@ class CitySDKAPI < Sinatra::Application
       .layer_geosearch(params)
       .do_paginate(params)
 
-    serializer = CitySDK::Serializer.create_serializer(params[:request_format])
+    serializer = CitySDK::Serializer.create(params)
 
-    res = 0
+    num_layers = 0
     pgn.each do |layer|
-      serializer.add_layer(layer, params, request)
-      res += 1
+      serializer.add_layer(layer)
+      num_layers += 1
     end # do
 
-    serializer.serialize(
-      params,
-      request,
-      CitySDKAPI::pagination_results(
-        params,
-        pgn.get_pagination_data(params),
-        res
-      )
-    )
+    serializer.serialize()
   end # do
 end # class
 

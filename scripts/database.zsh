@@ -207,6 +207,25 @@ function update_modalities()
     ruby $db_dir/update_modalities.rb $config
 }
 
+function ensure_turtle_prefixes()
+{
+    ruby $db_dir/ensure_turtle_prefixes.rb \
+        "dbname=$db_name"                  \
+        "$(config-setup admin.email)"
+}
+
+function insert_osm_properties()
+{
+    local src=/tmp/osm_properties.csv
+    cp --force $db_dir/osm_properties.csv $src
+
+    psql --echo-all --dbname=$db_name <<-SQL
+		\set ON_ERROR_STOP on
+		COPY osmprops FROM '$src' WITH CSV HEADER;
+	SQL
+    rm --force $src
+}
+
 
 # ==============================================================================
 # = Command line interface                                                     =
@@ -228,6 +247,8 @@ tasks=(
     set_osm_imported_at
     update_osm_bounds
     update_modalities
+    ensure_turtle_prefixes
+    insert_osm_properties
 )
 
 function usage()
@@ -257,6 +278,8 @@ function usage()
 		    set_osm_imported_at
 		    update_osm_bounds
 		    update_modalities
+		    ensure_turtle_prefixes
+		    insert_osm_properties
 	EOF
     exit 1
 }
