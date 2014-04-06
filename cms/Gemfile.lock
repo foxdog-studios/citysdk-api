@@ -1,8 +1,8 @@
 GIT
   remote: https://github.com/foxdog-studios/citysdk
-  revision: 35e79b257d563fb7209c4a228deedf39bc479c7e
+  revision: 751f6fd3334cc64f377ffdae1ea2286478ad6857
   specs:
-    citysdk (0.0.1)
+    citysdk (0.0.2)
       faraday
       rgeo-geojson
       sequel
@@ -29,8 +29,6 @@ GEM
       thread_safe (~> 0.1)
       tzinfo (~> 0.3.37)
     addressable (2.3.6)
-    atomic (1.1.16)
-    bacon (1.2.0)
     capistrano (2.15.5)
       highline
       net-scp (>= 1.0.0)
@@ -123,7 +121,6 @@ GEM
       sinatra
       sinbook
     sinatra-sequel (0.9.0)
-      bacon
       sequel (>= 3.2.0)
       sinatra (>= 0.9.4)
     sinatra-session (1.0.0)
@@ -134,8 +131,7 @@ GEM
       daemons (>= 1.0.9)
       eventmachine (>= 1.0.0)
       rack (>= 1.0.0)
-    thread_safe (0.3.1)
-      atomic (>= 1.1.7, < 2)
+    thread_safe (0.3.2)
     tilt (1.4.1)
     timers (1.1.0)
     treetop (1.4.15)
