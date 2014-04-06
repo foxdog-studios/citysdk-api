@@ -10,7 +10,7 @@ class CitySDKAPI < Sinatra::Application
 
     serializer = CitySDK::Serializer.create(params)
     serializer.add_layer(layer)
-    serializer.serialize()
+    serializer.serialize(url: request.url)
   end # do
 end # class
 
