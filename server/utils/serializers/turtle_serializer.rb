@@ -4,18 +4,25 @@ module CitySDK
   class TurtleSerializer < Serializer
     def self.create(options)
       TurtleSerializer.new(
+        TurtleEndpointSerializer.new(options),
         TurtleDirectiveSerializer.new(options),
         TurtleLayerSerializer.new(options),
         TurtleNodeSerializer.new(options)
       )
     end # def
 
-    def initialize(directive_serializer, layer_serializer, node_serializer)
+    def initialize(
+      endpoint_serializer,
+      directive_serializer,
+      layer_serializer,
+      node_serializer
+    )
       super()
 
       @layers = {}
       @nodes = {}
 
+      @endpoint_serializer = endpoint_serializer
       @directive_serializer = directive_serializer
       @layer_serializer = layer_serializer
       @node_serializer = node_serializer
@@ -30,12 +37,16 @@ module CitySDK
       add_layer_for_node(node)
     end # def
 
-    def serialize(url)
+    def serialize(options)
       [
         serialize_directives(),
         serialize_layers(),
         serialize_nodes()
       ].join("\n\n")
+    end # def
+
+    def serialize_endpoint(url)
+      @endpoint_serializer.serialize(url)
     end # def
 
     private

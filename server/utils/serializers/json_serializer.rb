@@ -3,15 +3,18 @@
 module CitySDK
   class JsonSerializer
     def self.create(options)
-      layer_serializer = PodLayerSerializer.new(options)
-      node_serializer = PodNodeSerializer.new(options)
-      self.new(layer_serializer, node_serializer)
+      self.new(
+        PodEndpointSerializer.new(options),
+        PodLayerSerializer.new(options),
+        PodNodeSerializer.new(options)
+      )
     end # def
 
-    def initialize(layer_serializer, node_serializer)
+    def initialize(endpoint_serializer, layer_serializer, node_serializer)
       super()
       @layers = []
       @nodes = []
+      @endpoint_serializer = endpoint_serializer
       @layer_serializer = layer_serializer
       @node_serializer = node_serializer
     end # def
@@ -30,6 +33,10 @@ module CitySDK
       pod.merge!(metadata)
       pod[:results] = serialize_layers() + serialize_nodes()
       pod.to_json()
+    end # def
+
+    def serialize_endpoint(url)
+      @endpoint_serializer.serialize(url)
     end # def
 
     private
