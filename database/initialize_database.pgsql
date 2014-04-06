@@ -141,6 +141,7 @@ CREATE TABLE IF NOT EXISTS modalities (
     name TEXT NOT NULL UNIQUE
 );
 
+-- XXX: What does the 'ld' in 'ldprefix' mean?
 CREATE TABLE IF NOT EXISTS ldprefix (
     prefix   TEXT PRIMARY KEY,
     name     TEXT NOT NULL,
@@ -148,6 +149,7 @@ CREATE TABLE IF NOT EXISTS ldprefix (
     owner_id INTEGER NOT NULL REFERENCES users (id)
 );
 
+-- XXX: What does the 'ld' in 'ldprops' mean?
 CREATE TABLE IF NOT EXISTS ldprops (
     layer_id INTEGER NOT NULL REFERENCES layers (id),
     key      TEXT NOT NULL,
@@ -168,6 +170,14 @@ CREATE TABLE IF NOT EXISTS node_types (
 CREATE TABLE IF NOT EXISTS node_data_types (
     id   SERIAL PRIMARY KEY,
     name TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS osmprops (
+    key  text NOT NULL,
+    val  text,
+    type text,
+    uri  text,
+    lang text
 );
 
 

@@ -1,23 +1,25 @@
 # encoding: utf-8
 
 class CitySDKAPI < Sinatra::Application
-  get '/:cdk_id' do |cdk_id|
+  get '/:cdk_id/?' do |cdk_id|
     results = Node
       .where(cdk_id: cdk_id)
       .node_layers(params)
       .nodes(params)
 
     if results.empty?
-      halt 404, { error: "No node with cdk_id '#{ cdk_id }'." }.to_json
+      halt 404, { error: "No node with cdk_id '#{ cdk_id }'." }.to_json()
     end
 
-    Node.serializeStart(params, request)
+    serializer = CitySDK::Serializer.create(params)
+
     if params[:p]
-      Node.processPredicate(results.first, params)
+      # TODO: What's this? Once known, serialize it.
+      serializer.process_predicate(results.first, params)
     else
-      results.map { |item| Node.serialize(item, params) }
+      results.map { |item| serializer.add_node(item) }
     end
-    Node.serializeEnd(params, request)
+    serializer.serialize(url: request.url)
   end # do
 end # class
 

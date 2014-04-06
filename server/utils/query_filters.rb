@@ -5,28 +5,25 @@ module Sequel
     MAX_PER_PAGE = 1000
 
     def do_paginate(params)
-      if not params.has_key? "subselect_pagination"
-        page = 1
+      return self if params.key?('subselect_pagination')
+
+      page = 1
+      per_page = 10
+
+      if params.key?('page')
+        page = [ 1, params['page'].to_i() ].max()
+      end # if
+
+      if params.key?('per_page')
+        per_page = [ params['per_page'].to_i(), MAX_PER_PAGE ].min()
+      end # if
+
+      if per_page <= 0
         per_page = 10
+      end # if
 
-        if params.has_key? 'page'
-          page = [1,params['page'].to_i].max
-        end
-        if params.has_key? 'per_page'
-          per_page = [params['per_page'].to_i, MAX_PER_PAGE].min
-        end
-
-        per_page = 10 if per_page <= 0
-
-        if params.has_key? 'count'
-          return self.paginate(page, per_page)
-        else
-          return self.paginate(page, per_page, 900000000)
-        end
-      else
-        return self
-      end
-    end
+      return self.paginate(page, per_page)
+    end # def
 
     # If eager_graph is used, multiple nodedata object
     # can be found for single node. PAGINATION should occur

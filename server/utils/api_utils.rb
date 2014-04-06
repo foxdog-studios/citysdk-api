@@ -1,6 +1,5 @@
-require 'dalli'
-require 'set'
-require 'rgeo'
+# encoding: utf-8
+
 
 class CitySDKAPI < Sinatra::Application
 
@@ -71,17 +70,35 @@ class CitySDKAPI < Sinatra::Application
 
   def self.do_abort(code, message)
     @do_cache = false
-    throw(:halt, [code, {'Content-Type' => 'application/json'}, {:status => 'fail', :message  => message}.to_json])
+    throw(:halt, [
+      code,
+      {'Content-Type' => 'application/json'},
+      {status: 'fail', message: message}.to_json()
+    ])
   end
 
+  def self.nodes_results(dataset, params, request)
+    num_nodes = 0
+    serializer = CitySDK::Serializer.create(params)
+    dataset.nodes(params).each do |node|
+      serializer.add_node(node)
+      num_nodes += 1
+    end # do
 
+    options = self.make_serialize_options(dataset, num_nodes, params, request)
+    serializer.serialize(options)
+  end # def
 
-  def self.nodes_results(dataset, params, req)
-    res = 0
-    Node.serializeStart(params, req)
-    dataset.nodes(params).each { |h| Node.serialize(h,params); res += 1 }
-    Node.serializeEnd(params, req, pagination_results(params, dataset.get_pagination_data(params), res))
-  end
+  def self.make_serialize_options(dataset, dataset_size, params, request)
+    options = dataset.get_pagination_data(params)
+    if options.nil?
+      options = {}
+    else
+      options.merge!(self.pagination_results(params, options, dataset_size))
+    end
+    options[:url] = request.url
+    options
+  end # def
 
   def self.pagination_results(params, pagination_data, res_length)
     if pagination_data
@@ -103,7 +120,6 @@ class CitySDKAPI < Sinatra::Application
     else # pagination_data == nil
       {}
     end
-  end
-
-end
+  end # def
+end # class
 
