@@ -3,59 +3,75 @@
 module CitySDK
   class PodLayerSerializer
     def initialize(options)
-      @with_bounds = options.fetch(:with_bounds, false)
+      @with_geometry = options.fetch(:with_geometry, false)
     end # def
 
     def serialize(layer)
-      pod = {
-        name:         layer.name,
-        category:     layer.category,
-        organization: layer.organization,
-        owner:        layer.owner.email,
-        description:  layer.description,
-        imported_at:  layer.imported_at
-      }
-
-      pod[:data_sources] = serialize_data_sources(layer.data_sources)
-
-      layer_properties = serialize_layer_properties(layer.id)
-      pod[:fields] = layer_properties unless layer_properties.empty?
-
-      sample_url = layer.sample_url
-      pod[:sample_url] = sample_url unless sample_url.nil?
-
-      realtime = layer.realtime
-      if realtime
-        pod[:update_rate] = layer.update_rate
-      end # if
-
-      bounds = layer.bbox
-      if @with_bounds && !bounds.nil?
-        pod[:geom] = serialize_bounds(bounds)
-      end # if
-
+      pod = {}
+      add_name(layer, pod)
+      add_category(layer, pod)
+      add_owner(layer, pod)
+      add_description(layer, pod)
+      add_data_sources(layer, pod)
+      add_imported_at(layer, pod)
+      add_geometry(layer, pod)
+      add_fields(layer, pod)
+      add_sample_url(layer, pod)
+      add_update_rate(layer, pod)
       pod
     end # def
 
     private
 
-    def serialize_bounds(bounds)
-      feature = CitySDKAPI.rgeo_factory.parse_wkb(bounds)
-      RGeo::GeoJSON.encode(feature)
+    def add_name(layer, pod)
+      pod[:name] = layer.name
     end # def
 
-    def serialize_data_source(data_source)
-      equals = data_source.index('=')
-      data_source = data_source[equals + 1..-1] unless equals.nil?
-      data_source
+    def add_category(layer, pod)
+      pod[:category] = layer.category
     end # def
 
-    def serialize_data_sources(data_sources)
+    def add_owner(layer, pod)
+      pod[:owner] = layer.owner.email
+    end # def
+
+    def add_description(layer, pod)
+      pod[:description] = layer.description
+    end # def
+
+    def add_imported_at(layer, pod)
+      pod[:imported_at] = layer.imported_at
+    end # def
+
+    def add_geometry(layer, pod)
+      return unless @with_geometry
+      geometry = layer.bbox
+      return if geometry.nil?
+      geometry = CitySDKAPI.rgeo_factory.parse_wkb(geometry)
+      geometry = RGeo::GeoJSON.encode(geometry)
+      pod[:geom] = geometry
+    end # def
+
+    def add_data_sources(layer, pod)
+      data_sources = layer.data_sources
       data_sources = [] if data_sources.nil?
-      data_sources.map { |data_source| serialize_data_source(data_source) }
+      data_sources = data_sources.map do |data_source|
+        equals = data_source.index('=')
+        unless equals.nil?
+          data_source = data_source[equals + 1..-1]
+        end # unless
+        data_source
+      end # do
+      pod[:data_sources] = data_sources
     end # def
 
-    def serialize_layer_property(layer_property)
+    def add_fields(layer, pod)
+      result = LayerProperty.where(layer_id: layer.id)
+      fields = result.map { |layer_property| make_field(layer_property) }
+      pod[:fields] = fields unless fields.empty?
+    end # def
+
+    def make_field(layer_property)
       key = layer_property.key
       type = layer_property.type
       pod = { key: key, type: type }
@@ -81,10 +97,15 @@ module CitySDK
       pod
     end # def
 
-    def serialize_layer_properties(layer_id)
-      result = LayerProperty.where(layer_id: layer_id)
-      result.map { |layer_property| serialize_layer_property(layer_property) }
-    end # def
+    def add_sample_url(layer, pod)
+      sample_url = layer.sample_url
+      pod[:sample_url] = sample_url unless sample_url.nil?
+    end # end
+
+    def add_update_rate(layer, pod)
+      realtime = layer.realtime
+      pod[:update_rate] = layer.update_rate if realtime
+    end # end
   end # class
 end # module
 
