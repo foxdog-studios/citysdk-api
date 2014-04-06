@@ -45,7 +45,7 @@ module CitySDK
       return unless @with_geometry
       member_geometries = node[:member_geometries]
       geometry = node[:geom]
-      unless member_geometries.nil? || node.node_type == NODE_TYPE_PTLINE
+      unless member_geometries.nil? || node[:node_type] == NODE_TYPE_PTLINE
         geometry = member_geometries
       end # unless
       return if geometry.nil?
@@ -77,13 +77,8 @@ module CitySDK
 
     def serialize_modalities(node, pod)
       modality_ids = node.fetch(:modalities)
-      if modality_ids.nil? || modality_ids.empty?
-        return
-      end # if
-      modality_names = modality_ids.map do |modality_id|
-        Modality.where(id: modality_id).first().name
-      end # do
-      pod[:modalities] = modality_names
+      modality_names = CitySDK::find_modality_names(modality_ids)
+      pod[:modalities] = modality_names unless modality_names.empty?
       return # nothing
     end # def
 
