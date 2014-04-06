@@ -1,5 +1,6 @@
-PATH
-  remote: ../../citysdk
+GIT
+  remote: https://github.com/foxdog-studios/citysdk
+  revision: 751f6fd3334cc64f377ffdae1ea2286478ad6857
   specs:
     citysdk (0.0.2)
       faraday
@@ -18,7 +19,6 @@ GEM
     addressable (2.3.6)
     amatch (0.3.0)
       tins (~> 1.0)
-    atomic (1.1.16)
     base62 (1.0.0)
     capistrano (2.15.5)
       highline
@@ -107,13 +107,12 @@ GEM
       sinatra (>= 0.9.4)
     sinbook (0.1.9)
       yajl-ruby
-    stringex (2.5.0)
+    stringex (2.5.1)
     thin (1.6.2)
       daemons (>= 1.0.9)
       eventmachine (>= 1.0.0)
       rack (>= 1.0.0)
-    thread_safe (0.3.1)
-      atomic (>= 1.1.7, < 2)
+    thread_safe (0.3.2)
     tilt (1.4.1)
     timers (1.1.0)
     tins (1.0.1)
