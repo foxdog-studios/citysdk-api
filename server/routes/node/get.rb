@@ -1,7 +1,7 @@
 # encoding: utf-8
 
 class CitySDKAPI < Sinatra::Application
-  get '/:cdk_id' do |cdk_id|
+  get '/:cdk_id/?' do |cdk_id|
     results = Node
       .where(cdk_id: cdk_id)
       .node_layers(params)
@@ -19,7 +19,7 @@ class CitySDKAPI < Sinatra::Application
     else
       results.map { |item| serializer.add_node(item) }
     end
-    serializer.serialize()
+    serializer.serialize(url: request.url)
   end # do
 end # class
 

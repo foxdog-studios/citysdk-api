@@ -1,5 +1,5 @@
 class CitySDKAPI < Sinatra::Application
-  get '/:cdk_id/select/:cmd/' do
+  get '/:cdk_id/select/:cmd/?' do
     n = Node.where(:cdk_id=>params[:cdk_id]).first
     if n.nil?
       CitySDKAPI.do_abort(422,"Node not found: #{params[:cdk_id]}")

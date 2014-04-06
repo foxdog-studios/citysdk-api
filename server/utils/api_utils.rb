@@ -91,7 +91,11 @@ class CitySDKAPI < Sinatra::Application
 
   def self.make_serialize_options(dataset, dataset_size, params, request)
     options = dataset.get_pagination_data(params)
-    options.merge!(self.pagination_results(params, options, dataset_size))
+    if options.nil?
+      options = {}
+    else
+      options.merge!(self.pagination_results(params, options, dataset_size))
+    end
     options[:url] = request.url
     options
   end # def

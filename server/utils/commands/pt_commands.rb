@@ -5,7 +5,9 @@ class CitySDKAPI < Sinatra::Application
     @@agency_names = {}
     def self.get_agency_name(id)
       return @@agency_names[id] if(@@agency_names[id])
-      res = Sequel::Model.db.fetch("select agency_name from gtfs.agency where agency_id = '#{id}'")
+      res = Sequel::Model.db.fetch(
+        "select agency_name from gtfs.agency where agency_id = '#{id}'"
+      )
       res.to_a.each do |t|
         @@agency_names[id] = t[:agency_name]
         return @@agency_names[id]
@@ -25,7 +27,9 @@ class CitySDKAPI < Sinatra::Application
       g = stop.getLayer('gtfs')
       if(g)
         h = {}
-        a = Sequel::Model.db.fetch("select * from stop_now('#{g[:data]['stop_id']}','#{tz}')").all
+        a = Sequel::Model.db.fetch(
+          "select * from stop_now('#{g[:data]['stop_id']}','#{tz}')"
+        ).all()
         a.to_a.each do |t|
 
           aname = t[:agency_id]
@@ -168,22 +172,25 @@ class CitySDKAPI < Sinatra::Application
       ['ptlines','schedule','now'].include?(params[:cmd])
     end
 
-    def self.processStop(stop,params,req)
+    def self.processStop(stop, params, req)
       if params.has_key? 'cdk_id'
         if(stop)
           case params[:cmd]
           when 'ptlines'
-            lines = CitySDK::Node.where("members @> '{ #{stop.id} }' ").eager_graph(:node_data).where(:node_id => :nodes__id)
-            lines = lines.all.map { |a| a.values.merge(:node_data=>a.node_data.map{|al| al.values}) }
+            lines = CitySDK::Node
+              .where("members @> '{ #{stop.id} }' ")
+              .eager_graph(:node_data)
+              .where(:node_id => :nodes__id)
+            lines = lines
+              .all()
+              .map { |a| a.values.merge(:node_data=>a.node_data.map{|al| al.values}) }
 
             # TODO: gebruik  CitySDKAPI.json_simple_results(res, req)
-            return {
-              :status => 'success',
-              :pages => 1,
-              :per_page => lines.length,
-              :record_count => lines.length,
-              :results => lines.each {|l| CitySDK::Node.serialize(l,params)}
-            }.to_json
+            serializer = CitySDK::Serializer.create(params)
+            lines.each do |line|
+              serializer.add_node(line)
+            end
+            serializer.serialize(url: req.url)
           when 'schedule'
             return scheduleForStop(stop)
           when 'now'
@@ -212,7 +219,11 @@ class CitySDKAPI < Sinatra::Application
           case params[:cmd]
           when 'ptstops'
             members = line.members.to_a
-            stops = CitySDK::Node.where(:nodes__id => members).eager_graph(:node_data).where(:node_data__node_id => :nodes__id).all
+            stops = CitySDK::Node
+              .where(nodes__id: members)
+              .eager_graph(:node_data)
+              .where(node_data__node_id: :nodes__id)
+              .all()
             stops = stops.sort_by { |a| members.index(a.values[:id]) }.map { |a|
               a.values.merge( :node_data =>
                a.node_data.map{ |al|
@@ -220,13 +231,11 @@ class CitySDKAPI < Sinatra::Application
                 }
               )
             }
-            return {
-              :status => 'success',
-              :pages => 1,
-              :per_page => stops.length,
-              :record_count => stops.length,
-              :results => stops.each {|l| CitySDK::Node.serialize(l,params)}
-            }.to_json
+            serializer = CitySDK::Serializer.create(params)
+            stops.each do |stop|
+              serializer.add_node(stop)
+            end # do
+            return serializer.serialize(url: req.url)
           when 'schedule'
             return scheduleForLine(line,params[:day]||0)
           else

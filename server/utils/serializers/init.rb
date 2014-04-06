@@ -18,3 +18,5 @@ require_relative 'turtle_node_serializer'
 require_relative 'turtle_node_datum_serializer'
 require_relative 'turtle_osm_property_serializer'
 
+require_relative 'utils'
+

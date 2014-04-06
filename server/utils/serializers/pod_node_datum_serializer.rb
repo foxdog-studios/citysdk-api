@@ -39,10 +39,9 @@ module CitySDK
     end # def
 
     def serialize_modalities(node_datum, data_pod)
-      modalities = node_datum[:modalities]
-      return if modalities.nil? || modalities.empty?
-      modalities = modalities.map { |modality| modality.fetch(:name) }
-      data_pod[:modalities] = modalities
+      modality_ids = node_datum[:modalities]
+      modality_names = CitySDK::find_modality_names(modality_ids)
+      data_pod[:modalities] = modality_names unless modality_names.empty?
       return # nothing
     end # def
 
