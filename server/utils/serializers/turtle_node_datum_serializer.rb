@@ -68,7 +68,7 @@ module CitySDK
       subject = make_subject(layer, node)
       pos = []
       append_type_po(layer, node_datum, pos)
-      serialize_data(layer, node_datum)
+      serialize_data(layer, node, node_datum)
     end # def
 
 
@@ -85,11 +85,11 @@ module CitySDK
     # = Misc.                                                              =
     # ======================================================================
 
-    def extract_data(layer, node_datum)
+    def extract_data(layer, node, node_datum)
       data = node_datum.fetch(:data)
       webservice = layer.webservice
       if @use_webservice && !(webservice.nil? || webservice.empty?)
-        data = WebService.load(layer.id, node_datum.fetch(:cdk_id), data)
+        data = WebService.load(layer.id, node.cdk_id, data)
       end # if
       data
     end # def
@@ -112,8 +112,8 @@ module CitySDK
       return # nothing
     end # def
 
-    def serialize_data(layer, node_datum)
-      data = extract_data(layer, node_datum)
+    def serialize_data(layer, node, node_datum)
+      data = extract_data(layer, node, node_datum)
       data.each { |key, value| serialize_datum(key, value) }
     end # def
 

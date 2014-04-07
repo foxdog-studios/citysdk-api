@@ -3,7 +3,7 @@
 module CitySDK
   class PodNodeDatumSerializer
     def initialize(options)
-      @use_webservice = options.fetch('use_webservice', false)
+      @use_webservice = options.fetch(:use_webservice, false)
     end # def
 
     def serialize(node_datum)
@@ -27,10 +27,13 @@ module CitySDK
     def serialize_data(node_datum, data_pod)
       data = node_datum[:data]
       if @use_webservice
-        layer = node_datum.layer
+        layer_id = node_datum.fetch(:layer_id)
+        layer = Layer.where(id: layer_id).first()
         web_service = layer.webservice
         unless web_service.nil? || web_service.empty?
-          data = WebService.load(layer.id, node_datum.cdk_id, data)
+          node_id = node_datum.fetch(:node_id)
+          node = Node.where(id: node_id).first()
+          data = WebService.load(layer.id, node.cdk_id, data)
         end # unless
       end # if
       data = data.to_hash()

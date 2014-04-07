@@ -112,10 +112,10 @@ GEM
       daemons (>= 1.0.9)
       eventmachine (>= 1.0.0)
       rack (>= 1.0.0)
-    thread_safe (0.3.2)
+    thread_safe (0.3.3)
     tilt (1.4.1)
     timers (1.1.0)
-    tins (1.0.1)
+    tins (1.1.0)
     tzinfo (0.3.39)
     yajl-ruby (1.2.0)
 
