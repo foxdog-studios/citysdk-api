@@ -18,22 +18,20 @@ module CitySDK
         }
       )
       @generator = RGeo::WKRep::WKTGenerator.new()
-      @node_datum_serializer = TurtleNodeDatumSerializer.new(options)
+      @node_datum_pos_serializer = TurtleNodeDatumPOSSerializer.new(options)
       @with_geometry = options.fetch(:with_geometry, false)
     end # def
 
     def serialize(node)
       subject = make_subject(node)
-
       pos = []
       append_title_po(pos, node)
       append_type_po(pos, node)
       append_created_on_layer_po(pos, node)
       append_modality_pos(pos, node)
       append_geometry_po(pos, node)
-      append_data_pos(pos, node)
+      pos += make_data_pos(node)
       pos = pos.join(" ;\n")
-
       "#{ subject }\n#{ pos } ."
     end # def
 
@@ -51,13 +49,13 @@ module CitySDK
       return # nothing
     end # def
 
-    def append_data_pos(pos, node)
+    def make_data_pos(node)
       node_data = node[:node_data]
       return if node_data.nil? || node_data.empty?
-      node_data.each do |node_datum|
-        pos << @node_datum_serializer.serialize(node_datum)
+      pos = node_data.map do |node_datum|
+        @node_datum_pos_serializer.serialize(node_datum)
       end # do
-      return # nothing
+      pos.flatten()
     end # def
 
     def append_geometry_po(pos, node)

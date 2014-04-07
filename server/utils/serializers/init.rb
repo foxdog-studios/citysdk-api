@@ -15,7 +15,7 @@ require_relative 'turtle_directive_serializer'
 require_relative 'turtle_endpoint_serializer'
 require_relative 'turtle_layer_serializer'
 require_relative 'turtle_node_serializer'
-require_relative 'turtle_node_datum_serializer'
+require_relative 'turtle_node_datum_pos_serializer'
 require_relative 'turtle_osm_property_serializer'
 
 require_relative 'utils'
