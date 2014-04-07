@@ -5,6 +5,8 @@ require 'json'
 require 'pathname'
 require 'uri'
 
+require 'haml'
+
 require 'sinatra'
 require 'sinatra/session'
 require 'sinatra/sequel'
