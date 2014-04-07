@@ -6,7 +6,8 @@ curl -X PUT -d '{"name": "Lisbon Tourism", "code": "lisbt", "api": "http://touri
 
 curl -X PUT -d '{"name": "Istanbul", "code": "istb", "api": "http://apicitysdk.ibb.gov.tr", "type": "csdk_mobility", "docs": "http://devcitysdk.ibb.gov.tr", "email": "sercan.erhan@ibb.gov.tr", "description": "CitySDK Mobility Endpoint in Istanbul, Turkey" }' http://cat.citysdk.eu/endpoint
 
-curl -X PUT -d '{"name": "Amsterdam", "code": "asd", "api": "http://api.citysdk.waag.org", "docs": "http://dev.citysdk.waag.org", "type": "csdk_mobility", "email": "citsdk@waag.org", "description": "CitySDK Mobility Endpoint in Amsterdam, Holland" }' http://cat.citysdk.eu/endpoint
+curl -X PUT -d '{"name": "Amsterdam", "code": "asd", "api": "http://api.citysdk.waag.org", "docs": "http://dev.citysdk.waag.org", "type": "csdk_mobility", "email": "citsdk@waag.org", "description": "CitySDK Mobility Endpoint in Amsterdam, The Netherlands" }' http://cat.citysdk.eu/endpoint
 
 curl -X PUT -d '{"name": "Lamia", "code": "lamia", "api": "http://api.citysdk.lamia-city.gr", "docs": "http://dev.citysdk.waag.org", "email": "laoukas@gnosis.gr", "type": "csdk_mobility", "description": "CitySDK Mobility Endpoint in Lamia, Greece" }' http://cat.citysdk.eu/endpoint
 
+curl -X PUT -d '{"name": "Amsterdam Tourism", "code": "asdt", "api": "http://citysdk.dmci.hva.nl/CitySDK", "type": "csdk_tourism", "docs": "http://citysdk.ist.utl.pt/index.html", "email": "w.t.meys@hva.nl", "description": "CitySDK Tourism Endpoint in Amsterdam, The Netherlands" }' http://cat.citysdk.eu/endpoint

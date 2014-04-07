@@ -80,7 +80,6 @@ $(document).ready( function() {
   
   function updatePosition(pos) {
     loadingMessage(false)
-    
     if($.cdk_url == '') {
       var url = 'http://cat.citysdk.eu/layers/mobility.public_transport?ll=';
       url = url + pos.coords.latitude + ',' + pos.coords.longitude;
@@ -240,7 +239,6 @@ $(document).ready( function() {
     loadingMessage(false)
     alert(error.message)
   }
-
   $.query = getQueryParams(document.location.search);
 
   if($.query.ll != undefined) {
@@ -254,7 +252,7 @@ $(document).ready( function() {
   } else {
     if (navigator.geolocation) {
       loadingMessage(true)
-      navigator.geolocation.watchPosition(updatePosition,locationError);
+      navigator.geolocation.watchPosition(updatePosition,locationError,{timeout:10000});
     } else {
       alert("Location services on, please.")
     }

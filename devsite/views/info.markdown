@@ -9,7 +9,7 @@
 Most important data sources currently available:
 
 - Public transport, schedules and real-time &ndash; GTFS, [openOV](http://www.openov.nl/)
-- Amsterdam infrastructure and transportation data &ndash; [DIVV](http://www.amsterdam.nl/parkeren-verkeer/open-data/overzicht/)
+- Amsterdam infrastructure and transportation data &ndash; [DIVV](http://www.amsterdamopendata.nl/data?searchvalue=IVV)
 - Dutch addresses and buildings &ndash; [BAG](http://www.kadaster.nl/BAG/)
 - [OpenStreetMap](http://www.openstreetmap.org/) data.
 - More information about available data sets on the [data page](/data), via the [`/layers` API](http://api.citysdk.waag.org/layers) or in the [CMS](https://cms.citysdk.waag.org/).
