@@ -51,7 +51,7 @@ module CitySDK
 
     def make_data_pos(node)
       node_data = node[:node_data]
-      return if node_data.nil? || node_data.empty?
+      return [] if node_data.nil? || node_data.empty?
       pos = node_data.map do |node_datum|
         @node_datum_pos_serializer.serialize(node_datum)
       end # do
