@@ -81,7 +81,6 @@ module CitySDK
           .select(:name)
           .where(id: modalities.any())
           .order(:name)
-      puts modalities.sql
       modalities.each do |modality|
         modality = ":transportModality_#{ modality.name }"
         append_po(pos, ':hasTransportmodality', modality)
