@@ -1,10 +1,6 @@
 # encoding: utf-8
 
-require 'httpauth/basic'
-
-
 class CitySDKAPI < Sinatra::Application
-
   before do
     # Basic authentication
     header_name = 'HTTP_AUTHORIZATION'
@@ -14,6 +10,5 @@ class CitySDKAPI < Sinatra::Application
     user = User.authenticate(email, password)
     session[:user] = user.id unless user.nil?
   end # do
-
 end # class
 

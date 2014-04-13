@@ -3,6 +3,8 @@
     %a(href='/layers/') Home
     &#8594;
     %a(href='/users/') Users
+    %span.editlinks
+      %a(href='/signup') New user
   .code
     %table
       %thead
@@ -28,7 +30,7 @@
               %td
                 %a{href: "/users/#{ user.id }/edit"} edit
               %td
-                - unless user.site_admin?
+                - if user.site_admin?
                   site admin
                 - else
                   %a{href: "/users/#{ user.id }/delete",
