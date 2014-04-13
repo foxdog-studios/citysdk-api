@@ -95,6 +95,8 @@ GEM
     rack (1.5.2)
     rack-flash (0.1.2)
       rack
+    rack-flash3 (1.0.5)
+      rack
     rack-protection (1.5.2)
       rack
     rb-fsevent (0.9.4)
@@ -156,6 +158,7 @@ DEPENDENCIES
   multipart-post
   pg
   pony
+  rack-flash3
   rerun
   rgeo
   rgeo-geojson

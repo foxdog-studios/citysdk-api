@@ -7,13 +7,16 @@ require 'uri'
 
 require 'haml'
 
+require 'rack-flash'
+
 require 'sinatra'
 require 'sinatra/session'
 require 'sinatra/sequel'
 
 module CitySDK
-  class CMSApplication < ::Sinatra::Application
+  class CMSApplication < Sinatra::Application
     register Sinatra::Session
+    use Rack::Flash
 
     configure :production do |app|
       PhusionPassenger.on_event(:starting_worker_process) do |forked|
