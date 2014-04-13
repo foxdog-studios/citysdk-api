@@ -3,7 +3,7 @@
     Email
     %input#email.layer{type: 'text',
                        name: 'user[email]',
-                       value: current_user.email}
+                       value: user.email}
 
 .code
   %label(for='password')
@@ -22,12 +22,12 @@
     Organization
     %input#organization.layer{type: 'text',
                               name: 'user[organization]',
-                              value: current_user.organization}
+                              value: user.organization}
 
--if current_user.domains.is_a?(Array) && !current_user.domains.empty?
+-if user.domains.is_a?(Array) && !user.domains.empty?
   .code
     %h2 Domains
-    %p= domains_to_s(current_user.domains)
+    %p= domains_to_s(user.domains)
 
 %input(type='submit' value='Save')
 

@@ -9,5 +9,5 @@
   = haml :'user/errors'
 
   %form(name='input' action="/users/#{ current_user.id }/edit" method='post')
-    = haml :'user/edit_form_body'
+    = haml :'user/edit_form_body', locals: { user: user }
 

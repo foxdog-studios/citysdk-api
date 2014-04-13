@@ -15,9 +15,10 @@
         %a(href="/users/#{ current_user.id }/edit") My account
         |
         %a(href='/logout') Sign out
+        - if current_user.admin?()
+          |
+          %a(href='/users') Users
       - else
-        %a(href='/signup') Sign up
-        |
         %a(href='/login') Sign in
   - layers.each do |layer|
     = haml :layer, locals: { layer: layer }

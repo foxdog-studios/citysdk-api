@@ -1,0 +1,11 @@
+.info
+  .pageheader
+    %a(href='/layers/') Home
+    &#8594;
+    New user
+
+  = haml :'user/errors'
+
+  %form(name='input' method='post')
+    = haml :'user/edit_form_body', locals: { user: user }
+
