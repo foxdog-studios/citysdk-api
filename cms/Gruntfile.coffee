@@ -2,7 +2,7 @@ JS_VENDOR = [
   'bower_components/URIjs/src/URI.js'
   'bower_components/jquery-form/jquery.form.js'
   'bower_components/jquery-ui/ui/minified/jquery-ui.min.js'
-  'bower_components/jquery/jquery.min.js'
+  'bower_components/jquery/dist/jquery.min.js'
 ]
 
 CSS_VENDOR = [
