@@ -1,24 +1,24 @@
 .code
-  %label(for='email')
+  %label
     Email
     %input#email.layer{type: 'text',
                        name: 'user[email]',
                        value: user.email}
 
 .code
-  %label(for='password')
+  %label
     Password
     %input#password.layer{type: 'password',
                           name: 'user[password]',
                           placeholder: 'Password'}
-  %label(for='password_confirmation')
+  %label
     Confirmation password
     %input#password_confirmation.layer{type: 'password',
                                        name: 'user[password_confirmation]',
                                        placeholder: 'Confirm password'}
 
 .code
-  %label(for='organization')
+  %label
     Organization
     %input#organization.layer{type: 'text',
                               name: 'user[organization]',
@@ -28,6 +28,12 @@
   .code
     %h2 Domains
     %p= domains_to_s(user.domains)
+
+-if current_user.admin?()
+  .code
+    %label
+      = checkbox 'is_admin', 'admin', user.admin?
+      Admin
 
 %input(type='submit' value='Save')
 

@@ -1,5 +1,6 @@
-# -*- encoding: utf-8 -*-
+# encoding: utf-8
 
+require_relative 'checkbox'
 require_relative 'domains_to_s'
 require_relative 'get_layers'
 require_relative 'import_period_select'

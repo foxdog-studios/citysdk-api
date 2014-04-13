@@ -10,8 +10,9 @@ require 'haml'
 require 'rack-flash'
 
 require 'sinatra'
-require 'sinatra/session'
 require 'sinatra/sequel'
+require 'sinatra/session'
+
 
 module CitySDK
   class CMSApplication < Sinatra::Application
