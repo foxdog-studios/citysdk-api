@@ -2,6 +2,8 @@
   .pageheader
     %a(href='/layers/') Home
     &#8594;
+    %a(href='/users/') Users
+    &#8594;
     %a(href="/users/#{ current_user.id }/edit")= current_user.email
 
   = haml :'user/errors'

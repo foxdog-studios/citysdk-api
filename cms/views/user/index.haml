@@ -1,0 +1,36 @@
+.info
+  .pageheader
+    %a(href='/layers/') Home
+    &#8594;
+    %a(href='/users/') Users
+  .code
+    %table
+      %thead
+        %tr
+          %th Email
+          - if current_user.admin?
+            %th Permission level
+          %th
+          - if current_user.admin?
+            -# show
+            %th
+            -# edit
+            %th
+      - @users.each do |user|
+        %tbody
+          %tr
+            %td= user.email
+            - if current_user.admin?
+              %td= user.permission_level
+            %td
+              %a{href: "/users/#{ user.id }"} show
+            - if current_user.admin?
+              %td
+                %a{href: "/users/#{ user.id }/edit"} edit
+              %td
+                - unless user.site_admin?
+                  site admin
+                - else
+                  %a{href: "/users/#{ user.id }/delete",
+                     onclick: "return confirm('you sure?')"} delete
+
