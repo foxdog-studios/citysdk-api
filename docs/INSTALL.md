@@ -23,12 +23,12 @@ The full API implementation currently consists of:
 ### Server basic setup
 
 We've installed on Ubuntu 12.04 LTS so far.
-Other distros should work without much modification. 
+Other distros should work without much modification.
 
 #### Install PostgreSQL >= 9.2
-  
+
 Use your package manager; in case 9.2 is not yet available, [this](http://anonscm.debian.org/loggerhead/pkg-postgresql/postgresql-common/trunk/download/head:/apt.postgresql.org.s-20130224224205-px3qyst90b3xp8zj-1/apt.postgresql.org.sh) script will help (for ubuntu).
-    
+
 
 #### Install PostGIS:
 
@@ -39,8 +39,8 @@ This needs to be installed from source, follow instructions [here](http://trac.o
 `apt-get install postgresql-contrib`
 
 #### Install osm2pgsql:
-  
-At the moment of writing, the standard osm2pgsql available through apt will expect postgres 9.1 and doesn't play nice with 9.2. 
+
+At the moment of writing, the standard osm2pgsql available through apt will expect postgres 9.1 and doesn't play nice with 9.2.
 Therefore, we need to build it from source. This is what works for us:
 
     sudo apt-get install build-essential libxml2-dev libgeos++-dev libpq-dev libbz2-dev proj libtool automake
@@ -51,7 +51,7 @@ Therefore, we need to build it from source. This is what works for us:
     sed -i 's/-g -O2/-O2 -march=native -fomit-frame-pointer/' Makefile
     make && sudo make install
     ln -s /usr/share/osm2pgsql/default.style /usr/share/default.style
-  
+
 ####install ruby, passenger & nginx:
 
     sudo -s
@@ -86,16 +86,14 @@ Now, make sure you have the 'server' part of the download installed on your serv
 The `/shared` directory has some more entries than the default:
 
 * `/shared/daemons`   -- we run some data importer daemons from here
-* `/shared/periodic`  -- periodically run importer/updater scripts 
-* `/shared/importers` -- all 'other' importers (gtfs)
-
+* `/shared/periodic`  -- periodically run importer/updater scripts
 
 From now, we'll assume you're working in the 'current' directory (the contents of which should be that of the api/server directory in the download)
 
 Change `example.config.json` into `config.json` and make sure the contents reflect your configuration.
 
-To set up the admin user, edit `db/migrations/002_insert_constants.rb` and at the bottom, change the line:     
-    
+To set up the admin user, edit `db/migrations/002_insert_constants.rb` and at the bottom, change the line:
+
     self[:owners].insert(:id => 0, :name => 'CitySDK', :email => 'citysdk@waag.org')
 
 to replect your situation, the email address will be needed to add users, layers and data (through the CMS, or using the API).
@@ -109,18 +107,18 @@ To seed the database (more information is available as comments in the various s
 These commands will take considerable time; hours, most likely, so be patient.
 (You can undo the migrations and try again with `./run_migrations.rb 0`)
 
-After the migrations have run, you'll need to add a password to the admin account: 
+After the migrations have run, you'll need to add a password to the admin account:
 
       cd current
       racksh
       o = Owner[0]
       o.createPW('<passwd>')
       <ctrl>-d
-      
+
 
 Importers and daemons won't be directly usable, except for the GTFS importer, but are included to help you get started on your own versions.
 
-Included is our nginx configuration, other servers will work, of course, but nginx is fast and easy to configure. 
+Included is our nginx configuration, other servers will work, of course, but nginx is fast and easy to configure.
 
 The cms, services and dev web apps are simple to deploy, they do not depend on databases of their own.
 

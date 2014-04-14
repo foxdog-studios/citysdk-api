@@ -36,13 +36,6 @@ namespace :deploy do
       mkdir -p #{latest_release}/tmp &&
       mkdir -p #{latest_release}/public
     CMD
-
-    top.upload(
-      '../importers/periodic',
-      shared_path,
-      :via => :scp,
-      :recursive => true,
-    )
   end
 end
 
