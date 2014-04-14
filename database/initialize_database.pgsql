@@ -43,34 +43,33 @@ CREATE OR REPLACE VIEW sequel_users AS SELECT * FROM users;
 -- -----------------------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS layers (
-    id            SERIAL PRIMARY KEY,
-    name          TEXT NOT NULL UNIQUE,
-    title         TEXT,
-    description   TEXT,
-    data_sources  TEXT[],
+    id            serial PRIMARY KEY,
+    name          text NOT NULL UNIQUE,
+    title         text,
+    description   text,
+    data_sources  text[],
 
     -- Get real-time data from memcache
-    realtime      BOOLEAN NOT NULL DEFAULT FALSE,
+    realtime      boolean NOT NULL DEFAULT FALSE,
 
-    -- In seconds
-    update_range  INTEGER DEFAULT 0,
-    update_rate   INTEGER DEFAULT 0,
+    update_range  integer DEFAULT 0, -- seconds
+    update_rate   integer DEFAULT 0, -- seconds
 
     -- Get data from web service if not in memcache.
-    webservice    TEXT,
+    webservice    text,
 
     validity      tstzrange,
-    owner_id      INTEGER NOT NULL REFERENCES users (id),
-    created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
-    imported_at   TIMESTAMPTZ,
-    category      TEXT NOT NULL,
-    organization  TEXT,
-    import_url    TEXT,
-    import_period TEXT,
-    import_status TEXT,
-    import_config TEXT,
-    sample_url    TEXT,
-    rdf_type_uri  TEXT,
+    owner_id      integer NOT NULL REFERENCES users (id),
+    created_at    timestamptz NOT NULL DEFAULT now(),
+    imported_at   timestamptz,
+    category      text NOT NULL,
+    organization  text,
+    import_url    text,
+    import_period text,
+    import_status text,
+    import_config text,
+    sample_url    text,
+    rdf_type_uri  text,
 
     CONSTRAINT constraint_layer_name_alphanumeric_with_dots CHECK (
         name SIMILAR TO
