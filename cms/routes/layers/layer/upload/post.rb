@@ -32,7 +32,7 @@ module CitySDK
       begin
         x = params.fetch('x')
         y = params.fetch('y')
-        builder.set_geometry_from_lat_lon!(x, y)
+        builder.set_geometry_from_lat_lon!(y, x)
       rescue KeyError
         halt 422, { error: 'Bad key for x or y' }.to_json
       end
