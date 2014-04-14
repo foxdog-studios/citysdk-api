@@ -129,50 +129,126 @@ CREATE INDEX ON nodes USING btree ((members[array_upper(members, 1)]));
 
 
 -- -----------------------------------------------------------------------------
--- - Other tables                                                              -
+-- - Categories                                                                -
 -- -----------------------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS categories (
-    id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL UNIQUE
+    id   serial PRIMARY KEY,
+    name text NOT NULL UNIQUE
 );
+
+INSERT INTO categories (name) VALUES
+    ('administrative'),
+    ('civic'         ),
+    ('commercial'    ),
+    ('cultural'      ),
+    ('education'     ),
+    ('environment'   ),
+    ('health'        ),
+    ('mobility'      ),
+    ('natural'       ),
+    ('security'      ),
+    ('tourism'       )
+;
+
+-- -----------------------------------------------------------------------------
+-- - Modalities                                                                -
+-- -----------------------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS modalities (
-    id   SERIAL PRIMARY KEY,
-    name TEXT NOT NULL UNIQUE
+    id   serial PRIMARY KEY,
+    name text NOT NULL UNIQUE
 );
 
--- XXX: What does the 'ld' in 'ldprefix' mean?
+INSERT INTO modalities (id, name) VALUES
+    (  0, 'tram'     ), -- Tram, Streetcar, Light rail
+    (  1, 'subway'   ), -- Subway, Metro
+    (  2, 'rail'     ), -- Rail
+    (  3, 'bus'      ), -- Bus
+    (  4, 'ferry'    ), -- Ferry
+    (  5, 'cable_car'), -- Cable car
+    (  6, 'gondola'  ), -- Gondola, Suspended cable car
+    (  7, 'funicular'), -- Funicular
+    (109, 'airplane '), -- Airplane
+    (110, 'foot'     ), -- Foot, walking
+    (111, 'bicycle'  ), -- Bicycle
+    (112, 'moped'    ), -- Light motorbike, moped
+    (113, 'motorbike'), -- Motorbike
+    (114, 'car'      ), -- Car
+    (115, 'truck'    ), -- Truck
+    (116, 'horse'    ), -- Horse
+    (200, 'any'      )  -- Any
+;
+
+
+-- -----------------------------------------------------------------------------
+-- - Linked data prefixes                                                      -
+-- -----------------------------------------------------------------------------
+
+-- The 'ld' prefix stands for 'linked data'.
 CREATE TABLE IF NOT EXISTS ldprefix (
-    prefix   TEXT PRIMARY KEY,
-    name     TEXT NOT NULL,
-    url      TEXT NOT NULL,
-    owner_id INTEGER NOT NULL REFERENCES users (id)
+    prefix   text PRIMARY KEY,
+    name     text NOT NULL,
+    url      text NOT NULL,
+    owner_id integer NOT NULL REFERENCES users (id)
 );
 
--- XXX: What does the 'ld' in 'ldprops' mean?
+
+-- -----------------------------------------------------------------------------
+-- - Linked data properties                                                    -
+-- -----------------------------------------------------------------------------
+
+-- The 'ld' prefix stands for 'linked data'.
 CREATE TABLE IF NOT EXISTS ldprops (
-    layer_id INTEGER NOT NULL REFERENCES layers (id),
-    key      TEXT NOT NULL,
-    type     TEXT,
-    unit     TEXT,
-    lang     TEXT,
-    eqprop   TEXT,
-    descr    TEXT,
+    layer_id integer NOT NULL REFERENCES layers (id),
+    key      text NOT NULL,
+    type     text,
+    unit     text,
+    lang     text,
+    eqprop   text,
+    descr    text,
 
     PRIMARY KEY (layer_id, key)
 );
+
+
+-- -----------------------------------------------------------------------------
+-- - Node types                                                                -
+-- -----------------------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS node_types (
     id   SERIAL PRIMARY KEY,
     name TEXT NOT NULL
 );
 
+INSERT INTO node_types (id, name) VALUES
+    (0, 'node'  ),
+    (1, 'route' ),
+    (2, 'ptstop'),
+    (3, 'ptline')
+;
+
+
+-- -----------------------------------------------------------------------------
+-- - Node data types                                                           -
+-- -----------------------------------------------------------------------------
+
 CREATE TABLE IF NOT EXISTS node_data_types (
-    id   SERIAL PRIMARY KEY,
-    name TEXT NOT NULL
+    id   serial PRIMARY KEY,
+    name text NOT NULL
 );
 
+INSERT INTO node_data_types (id, name) VALUES
+    (0, 'layer_data'),
+    (1, 'comment'   )
+;
+
+
+-- -----------------------------------------------------------------------------
+-- - OpenStreetMaps linked-data properties                                     -
+-- -----------------------------------------------------------------------------
+
+-- See osm_properties.csv
 CREATE TABLE IF NOT EXISTS osmprops (
     key  text NOT NULL,
     val  text,
@@ -204,57 +280,6 @@ CREATE INDEX ON node_data USING gin (data);
 CREATE INDEX ON node_data USING gin (modalities);
 CREATE INDEX ON node_data USING gist (validity);
 CREATE INDEX ON node_data USING btree (layer_id);
-
-
--- -----------------------------------------------------------------------------
--- - Inserts                                                                   -
--- -----------------------------------------------------------------------------
-
-INSERT INTO categories (name) VALUES
-    ('administrative'),
-    ('civic'         ),
-    ('commercial'    ),
-    ('cultural'      ),
-    ('education'     ),
-    ('environment'   ),
-    ('health'        ),
-    ('mobility'      ),
-    ('natural'       ),
-    ('security'      ),
-    ('tourism'       )
-;
-
-INSERT INTO modalities (id, name) VALUES
-    (  0, 'tram'     ), -- Tram, Streetcar, Light rail
-    (  1, 'subway'   ), -- Subway, Metro
-    (  2, 'rail'     ), -- Rail
-    (  3, 'bus'      ), -- Bus
-    (  4, 'ferry'    ), -- Ferry
-    (  5, 'cable_car'), -- Cable car
-    (  6, 'gondola'  ), -- Gondola, Suspended cable car
-    (  7, 'funicular'), -- Funicular
-    (109, 'airplane '), -- Airplane
-    (110, 'foot'     ), -- Foot, walking
-    (111, 'bicycle'  ), -- Bicycle
-    (112, 'moped'    ), -- Light motorbike, moped
-    (113, 'motorbike'), -- Motorbike
-    (114, 'car'      ), -- Car
-    (115, 'truck'    ), -- Truck
-    (116, 'horse'    ), -- Horse
-    (200, 'any'      )  -- Any
-;
-
-INSERT INTO node_types (id, name) VALUES
-    (0, 'node'  ),
-    (1, 'route' ),
-    (2, 'ptstop'),
-    (3, 'ptline')
-;
-
-INSERT INTO node_data_types (id, name) VALUES
-    (0, 'layer_data'),
-    (1, 'comment'   )
-;
 
 
 -- -----------------------------------------------------------------------------
