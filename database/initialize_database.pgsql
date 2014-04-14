@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS layers (
     name          text NOT NULL UNIQUE,
     title         text,
     description   text,
-    data_sources  text[],
+    data_sources  text[] NOT NULL DEFAULT '{}'::text[],
 
     -- Get real-time data from memcache
     realtime      boolean NOT NULL DEFAULT FALSE,
@@ -216,8 +216,8 @@ CREATE TABLE IF NOT EXISTS ldprops (
 -- -----------------------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS node_types (
-    id   SERIAL PRIMARY KEY,
-    name TEXT NOT NULL
+    id   serial PRIMARY KEY,
+    name text NOT NULL
 );
 
 INSERT INTO node_types (id, name) VALUES
@@ -262,16 +262,16 @@ CREATE TABLE IF NOT EXISTS osmprops (
 -- -----------------------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS node_data (
-    id             SERIAL PRIMARY KEY,
-    node_id        INTEGER NOT NULL REFERENCES nodes (id),
-    layer_id       INTEGER NOT NULL REFERENCES layers (id),
-    data           HSTORE,
-    modalities     INTEGER[],
-    -- XXX: What's this for? What's the default?
-    node_data_type INTEGER NOT NULL REFERENCES node_data_types (id) DEFAULT 0,
-    validity       TSTZRANGE,
-    created_at     TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-    updated_at     TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+    id             serial PRIMARY KEY,
+    node_id        integer NOT NULL REFERENCES nodes (id),
+    layer_id       integer NOT NULL REFERENCES layers (id),
+    data           hstore,
+    modalities     integer[],
+    -- This column is no longer used.
+    node_data_type integer NOT NULL REFERENCES node_data_types (id) DEFAULT 0,
+    validity       tstzrange,
+    created_at     timestamp with time zone NOT NULL DEFAULT now(),
+    updated_at     timestamp with time zone NOT NULL DEFAULT now()
 );
 
 CREATE INDEX ON node_data USING btree (node_id);
