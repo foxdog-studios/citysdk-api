@@ -1,7 +1,7 @@
 .code
-  %a.layerheader(href="/layers/#{ layer.name }/")
-    = layer.name
   - if current_user.update_layer?(layer)
+    %a.layerheader(href="/layers/#{ layer.name }/")
+      = layer.name
     %span.editlinks
       %a(href="/layers/#{ layer.name }/data") Data
       |
@@ -9,6 +9,9 @@
       - if current_user.delete_layer?(layer)
         |
         %a(href='#' onclick="deleteLayer('#{ layer.name }');") Delete
+  - else
+    %p.layerheader
+      = layer.name
   %table
     %tr
       %td Category:
