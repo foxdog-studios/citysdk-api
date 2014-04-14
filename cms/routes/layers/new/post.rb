@@ -11,16 +11,13 @@ module CitySDK
 
       # Name
       name = params.fetch('name')
-      prefix = params['prefix']
-      prefixc = params['prefixc']
+      domain = params['domain']
 
       layer.name =
-        if !prefix.nil? && !prefix.empty?
-          "#{ prefix }.#{ name }"
-        elsif !prefixc.nil? && !prefixc.empty?
-          "#{ prefixc }.#{ name }"
-        else
+        if domain.nil? || domain.empty?
           name
+        else
+          "#{ domain }.#{ name }"
         end # else
 
       if params['validity_from'].nil?

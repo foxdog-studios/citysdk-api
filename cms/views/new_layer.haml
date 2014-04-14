@@ -11,7 +11,7 @@
       %label Domain
       %div
         %span.flexinput
-          %select.layer{name: 'prefix'}
+          %select.layer{name: 'domain'}
             - current_user.domains.each do |domain|
               %option{value: domain}
                 = domain
