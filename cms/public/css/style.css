@@ -64,6 +64,18 @@ table.twotable {
 }
 
 
+table.users {
+  width: 100%;
+}
+
+table.users th {
+  text-align: left;
+  font-weight: bold;
+}
+
+table.users tr:last-child {
+  border-bottom: 1px dashed #d4dee5;
+}
 
 
 /* Columns

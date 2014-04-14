@@ -6,7 +6,7 @@
     %span.editlinks
       %a(href='/users_new/') New user
   .code
-    %table
+    %table.users
       %thead
         %tr
           %th Email
@@ -14,8 +14,6 @@
             %th Permission level
           %th
           - if current_user.admin?
-            -# show
-            %th
             -# edit
             %th
       - @users.each do |user|
@@ -23,9 +21,8 @@
           %tr
             %td= user.email
             - if current_user.admin?
-              %td= user.permission_level
-            %td
-              %a{href: "/users/#{ user.id }"} show
+              %td
+                = permission_level user
             - if current_user.admin?
               %td
                 %a{href: "/users/#{ user.id }/edit"} edit

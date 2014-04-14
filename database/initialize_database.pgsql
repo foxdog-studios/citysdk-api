@@ -26,7 +26,8 @@ CREATE TABLE IF NOT EXISTS users (
     hashed_password  text,
     salt             text,
     created_at       timestamp without time zone,
-    permission_level integer DEFAULT 1,
+    -- Interpeted by sinatra-authentication as normal user, i.e., not an admin.
+    permission_level integer DEFAULT 0,
 
     -- These columns are specific to the CitySDK.
     organization     text NOT NULL,
