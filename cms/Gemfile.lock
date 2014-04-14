@@ -1,14 +1,5 @@
 GIT
-  remote: https://github.com/foxdog-studios/citysdk
-  revision: 2dbae291999e4b53f5c5d480df3758dc7e08177d
-  specs:
-    citysdk (0.0.2)
-      faraday
-      rgeo-geojson
-      sequel
-
-GIT
-  remote: https://github.com/foxdog-studios/citysdk-client
+  remote: https://github.com/foxdog-studios/citysdk-client.git
   revision: dd5083e0055dd72b51ccc5b9591f7d27d81c8e32
   specs:
     citysdk-client (0.1.2.1)
@@ -18,6 +9,15 @@ GIT
       faraday (~> 0.8.5)
       georuby (~> 2.0.0)
       nokogiri (~> 1.6.1)
+
+GIT
+  remote: https://github.com/foxdog-studios/citysdk.git
+  revision: 2dbae291999e4b53f5c5d480df3758dc7e08177d
+  specs:
+    citysdk (0.0.2)
+      faraday
+      rgeo-geojson
+      sequel
 
 GIT
   remote: https://github.com/foxdog-studios/sinatra-authentication.git
