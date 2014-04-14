@@ -26,6 +26,7 @@ gem 'sinatra-session'
 group :development do
   gem 'capistrano', '~>2'
   gem 'capistrano-ext'
+  gem 'racksh'
   gem 'rerun'
   gem 'thin'
 end

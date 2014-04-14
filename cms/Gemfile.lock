@@ -111,6 +111,11 @@ GEM
       rack
     rack-protection (1.5.3)
       rack
+    rack-test (0.6.2)
+      rack (>= 1.0)
+    racksh (1.0.0)
+      rack (>= 1.0)
+      rack-test (>= 0.5)
     rb-fsevent (0.9.4)
     rb-inotify (0.9.3)
       ffi (>= 0.5.0)
@@ -163,6 +168,7 @@ DEPENDENCIES
   pg
   pony
   rack-flash3
+  racksh
   rerun
   rgeo
   rgeo-geojson

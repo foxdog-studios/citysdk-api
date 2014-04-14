@@ -24,10 +24,10 @@
                               name: 'user[organization]',
                               value: user.organization}
 
--if user.domains.is_a?(Array) && !user.domains.empty?
-  .code
-    %h2 Domains
-    %p= domains_to_s(user.domains)
+.code
+  %label
+    Domains
+    = domains_input user
 
 -if current_user.admin?()
   .code
