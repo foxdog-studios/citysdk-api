@@ -78,7 +78,6 @@ end # module
 require 'citysdk'
 require 'citysdk/client'
 require_relative 'utils/init'
-require_relative 'models/init'
 require_relative 'helpers/init'
 require_relative 'routes/init'
 require_relative 'hooks/init'
