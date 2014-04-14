@@ -8,9 +8,15 @@
   %form#cl(name='input' method='post')
     %input(type='hidden' name='category' value=@category)
     .code
+      %label Domain
+      %div
+        %span.flexinput
+          %select.layer{name: 'prefix'}
+            - current_user.domains.each do |domain|
+              %option{value: domain}
+                = domain
+    .code
       %label Name
-      - if @prefix
-        %span.flex= @prefix
       %div
         %span.flexinput
           %input.layer{type: 'text',
