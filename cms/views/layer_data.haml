@@ -13,14 +13,20 @@
     = haml :file_upload, locals: { layer: layer }
 
   .code
+    %h2 Periodic import
+    %form(action="/layers/#{ layer.name }/periodic" method='post')
+      %label
+        URL
+        %input.layer{type: 'text', name: 'import_url', value: layer.import_url}
+      %input.submitb(type='submit' value='Save')
+
+  .code
     %h2 Web service
     Send node data to a web service that returns enhanced data.
     %form(action="/layers/#{ layer.name }/webservice" method='post')
-      %label(for='url')
+      %label
         URL:
-        %input#url.layer{type: 'text',
-                         name: 'url',
-                         value: layer.webservice}
+        %input.layer{type: 'text', name: 'url', value: layer.webservice}
       %label Cache for (seconds):
       %input.layer{type: 'text',
                    name: 'update_rate',
