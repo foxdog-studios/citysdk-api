@@ -245,7 +245,7 @@ class CitySDKAPI < Sinatra::Application
 
     private
 
-    def get_data_on_layer(node, layer_name)
+    def self.get_data_on_layer(node, layer_name)
       node.node_data.find { |node_datum| node_datum.layer.name == layer_name }
     end # def
   end # module
