@@ -1,6 +1,6 @@
 source 'https://rubygems.org'
 
-ruby '1.9.3'
+ruby '2.1.1'
 #ruby-gemset=citysdk
 
 gem 'activesupport'
@@ -17,7 +17,7 @@ gem 'racksh'
 gem 'rgeo'
 gem 'rgeo-geojson'
 gem 'sequel'
-gem 'sinatra', :require => 'sinatra/base'
+gem 'sinatra', require: 'sinatra/base'
 gem 'sinatra-authentication', git: 'https://github.com/foxdog-studios/sinatra-authentication.git'
 gem 'sinatra-sequel'
 gem 'stringex'

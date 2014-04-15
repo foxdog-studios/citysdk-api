@@ -1,9 +1,13 @@
-source "https://rubygems.org"
+source 'https://rubygems.org'
 
-gem "sinatra", :require => "sinatra/base"
-gem "sinatra-sequel"
-gem "rgeo"
-gem "rgeo-geojson"
-gem "i18n"
-gem "pg"
+ruby '2.1.1'
+#ruby-gemset=citysdk
+
 gem 'citysdk'
+gem 'i18n'
+gem 'pg'
+gem 'rgeo'
+gem 'rgeo-geojson'
+gem 'sinatra', require: 'sinatra/base'
+gem 'sinatra-sequel'
+
