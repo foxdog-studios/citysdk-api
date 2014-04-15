@@ -8,8 +8,8 @@ module CitySDK
           if category.nil?
             Layer
           else
-            Layer.get_layers_in_category(category)
-          end # end
+            Layer.where(Sequel.like(:category, category + '%'))
+          end # else
         layers = layers.order(:name)
         haml :layers, locals: { layers: layers }
       end # def

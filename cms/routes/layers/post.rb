@@ -2,7 +2,7 @@
 
 module CitySDK
   class CMSApplication < Sinatra::Application
-    post '/layers/new' do
+    post '/layers/?' do
       owner = current_user
       halt 403 unless owner.create_layer?
 

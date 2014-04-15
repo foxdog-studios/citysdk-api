@@ -5,7 +5,7 @@
 
   = haml :layer_errors, locals: { layer: layer }
 
-  %form#cl(name='input' method='post')
+  %form#cl(name='input' action='/layers/' method='post')
     %input(type='hidden' name='category' value=@category)
     .code
       %label Domain
