@@ -85,7 +85,7 @@ env.postgres_key     = 'http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc'
 env.postgres_ppa     = 'http://apt.postgresql.org/pub/repos/apt/'
 env.postgres_version = '9.3'
 env.ruby_gemset      = 'citysdk'
-env.ruby_version     = '1.9.3'
+env.ruby_version     = '2.1.1'
 
 # Applications
 # (Source directory name, sub-sub-domain name, SSL)
