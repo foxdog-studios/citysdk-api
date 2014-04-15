@@ -1,26 +1,18 @@
+require 'capistrano/ext/multistage'
+
 set :stages, %w(production testing opt)
 set :default_stage, "testing"
-require 'capistrano/ext/multistage'
-#require "bundler/capistrano"
-
-
 set :application, "CSDK_CAT"
 set :repository,  "."
 set :scm, :none
-
-
 set :branch, "master"
-
 set :deploy_to, "/var/www/cat.citysdk"
 set :copy_exclude, ['db.json','tmp','log']
-
 set :deploy_via, :copy
-
 set :use_sudo, false
 set :user, "citysdk"
 
 default_run_options[:shell] = '/bin/bash'
-
 
 namespace :deploy do
   task :start do ; end
@@ -29,7 +21,7 @@ namespace :deploy do
   task :restart, :roles => :app, :except => { :no_release => true } do
     run "touch #{File.join(current_path,'tmp','restart.txt')}"
   end
- 
+
   task :finalize_update, :except => { :no_release => true } do
     run <<-CMD
       rm -rf #{latest_release}/log &&
@@ -39,6 +31,5 @@ namespace :deploy do
       mkdir -p #{latest_release}/public
     CMD
   end
-end  
-
+end
 
