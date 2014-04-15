@@ -41,7 +41,7 @@ module CitySDK
 
       # Sessions
       enable :sessions
-      set :session_expire, 60 * 60 * 24
+      set :session_expire, 60 * 60 * 24 # 1 day
       set :session_fail, '/login'
       set :session_secret, CONFIG.fetch(:session_secret)
 
