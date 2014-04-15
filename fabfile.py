@@ -61,7 +61,6 @@ def load_config(name):
         return json.load(config_file)
 
 
-config_dev    = load_config('dev'   )
 config_server = load_config('server')
 config_setup  = load_config('setup' )
 
