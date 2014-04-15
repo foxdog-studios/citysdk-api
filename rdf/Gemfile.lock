@@ -1,7 +1,7 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    capistrano (2.14.2)
+    capistrano (2.15.5)
       highline
       net-scp (>= 1.0.0)
       net-sftp (>= 2.0.0)
@@ -62,8 +62,8 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  capistrano (~> 2.14.1)
-  capistrano-ext (~> 1.2.1)
+  capistrano (~> 2)
+  capistrano-ext
   rdf-turtle
   rerun
   sinatra

@@ -7,8 +7,8 @@ gem 'sinatra', require: 'sinatra/base'
 gem 'redcarpet'
 
 group :development do
-  gem 'capistrano', '~>2.14.1'
-  gem 'capistrano-ext', '~>1.2.1'
+  gem 'capistrano', '~>2'
+  gem 'capistrano-ext'
   gem 'passenger', '~>4.0.23'
   gem 'rerun'
   gem 'thin'
