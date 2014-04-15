@@ -1,8 +1,9 @@
+# encoding: utf-8
+
 class CitySDKAPI < Sinatra::Application
-
   module PublicTransport
-
     @@agency_names = {}
+
     def self.get_agency_name(id)
       return @@agency_names[id] if(@@agency_names[id])
       res = Sequel::Model.db.fetch(
@@ -24,7 +25,7 @@ class CitySDKAPI < Sinatra::Application
     end
 
     def self.nowForStop(stop, tz)
-      g = stop.getLayer('gtfs')
+      g = get_data_on_layer(stop, 'gtfs')
       if(g)
         h = {}
         a = Sequel::Model.db.fetch(
@@ -71,7 +72,7 @@ class CitySDKAPI < Sinatra::Application
         }.to_json
       else
         # needs generic solution!!
-        g = stop.getLayer('ns')
+        g = get_data_on_layer(stop, 'ns')
         if(g)
           h = g.data
           h = NodeDatum::WebService.load(g.layer_id, stop.cdk_id, h)
@@ -82,12 +83,10 @@ class CitySDKAPI < Sinatra::Application
           }.to_json
         end
       end
-
     end
 
     def self.scheduleForStop(stop)
-
-      g = stop.getLayer('gtfs')
+      g = get_data_on_layer(stop, 'gtfs')
       if(g)
         h = {}
         t = Time.now
@@ -124,9 +123,8 @@ class CitySDKAPI < Sinatra::Application
       end
     end
 
-
     def self.scheduleForLine(line, day)
-      g = line.getLayer('gtfs')
+      g = get_data_on_layer(line, 'gtfs')
       if(g)
         h = {}
 
@@ -143,34 +141,32 @@ class CitySDKAPI < Sinatra::Application
           stops << key if !stops.include?(key)
           trips[t[:trip_id]] = [] if trips[t[:trip_id]].nil?
           trips[t[:trip_id]] << [ key, self.getRealTime(mckey,t[:stop_id],t[:departure_time]) ]
-        end
+        end # do
 
         t = []
-        trips.each_value do |v| t << v end
-
+        trips.each_value { |v| t << v }
 
         h[0] = {
           :line => line.cdk_id,
           :date => d,
           :trips => t.sort do |a,b|
             a[0][1] <=> b[0][1]
-          end
+          end # do
         }
 
         r = []
-        h.each_value do |v| r << v end
+        h.each_value { |v| r << v }
         return {
           :status => 'success',
           :pages => 1,
           :results => r
         }.to_json
-      end
-    end
-
+      end # if
+    end # def
 
     def self.processStop?(n,params)
       ['ptlines','schedule','now'].include?(params[:cmd])
-    end
+    end # def
 
     def self.processStop(stop, params, req)
       if params.has_key? 'cdk_id'
@@ -198,20 +194,18 @@ class CitySDKAPI < Sinatra::Application
             return nowForStop(stop,"#{tzdiff} minutes")
           else
             CitySDKAPI.do_abort(422,"Command #{params[:cmd]} not defined for ptstop.")
-          end
+          end # case
         else
           CitySDKAPI.do_abort(422,'Stop ' + params[:cdk_id] + ' not found..')
-        end
+        end # else
       else
         CitySDKAPI.do_abort(500,'Server error. ')
-      end
-    end
+      end # else
+    end # def
 
-
-    def self.processLine?(n,params)
-      ['ptstops','schedule'].include?(params[:cmd])
-    end
-
+    def self.processLine?(n, params)
+      ['ptstops', 'schedule'].include?(params[:cmd])
+    end # def
 
     def self.processLine(line,params,req)
       if params.has_key? 'cdk_id'
@@ -240,13 +234,20 @@ class CitySDKAPI < Sinatra::Application
             return scheduleForLine(line,params[:day]||0)
           else
             CitySDKAPI.do_abort(422,"Command #{params[:cmd]} not defined for ptline.")
-          end
+          end # case
         else
           CitySDKAPI.do_abort(422,'Line ' + params[:cdk_id] + ' not found..')
-        end
+        end # else
       else
         CitySDKAPI.do_abort(500,'Server error. ')
-      end
-    end
-  end
-end
+      end # else
+    end # def
+
+    private
+
+    def get_data_on_layer(node, layer_name)
+      node.node_data.find { |node_datum| node_datum.layer.name == layer_name }
+    end # def
+  end # module
+end # class
+

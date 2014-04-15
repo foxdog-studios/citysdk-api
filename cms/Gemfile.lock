@@ -12,7 +12,7 @@ GIT
 
 GIT
   remote: https://github.com/foxdog-studios/citysdk.git
-  revision: 1bffb9064ed15a8c1064be6aab117a6c6ceb61a2
+  revision: 0ba6c3f3967110a85a05ec6bd9f68f10be7825ed
   specs:
     citysdk (0.0.2)
       faraday
