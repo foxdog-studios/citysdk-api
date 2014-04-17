@@ -1,0 +1,12 @@
+source 'https://rubygems.org'
+
+ruby '2.1.1'
+#ruby-gemset=citysdk
+
+gem 'citysdk', git: 'https://github.com/foxdog-studios/citysdk.git'
+gem 'citysdk-client', git: 'https://github.com/foxdog-studios/citysdk-client.git'
+gem 'docopt'
+gem 'pg'
+gem 'sequel'
+gem 'sinatra-authentication', git: 'https://github.com/foxdog-studios/sinatra-authentication.git'
+

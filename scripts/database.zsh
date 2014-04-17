@@ -1,8 +1,9 @@
 #!/usr/bin/env zsh
 
-setopt err_exit
+setopt ERR_EXIT
 
 source ${0:h}/library.zsh
+unsetopt NO_UNSET
 
 
 # ==============================================================================
@@ -150,19 +151,21 @@ function grant_permissions()
 }
 
 function create_admin()
-{
+{(
     local config=$CITYSDK_CONFIG_DIR
-    ruby $db_dir/create_admin.rb $config/server.json $config/setup.json
-}
+    cd $db_dir
+    bundle exec ruby create_admin.rb $config/server.json  $config/setup.json
+)}
 
 function create_required_layers()
-{
+{(
     # Requires administrative rights to reset the layer ID sequence.
     local config=$CITYSDK_CONFIG_DIR
-    ruby $db_dir/create_required_layers.rb \
-         $config/server.json               \
-         $config/setup.json
-}
+    cd $db_dir
+    bundle exec ruby $db_dir/create_required_layers.rb \
+                     $config/server.json               \
+                     $config/setup.json
+)}
 
 function create_osm_nodes()
 {
@@ -202,17 +205,19 @@ function update_osm_bounds()
 }
 
 function update_modalities()
-{
+{(
     local config=$CITYSDK_CONFIG_DIR/server.json
-    ruby $db_dir/update_modalities.rb $config
-}
+    cd $db_dir
+    bundle exec ruby $db_dir/update_modalities.rb $config
+)}
 
 function ensure_turtle_prefixes()
-{
-    ruby $db_dir/ensure_turtle_prefixes.rb \
-        "dbname=$db_name"                  \
-        "$(config-setup admin.email)"
-}
+{(
+    cd $db_dir
+    bundle exec ruby $db_dir/ensure_turtle_prefixes.rb \
+                     "dbname=$db_name"                 \
+                     "$(config-setup admin.email)"
+)}
 
 function insert_osm_properties()
 {
