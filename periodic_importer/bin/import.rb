@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# -*- encoding: utf-8 -*-
 
 require 'docopt'
 require 'json'
@@ -38,7 +39,7 @@ class LayerImportHandler
   #
   # The source should be (re-)imported if;
   #   a) this is the first attempt to import the source;
-  #   b) is was not possible to determine when the source was last
+  #   b) it was not possible to determine when the source was last
   #      modified; or
   #   c) the source has been modified since the last import.
   def import_require?

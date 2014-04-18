@@ -44,6 +44,14 @@ CREATE OR REPLACE VIEW sequel_users AS SELECT * FROM users;
 -- - Layer table                                                               -
 -- -----------------------------------------------------------------------------
 
+CREATE TYPE format AS ENUM (
+    'csv',
+    'json',
+    'kml',
+    'shp',
+    'zip'
+);
+
 CREATE TABLE IF NOT EXISTS layers (
     id            serial PRIMARY KEY,
     name          text NOT NULL UNIQUE,
@@ -66,14 +74,21 @@ CREATE TABLE IF NOT EXISTS layers (
     imported_at   timestamptz,
     category      text NOT NULL,
     organization  text,
-    import_url    text,
-    import_period text,
-    import_status text,
-    import_config text,
     sample_url    text,
     rdf_type_uri  text,
 
-    CONSTRAINT constraint_layer_name_alphanumeric_with_dots CHECK (
+
+    -- - Periodic import columns -------------------------------------------
+
+    import_url    text CHECK (import_url <> ''),
+    import_format format,
+    import_period text,
+    import_status text,
+    import_config text,
+
+    -- ---------------------------------------------------------------------
+
+    CONSTRAINT layer_name_alphanumeric_with_dots CHECK (
         name SIMILAR TO
         '([A-Za-z0-9]+)|([A-Za-z0-9]+)(\.[A-Za-z0-9]+)*([A-Za-z0-9]+)'
     )
