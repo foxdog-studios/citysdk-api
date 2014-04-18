@@ -18,9 +18,14 @@
       %label
         URL
         %input.layer{type: 'text', name: 'import_url', value: layer.import_url}
-      %label
-        Format
-        = import_format_select(layer.import_format)
+      %div
+        %label
+          Format
+          = import_format_select(layer.import_format)
+      %div
+        %label
+          Period
+          = import_period_select(layer.import_period)
       %input.submitb(type='submit' value='Save')
 
   .code
