@@ -4,7 +4,6 @@ require_relative 'get'
 
 require_relative 'layer/get'
 require_relative 'layer/delete'
-require_relative 'layer/config/put'
 require_relative 'layer/status/put'
 
 require_relative 'layers/get'
