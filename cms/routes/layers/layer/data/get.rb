@@ -2,15 +2,18 @@
 
 module CitySDK
   class CMSApplication < Sinatra::Application
-    get '/layers/:layer_name/data' do |layer_name|
+    get '/layers/:name/data' do |name|
       login_required
 
-      layer = Layer.for_name(layer_name)
-      if layer.nil? || !current_user.retrieve_layer?(layer)
+      layer = Layer.where(name: name).first
+      unless layer && current_user.retrieve_layer?(layer)
         halt 401, 'Not authorized'
-      end # if
+      end # unless
 
-      haml :layer_data, locals: { layer: layer }
+      haml :layer_data, locals: {
+        layer: layer,
+        import: layer.import ? layer.import : Import.new
+      }
     end # do
   end # class
 end # module

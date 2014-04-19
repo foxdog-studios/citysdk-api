@@ -44,14 +44,6 @@ CREATE OR REPLACE VIEW sequel_users AS SELECT * FROM users;
 -- - Layer table                                                               -
 -- -----------------------------------------------------------------------------
 
-CREATE TYPE format AS ENUM (
-    'csv',
-    'json',
-    'kml',
-    'shp',
-    'zip'
-);
-
 CREATE TABLE IF NOT EXISTS layers (
     id            serial PRIMARY KEY,
     name          text NOT NULL UNIQUE,
@@ -77,17 +69,6 @@ CREATE TABLE IF NOT EXISTS layers (
     sample_url    text,
     rdf_type_uri  text,
 
-
-    -- - Periodic import columns -------------------------------------------
-
-    import_url    text CHECK (import_url <> ''),
-    import_format format,
-    import_period text,
-    import_status text,
-    import_config text,
-
-    -- ---------------------------------------------------------------------
-
     CONSTRAINT layer_name_alphanumeric_with_dots CHECK (
         name SIMILAR TO
         '([A-Za-z0-9]+)|([A-Za-z0-9]+)(\.[A-Za-z0-9]+)*([A-Za-z0-9]+)'
@@ -98,6 +79,62 @@ SELECT AddGeometryColumn('layers', 'bbox', 4326, 'GEOMETRY', 2);
 
 ALTER TABLE layers ADD CONSTRAINT constraint_bbox_4326 CHECK (
     ST_SRID(bbox) = 4326
+);
+
+
+-- -----------------------------------------------------------------------------
+-- - Imports table                                                             -
+-- -----------------------------------------------------------------------------
+
+CREATE TYPE importformat AS ENUM (
+    'csv',
+    'json',
+    'kml',
+    'shp',
+    'zip'
+);
+
+CREATE TYPE importperiod AS ENUM (
+    'hourly',
+    'daily',
+    'weekly',
+    'monthly',
+    'never'
+);
+
+CREATE TABLE IF NOT EXISTS imports (
+    layer_id int REFERENCES layers(id) PRIMARY KEY,
+
+    -- The minimum period at which at which a period import should be
+    -- performed for this layer.
+    min_period importperiod NOT NULL DEFAULT 'never',
+
+    -- A short message about the most recent import attempt.
+    status text NOT NULL DEFAULT '',
+
+    -- The URL of the data to be imported.
+    url text NOT NULL CHECK (url <> ''),
+
+    -- The format of the data to be imported. For security, any
+    -- indication of the format present in the URL or the retrieved
+    -- data is ignored.
+    format importformat NOT NULL,
+
+    -- The name of the field within the imported data that stores a
+    -- data point's ID, e.g., `name`.
+    id_field text CHECK (id_field <> ''),
+
+    -- The name of the field within the imported data that stores the
+    -- data point's name, e.g., `full_name`.
+    name_field text CHECK (name_field <> ''),
+
+    -- The name of the field within the imported data that stores a
+    -- data point's latitude, e.g., `lat`.
+    latitude_field text CHECK (latitude_field <> ''),
+
+    -- The name of the field within the imported data that stores a
+    -- data point's longitude, e.g., `lon`.
+    longitude_field text CHECK (longitude_field <> '')
 );
 
 

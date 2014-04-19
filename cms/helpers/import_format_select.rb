@@ -11,7 +11,7 @@ module CitySDK
           ['shp' , 'SHP' ],
           ['zip' , 'Zip' ]
         ]
-        CitySDK.render_select('import_format', options, selected)
+        CitySDK.render_select('format', options, selected)
       end # def
     end # end
   end # end

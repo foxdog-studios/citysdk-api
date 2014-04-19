@@ -14,24 +14,53 @@
 
   .code
     %h2 Periodic import
-    %form(action="/layers/#{ layer.name }/periodic" method='post')
-      %label
-        URL
-        %input.layer{type: 'text', name: 'import_url', value: layer.import_url}
-      %div
-        %label
-          Format
-          = import_format_select(layer.import_format)
+    %form(action="/layers/#{layer.name}/periodic" method='post')
       %div
         %label
           Period
-          = import_period_select(layer.import_period)
-      %input.submitb(type='submit' value='Save')
+          = import_period_select(import.min_period)
+      %div
+        %label
+          URL
+          %input{type: 'text',
+                 name: 'url',
+                 value: import.url}
+      %div
+        %label
+          Format
+          = import_format_select(import.format)
+
+      %div
+        %label
+          ID field
+          %input{type: 'text',
+                 name: 'id_field',
+                 value: import.id_field}
+      %div
+        %label
+          Name field
+          %input{type: 'text',
+                 name: 'name_field',
+                 value: import.name_field}
+      %div
+        %label
+          Latitude field
+          %input{type: 'text',
+                 name: 'latitude_field',
+                 value: import.latitude_field}
+      %div
+        %label
+          Longitude field
+          %input{type: 'text',
+                 name: 'longitude_field',
+                 value: import.longitude_field}
+
+      %input(type='submit' value='Save')
 
   .code
     %h2 Web service
     Send node data to a web service that returns enhanced data.
-    %form(action="/layers/#{ layer.name }/webservice" method='post')
+    %form(action="/layers/#{layer.name}/webservice" method='post')
       %label
         URL:
         %input.layer{type: 'text', name: 'url', value: layer.webservice}

@@ -4,9 +4,14 @@ module CitySDK
   class CMSApplication < Sinatra::Application
     helpers do
       def import_period_select(selected = nil)
-        options = ['never', 'monthly', 'weekly', 'daily', 'hourly']
-        options.map! { |value| [value, value.capitalize] }
-        CitySDK.render_select('period', options, selected)
+        options = [
+          ['hourly' , 'Hourly' ],
+          ['daily'  , 'Daily'  ],
+          ['weekly' , 'Weekly' ],
+          ['monthly', 'Monthly'],
+          ['never'  , 'Never'  ]
+        ]
+        CitySDK.render_select('min_period', options, selected)
       end # def
     end # end
   end # end
