@@ -14,8 +14,10 @@ module CitySDK
     TEXT_FIELDS = %i(
       url
       format
-      id_field
-      name_field
+      id_type
+      id_text
+      name_text
+      name_type
       latitude_field
       longitude_field
     )

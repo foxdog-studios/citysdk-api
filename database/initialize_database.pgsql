@@ -85,6 +85,11 @@ ALTER TABLE layers ADD CONSTRAINT constraint_bbox_4326 CHECK (
 -- - Imports table                                                             -
 -- -----------------------------------------------------------------------------
 
+CREATE TYPE texttype AS ENUM (
+    'field',
+    'literal'
+);
+
 CREATE TYPE importformat AS ENUM (
     'csv',
     'json',
@@ -113,13 +118,23 @@ CREATE TABLE IF NOT EXISTS imports (
     -- data is ignored.
     format importformat NOT NULL,
 
-    -- The name of the field within the imported data that stores a
-    -- data point's ID, e.g., `name`.
-    id_field text CHECK (id_field <> ''),
+    -- TODO: Move id_type and id_text into their own table and return
+    --       this table to 3NF.
 
-    -- The name of the field within the imported data that stores the
-    -- data point's name, e.g., `full_name`.
-    name_field text CHECK (name_field <> ''),
+    -- If `id_type` is 'field`, `id_text` is the name of the data point
+    -- data field that contains the ID of the data point. If `id_type`
+    -- is `literal`, `id_tpye` is the ID to be assign to each data
+    -- point. 'literal' should only be used for datasets contains one
+    -- data point.
+    id_type texttype NOT NULL DEFAULT 'field',
+    id_text text CHECK (id_text <> ''),
+
+    -- TODO: Move name_type and name_text into their own table and
+    --       return this table to 3NF.
+
+    -- See `id_type` and `id_text`
+    name_type texttype NOT NULL DEFAULT 'field',
+    name_text text CHECK (name_text <> ''),
 
     -- The name of the field within the imported data that stores a
     -- data point's latitude, e.g., `lat`.

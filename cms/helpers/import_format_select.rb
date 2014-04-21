@@ -13,7 +13,7 @@ module CitySDK
         ]
         CitySDK.render_select('format', select_options, selected: format)
       end # def
-    end # end
-  end # end
+    end # do
+  end # class
 end # module
 

@@ -32,16 +32,18 @@
 
       %div
         %label
-          ID field
+          ID
+          = import_texttype_select('id_type', import.id_type)
           %input{type: 'text',
-                 name: 'id_field',
-                 value: import.id_field}
+                 name: 'id_text',
+                 value: import.id_text}
       %div
         %label
-          Name field
+          Name
+          = import_texttype_select('name_type', import.name_type)
           %input{type: 'text',
-                 name: 'name_field',
-                 value: import.name_field}
+                 name: 'name_text',
+                 value: import.name_text}
       %div
         %label
           Latitude field
