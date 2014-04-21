@@ -195,7 +195,7 @@ end # def
 
 def each_import_info(&block)
   LOGGER.info('Retrieving import information')
-  CitySDK::Import.all.each(&block)
+  CitySDK::Import.exclude(max_frequency: nil).each(&block)
 end # def
 
 def margin(text)

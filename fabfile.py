@@ -31,6 +31,10 @@ from fabric.contrib.files import (
     uncomment,
 )
 
+from fabric.contrib.project import (
+    rsync_project,
+)
+
 
 # =============================================================================
 # = Configuration                                                             =
@@ -189,17 +193,20 @@ def setup(start=1, end=None):
         update_modalities,              # 32 |
         ensure_turtle_prefixes,         # 33 |
         insert_osm_properties,          # 34 |
-        copy_ssl_files,                 # 35 | Nginx
-        configure_nginx,                # 36 |
-        configure_default_nginx_server, # 37 |
-        configure_nginx_servers,        # 38 |
-        ensure_deploy_user,             # 39 | Deploy user
-        make_deploy_directories,        # 40 | Deploy apps
-        setup_deploy_directories,       # 41 |
-        check_deploy_directories,       # 42 |
-        deploy_all,                     # 43 | Deploy
-        copy_config,                    # 44 |
-        restart_nginx,                  # 45 |
+        copy_periodic_importer,         # 35 | Periodic import
+        create_periodic_import_cron,    # 36 |
+        copy_ssl_files,                 # 37 | Nginx
+        configure_nginx,                # 38 |
+        configure_default_nginx_server, # 39 |
+        configure_nginx_servers,        # 40 |
+        ensure_deploy_user,             # 41 | Deploy user
+        write_deploy_scripts,           # 42 | Deploy apps
+        make_deploy_directories,        # 43 |
+        setup_deploy_directories,       # 44 |
+        check_deploy_directories,       # 45 |
+        deploy_all,                     # 46 | Deploy
+        copy_config,                    # 47 |
+        restart_nginx,                  # 48 |
     ]
 
     start = int(start) - 1
@@ -704,6 +711,43 @@ def insert_osm_properties():
     ''').format(dst)
     psql(env.postgres_database, env.dba_username, commands)
     run('rm --force {}'.format(dst))
+
+
+# =============================================================================
+# = Periodic importer                                                         =
+# =============================================================================
+
+@task
+def copy_periodic_importer():
+    dirname='periodic_importer'
+    rsync_project(
+        remote_dir=dirname,
+        local_dir=resolve(dirname) + '/',
+    )
+    with cd(dirname):
+        rvmsudo('bundle install')
+    config = posixpath.join(dirname, 'config.json')
+    put(env.app_server.local_config, config)
+    run('chmod 400 {}'.format(config))
+
+
+@task
+def create_periodic_import_cron():
+    script = StringIO(margin(r'''
+       |#!/usr/bin/env bash
+       |set -o errexit
+       |cd /home/{user}/periodic_importer
+       |/usr/local/rvm/bin/rvm 2.1.1@citysdk do \
+       |        bundle exec                     \
+       |        ruby bin/import.rb config.json  \
+       |        &>> /home/{user}/import.log
+    ''').format(user=env.user))
+    remote_path='import.sh'
+    put(local_path=script, remote_path=remote_path)
+    run('chmod 700 {}'.format(quote(remote_path)))
+    run('crontab <<< {}'.format(
+        quote('0 * * * * /home/{}/import.sh'.format(env.user))
+    ))
 
 
 # =============================================================================
