@@ -13,7 +13,6 @@ module CitySDK
       add_owner(layer, pod)
       add_description(layer, pod)
       add_data_sources(layer, pod)
-      add_imported_at(layer, pod)
       add_geometry(layer, pod)
       add_fields(layer, pod)
       add_sample_url(layer, pod)
@@ -37,10 +36,6 @@ module CitySDK
 
     def add_description(layer, pod)
       pod[:description] = layer.description
-    end # def
-
-    def add_imported_at(layer, pod)
-      pod[:imported_at] = layer.imported_at
     end # def
 
     def add_geometry(layer, pod)

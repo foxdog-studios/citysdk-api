@@ -12,10 +12,10 @@ module CitySDK
   class SelectRenderer
     attr_reader :html
 
-    def initialize(name, options, selected = nil)
+    def initialize(name, select_options, options = {})
       @name = name
+      @select_options = select_options
       @options = options
-      @selected = selected
       @html = render
     end # def
 
@@ -42,7 +42,7 @@ module CitySDK
     end # def
 
     def render_options_list
-      @options.map { |value, text| render_option(value, text) }
+      @select_options.map { |value, text| render_option(value, text) }
     end # def
 
     def render_option(value, text)
@@ -51,7 +51,11 @@ module CitySDK
 
     def render_selected(value)
       # The space before 'selected' is required by render_option.
-      value == @selected ? ' selected' : ''
+      selected?(value) ? ' selected' : ''
+    end # def
+
+    def selected?(value)
+      @options.key?(:selected) && value == @options[:selected]
     end # def
 
     def render_tag_close

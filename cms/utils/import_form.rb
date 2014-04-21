@@ -11,8 +11,7 @@ module CitySDK
 
     # The fields here must match the input names in the template and
     # the name of the attribute on the Layer model.
-    FIELDS = %i(
-      min_period
+    TEXT_FIELDS = %i(
       url
       format
       id_field
@@ -28,14 +27,35 @@ module CitySDK
     end # def
 
     def update
-      FIELDS.each &method(:update_if)
+      update_text
+      update_max_frequency
+    end # def
+
+    def update_text
+      TEXT_FIELDS.each &method(:update_text_if)
     end # def
 
     # Update the field `name` on `@import` if `name` is present in
     # `@params`.
-    def update_if(name)
+    def update_text_if(name)
       text = @params[name]
       @import.send("#{name}=", clean(text)) if text
+    end # def
+
+    def update_max_frequency
+      max_frequency = @params['max_frequency']
+      return unless max_frequency
+      max_frequency = clean(max_frequency)
+      @import.max_frequency =
+        if max_frequency == 'never'
+          nil
+        else
+          begin
+            Integer(max_frequency, 10)
+          rescue ArgumentError
+            return
+          end # rescue
+        end # else
     end # def
 
     def clean(text)

@@ -184,7 +184,7 @@ def setup(start=1, end=None):
         create_required_layers,         # 27 |
         create_osm_nodes,               # 28 | OSM (part 2)
         modify_osm_nodes,               # 29 |
-        set_osm_imported_at,            # 30 |
+        insert_osm_import,              # 30 |
         update_osm_bounds,              # 31 |
         update_modalities,              # 32 |
         ensure_turtle_prefixes,         # 33 |
@@ -641,15 +641,31 @@ def modify_osm_nodes():
 
 
 @task
-def set_osm_imported_at():
-    imported_at = run('stat -c %y {}'.format(env.osm_data_file_name)).stdout
+def insert_osm_import():
+    last_imported = run('stat -c %y {}'.format(env.osm_data_file_name)).stdout
     commands = margin(r'''
        |\set ON_ERROR_STOP on
-       |UPDATE layers
-       |    SET imported_at = '{imported_at}'::timestamptz
-       |    WHERE id = 0
+       |INSERT INTO imports (
+       |        layer_id,
+       |        last_imported,
+       |        status,
+       |        url,
+       |        format
+       |    )
+       |    VALUES (
+       |        -- 0 is the predefined ID of the OSM layer.
+       |        0,
+       |        '{last_imported}'::timestamptz,
+       |        'Imported by the development database script.',
+       |        '{url}'::text,
+       |        -- It isn't really a Zip, but it's close enough.
+       |        'zip'::importformat
+       |    )
        |;
-    ''').format(imported_at=imported_at)
+    ''').format(
+        last_imported=last_imported,
+        url=env.osm_data_url,
+    )
     return psql(env.postgres_database, env.dba_username, commands)
 
 

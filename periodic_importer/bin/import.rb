@@ -11,84 +11,67 @@ require 'sequel'
 LOGGER = Logger.new(STDERR)
 LOGGER.level = Logger::DEBUG
 
-class LayerImportHandler
-  def initialize(layer)
-    @layer = layer
+class Importer
+  def self.import(import_info)
+    self.new(import_info).import
+    nil
   end # def
 
-  def handle
-    LOGGER.info("Handling import for layer #{@layer.name.inspect}")
-    import if import_require?
+  public
+
+  def import
+    puts first_import?
   end # def
 
   private
 
-  def http
-    @http ||= make_http
+  attr_reader :import_info
+
+  def initialize(import_info)
+    @import_info = import_info
   end # def
 
-  def import
-    LOGGER.info('Importing data')
+  # ========================================================================
+  # = Pseudo attributes                                                    =
+  # ========================================================================
+
+  def last_imported
+    import_info.last_imported
   end # def
 
-  def import_url
-    @import_url ||= URI.parse(@layer.import_url)
+  def layer
+    import_info.layer
   end # def
 
-  # Is an import required or is the layer's data up-to-date?
-  #
-  # The source should be (re-)imported if;
-  #   a) this is the first attempt to import the source;
-  #   b) it was not possible to determine when the source was last
-  #      modified; or
-  #   c) the source has been modified since the last import.
+  def max_frequency
+    import_info.max_frequency
+  end # def
+
+  # ========================================================================
+
+  def first_import?
+    !last_imported
+  end # def
+
+  def min_period_elapsed?
+    seconds_since_last_import >= max_frequency
+  end # def
+
+  def seconds_since_last_import
+    Time.now - last_imported
+  end # def
+
   def import_require?
-    !imported_at || !last_modified || imported_at < last_modified
-  end # def
-
-  def imported_at
-    @layer.imported_at
-  end # def
-
-  def last_modified
-    @last_modified ||= retrieve_last_modified
-  end # def
-
-  def make_http
-    use_ssl = import_url.scheme == 'https'
-    Net::HTTP.start(import_url.host, import_url.port, use_ssl: use_ssl)
-  end # def
-
-  def retrieve_last_modified
-    response = http.head(import_url.request_uri)
-    last_modified = response.fetch('Last-Modified')
-    last_modified = last_modified[/.*,\s+(.*)\s+\d\d:/, 1]
-    Date.parse(last_modified)
-  rescue => error
-    LOGGER.debug("Unable to retrieve Last-Modified: #{error.message}")
-    nil
-  end # rescue
-
-  def retrieve_source
-    LOGGER.info("Retrieving #{import_url}")
-    http.get(import_url.request_uri).body
-  end # def
-
-  def source
-    @source ||= retrieve_source
+    first_import? || min_period_elapsed?
   end # def
 end # class
 
-
 def main(argv = ARGV)
   args = parse_args(argv)
-
   connect_to_database(args)
   require 'sinatra-authentication'
   require 'citysdk'
-
-  importable_layers { |layer| LayerImportHandler.new(layer).handle }
-
+  each_import_info { |import_info| Importer.import(import_info) }
   0
 end # def
 
@@ -106,17 +89,17 @@ end # def
 def connect_to_database(args)
   LOGGER.info('Connecting to database')
   config = open(args.fetch('CONFIG')) { |config_file| JSON.load(config_file) }
-  get = lambda { |key| config.fetch("db_#{ key }") }
+  get = -> (key) { config.fetch("db_#{key}") }
   user = get.call(:user)
   password = get.call(:pass)
   host = get.call(:host)
   name = get.call(:name)
-  Sequel.connect("postgres://#{ user }:#{ password }@#{ host }/#{ name }")
+  Sequel.connect("postgres://#{user}:#{password}@#{host}/#{name}")
 end # def
 
-def importable_layers(&block)
-  LOGGER.info('Finding importable layers')
-  CitySDK::Layer.exclude(import_url: nil).each(&block)
+def each_import_info(&block)
+  LOGGER.info('Retrieving import information')
+  CitySDK::Import.all.each(&block)
 end # def
 
 def margin(text)

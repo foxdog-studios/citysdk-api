@@ -17,8 +17,8 @@
     %form(action="/layers/#{layer.name}/periodic" method='post')
       %div
         %label
-          Period
-          = import_period_select(import.min_period)
+          Maximum frequency
+          = import_frequency_select(import.max_frequency)
       %div
         %label
           URL

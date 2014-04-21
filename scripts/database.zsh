@@ -181,15 +181,27 @@ function modify_osm_nodes()
          --username=$db_user
 }
 
-function set_osm_imported_at()
+function insert_osm_import()
 {
-    local imported_at="$(stat -c %y $osm_file_path)"
+    local last_imported="$(stat -c %y $osm_file_path)"
     psql --echo-all --dbname=$db_name <<-SQL
 		\set ON_ERROR_STOP on
-		UPDATE layers
-		    SET imported_at = '$imported_at'::timestamptz
-		    -- 0 is the predefined ID of the OSM layer.
-		    WHERE id = 0
+		INSERT INTO imports (
+		        layer_id,
+		        last_imported,
+		        status,
+		        url,
+		        format
+		    )
+		    VALUES (
+		        -- 0 is the predefined ID of the OSM layer.
+		        0,
+		        '$last_imported'::timestamptz,
+		        'Imported by the development database script.',
+		        '$osm_url'::text,
+		        -- It isn't really a Zip, but it's close enough.
+		        'zip'::importformat
+		    )
 		;
 	SQL
 }
@@ -249,7 +261,7 @@ tasks=(
     create_required_layers
     create_osm_nodes
     modify_osm_nodes
-    set_osm_imported_at
+    insert_osm_import
     update_osm_bounds
     update_modalities
     ensure_turtle_prefixes
@@ -280,7 +292,7 @@ function usage()
 		    create_osm_tuples
 		    create_osm_nodes
 		    modify_osm_nodes
-		    set_osm_imported_at
+		    insert_osm_import
 		    update_osm_bounds
 		    update_modalities
 		    ensure_turtle_prefixes

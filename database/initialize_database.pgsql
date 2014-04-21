@@ -63,7 +63,6 @@ CREATE TABLE IF NOT EXISTS layers (
     validity      tstzrange,
     owner_id      integer NOT NULL REFERENCES users (id),
     created_at    timestamptz NOT NULL DEFAULT now(),
-    imported_at   timestamptz,
     category      text NOT NULL,
     organization  text,
     sample_url    text,
@@ -94,20 +93,14 @@ CREATE TYPE importformat AS ENUM (
     'zip'
 );
 
-CREATE TYPE importperiod AS ENUM (
-    'hourly',
-    'daily',
-    'weekly',
-    'monthly',
-    'never'
-);
-
 CREATE TABLE IF NOT EXISTS imports (
     layer_id int REFERENCES layers(id) PRIMARY KEY,
 
-    -- The minimum period at which at which a period import should be
-    -- performed for this layer.
-    min_period importperiod NOT NULL DEFAULT 'never',
+    -- Perform import at most every `max_frequency` seconds.
+    max_frequency int CHECK (max_frequency >= 0),
+
+    -- The last time this import was performed.
+    last_imported timestamptz,
 
     -- A short message about the most recent import attempt.
     status text NOT NULL DEFAULT '',
