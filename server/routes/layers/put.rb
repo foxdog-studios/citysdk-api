@@ -15,8 +15,8 @@ class CitySDKAPI < Sinatra::Application
     end # unless
 
     layer = CitySDK::Layer.new(data)
-    halt 422, layer.errors.to_json unless layer.valid?
     layer.owner_id = user.id
+    halt 422, layer.errors.to_json unless layer.valid?
     layer.save
     [200, { status: 'success' }.to_json]
   end # do
