@@ -23,7 +23,6 @@ class Importer
   def initialize(import_info)
     @called_get_body_if_modified = false
     @import_info = import_info
-    @factory = CitySDK::DatasetFactory.new
   end # def
 
   public
@@ -65,7 +64,7 @@ class Importer
   end # def
 
   def build_nodes
-    dataset = @factory.load_stream(format, body)
+    dataset = CitySDK::Dataset.load_stream(body, format)
     @builder = CitySDK::NodeBuilder.new(dataset)
     set_geometry
     set_id
