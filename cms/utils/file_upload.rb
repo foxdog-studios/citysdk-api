@@ -17,47 +17,24 @@ module CitySDK
       upload_path = File.join(dirname, basename)
       open(upload_path, 'w') { |save_file| save_file.write(file.read) }
 
-      layer = Layer.for_name(layer_name)
+      layer = Layer.where(name: layer_name).first
       importer = CitySDK::Importer.new(file.path)
 
       headers =
         case Pathname(original_file_name).extname
         when '.csv'          then importer.get_headers_from_csv
         when '.geo', '.json' then importer.get_headers_from_json
-        when '.kml'          then importer.get_headers_from_kml
-        when '.shp'          then importer.get_headers_from_shp
         else fail "Unknown extension for #{ original_file_name }"
         end
 
-      @unique_id = "<select name='unique_id'><option>&lt;no unique id&gt;</option> "
-      @name = "<select name='name'><option>&lt;no name&gt;</option> "
-
-      @house_nr = "<select name='housenumber'><option>&lt;no housenr.&gt;</option> "
-      @postcode = "<select name='postcode'><option>&lt;no postcode&gt;</option> "
-
-      headers.each do |h|
-        @postcode += "<option>#{h}</option>"
-        @house_nr += "<option>#{h}</option>"
-        @unique_id += "<option>#{h}</option>"
-        @name += "<option>#{h}</option>"
-      end
-
-      @name += "</select>"
-      @unique_id += "</select>"
-
-      @sel_x = "<select name='x'><option>&lt;no longtitude&gt;</option> "
-      @sel_y = "<select name='y'><option>&lt;no latitude&gt;</option> "
-
-      headers.each do |h|
-        @sel_x += "<option value='#{h}' >#{h}</option>"
-        @sel_y += "<option value='#{h}' >#{h}</option>"
-      end
-
-      @sel_x += "</select>"
-      @sel_y += "</select>"
+      select_options = headers.sort.map { |header| [header, header] }
 
       haml :select_headers, layout: true, locals: {
         layer: layer,
+        id_select: CitySDK::render_select('unique_id', select_options),
+        name_select: CitySDK::render_select('name', select_options),
+        x_select: CitySDK::render_select('x', select_options),
+        y_select: CitySDK::render_select('y', select_options),
         original_file_name: original_file_name,
         uploaded_file_path: upload_path
       }
