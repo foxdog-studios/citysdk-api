@@ -21,7 +21,7 @@ GIT
 
 GIT
   remote: https://github.com/foxdog-studios/sinatra-authentication.git
-  revision: 909de044cb002a581d071adc4400c0e3eda1e5e4
+  revision: 4243f4e7a455decf7dfd7a6b4547bb798995a405
   specs:
     sinatra-authentication (0.4.2)
       dm-core
