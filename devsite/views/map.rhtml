@@ -61,7 +61,7 @@
 
     var epApiUrl = "<%= @config[:ep_api_url] %>";
     var epApiUrlLocation = getLocation(epApiUrl);
-    var server  = epApiUrlLocation.hostname + '/';
+    var server  = epApiUrlLocation.host + '/';
     var tileUrl = "<%= @config[:ep_tileserver_url] %>" + '/{z}/{x}/{y}.png';
     var curr_location = "<%= @config[:ep_mapxyz] %>".split(',');
     var http = epApiUrlLocation.protocol + '//';
