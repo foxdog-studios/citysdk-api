@@ -36,6 +36,13 @@ from fabric.contrib.project import (
 )
 
 
+def margin(text, strip=True):
+    text = re.sub(r'^ *\|', '', text, flags=re.MULTILINE)
+    if strip:
+        text = text.strip()
+    return text
+
+
 # =============================================================================
 # = Configuration                                                             =
 # =============================================================================
@@ -801,31 +808,31 @@ def copy_ssl_files():
     )
 
 
-NGINX_CONF_TEMPLATE = r'''
-# Memcached
-
-upstream memcached {{
-    server localhost:11211 weight=5 max_fails=3 fail_timeout=3s;
-    keepalive 1024;
-}}
-
-
-# Passenger
-
-passenger_user {passenger_user};
-passenger_group {passenger_group};
-
-passenger_nodejs {nodejs_bin};
-
-
-# SSL
-
-# CBC-mode ciphers might be vulnerable to a number of attacks and to
-# cipher, the BEAST attack in particular (see CVE-2011-3389), so
-# prefer the RC4-SHA.
-ssl_ciphers RC4:HIGH:!aNULL:!MD5;
-ssl_prefer_server_ciphers on;
-'''[1:-1]
+NGINX_CONF_TEMPLATE = margin(r'''
+    |# Memcached
+    |
+    |upstream memcached {{
+    |    server localhost:11211 weight=5 max_fails=3 fail_timeout=3s;
+    |    keepalive 1024;
+    |}}
+    |
+    |
+    |# Passenger
+    |
+    |passenger_user {passenger_user};
+    |passenger_group {passenger_group};
+    |
+    |passenger_nodejs {nodejs_bin};
+    |
+    |
+    |# SSL
+    |
+    |# CBC-mode ciphers might be vulnerable to a number of attacks and to
+    |# cipher, the BEAST attack in particular (see CVE-2011-3389), so
+    |# prefer the RC4-SHA.
+    |ssl_ciphers RC4:HIGH:!aNULL:!MD5;
+    |ssl_prefer_server_ciphers on;
+''')
 
 @task
 def configure_nginx():
@@ -884,47 +891,52 @@ def configure_default_nginx_server():
     ln(target, enabled, use_sudo=True)
 
 
-SERVER_TEMPLATE = r'''
-server {{
-    listen 80;
-    listen [::]80;
+SERVER_TEMPLATE = margin(r'''
+    |server {{
+    |    listen 80;
+    |    listen [::]80;
+    |
+    |    server_name {server_name};
+    |    root {root};
+    |
+    |    access_log {access_log};
+    |    error_log {error_log};
+    |
+    |    passenger_enabled on;
+    |    passenger_ruby {passenger_ruby};
+    |}}
+''')
 
-    server_name {server_name};
-    root {root};
 
-    access_log {access_log};
-    error_log {error_log};
+SSL_SERVER_TEMPLATE = margin(r'''
+    |server {{
+    |    listen 80;
+    |    listen [::]80;
+    |
+    |    server_name {server_name};
+    |
+    |    return 301 https://$server_name$request_uri;
+    |}}
+    |
+    |server {{
+    |    listen 443 ssl;
+    |    server_name {server_name};
+    |    root {root};
+    |
+    |    # Allow users to datasets of any size.
+    |    client_max_body_size 0;
+    |
+    |    access_log {access_log};
+    |    error_log {error_log};
+    |
+    |    ssl_certificate {ssl_certificate};
+    |    ssl_certificate_key {ssl_certificate_key};
+    |
+    |    passenger_enabled on;
+    |    passenger_ruby {passenger_ruby};
+    |}}
+''')
 
-    passenger_enabled on;
-    passenger_ruby {passenger_ruby};
-}}
-'''[1:-1]
-
-SSL_SERVER_TEMPLATE = r'''
-server {{
-    listen 80;
-    listen [::]80;
-
-    server_name {server_name};
-
-    return 301 https://$server_name$request_uri;
-}}
-
-server {{
-    listen 443 ssl;
-    server_name {server_name};
-    root {root};
-
-    access_log {access_log};
-    error_log {error_log};
-
-    ssl_certificate {ssl_certificate};
-    ssl_certificate_key {ssl_certificate_key};
-
-    passenger_enabled on;
-    passenger_ruby {passenger_ruby};
-}}
-'''[1:-1]
 
 @task
 def configure_nginx_servers():
@@ -1276,13 +1288,6 @@ def ln(target, link_name, use_sudo=False):
             link_name=quote(link_name),
         )
     )
-
-
-def margin(text, strip=True):
-    text = re.sub(r'^ *\|', '', text, flags=re.MULTILINE)
-    if strip:
-        text = text.strip()
-    return text
 
 
 def psql(database, username, psql_commands, echo_all=True, psql_opts=None):
