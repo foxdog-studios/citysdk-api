@@ -76,7 +76,7 @@ if [[ -r ~/.rvm/scripts/rvm ]]; then
     setopt NO_UNSET
 fi
 
-ruby_version=2.1.1
+ruby_version=2.1.2
 ruby_gemset=citysdk
 
 if (( $+commands[rvm] )); then

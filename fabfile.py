@@ -88,7 +88,7 @@ env.postgres_key     = 'http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc'
 env.postgres_ppa     = 'http://apt.postgresql.org/pub/repos/apt/'
 env.postgres_version = '9.3'
 env.ruby_gemset      = 'citysdk'
-env.ruby_version     = '2.1.1'
+env.ruby_version     = '2.1.2'
 
 # Applications
 # (Source directory name, sub-sub-domain name, SSL)
@@ -168,45 +168,46 @@ def setup(start=1, end=None):
         download_nodejs,                #  7 | nodejs
         install_nodejs,                 #  8 |
         install_rvm,                    #  9 | RVM
-        install_rvm_requirements,       # 10 |
-        install_ruby,                   # 11 |
-        create_gemset,                  # 12 |
-        install_bundler,                # 13 |
-        ensure_osm2pgsql_source,        # 14 | Build osm2psql
-        configure_osm2pgsql,            # 15 |
-        compile_osm2pgsql,              # 16 |
-        install_osm2pgsql,              # 17 |
-        ensure_superuser,               # 18 | Database (part 1)
-        ensure_database,                # 19 |
-        ensure_role,                    # 20 |
-        initialize_database,            # 21 |
-        download_osm_data,              # 22 | OSM (part 1)
-        import_osm_data,                # 23 |
-        grant_permissions,              # 24 | Database (part 2)
-        setup_admin_ruby_env,           # 25 |
-        ensure_citysdk_admin,           # 26 |
-        create_required_layers,         # 27 |
-        create_osm_nodes,               # 28 | OSM (part 2)
-        modify_osm_nodes,               # 29 |
-        insert_osm_import,              # 30 |
-        update_osm_bounds,              # 31 |
-        update_modalities,              # 32 |
-        ensure_turtle_prefixes,         # 33 |
-        insert_osm_properties,          # 34 |
-        copy_periodic_importer,         # 35 | Periodic import
-        create_periodic_import_cron,    # 36 |
-        copy_ssl_files,                 # 37 | Nginx
-        configure_nginx,                # 38 |
-        configure_default_nginx_server, # 39 |
-        configure_nginx_servers,        # 40 |
-        ensure_deploy_user,             # 41 | Deploy user
-        write_deploy_scripts,           # 42 | Deploy apps
-        make_deploy_directories,        # 43 |
-        setup_deploy_directories,       # 44 |
-        check_deploy_directories,       # 45 |
-        deploy_all,                     # 46 | Deploy
-        copy_config,                    # 47 |
-        restart_nginx,                  # 48 |
+        upgrade_rvm,                    # 10 |
+        install_rvm_requirements,       # 11 |
+        install_ruby,                   # 12 |
+        create_gemset,                  # 13 |
+        install_bundler,                # 14 |
+        ensure_osm2pgsql_source,        # 15 | Build osm2psql
+        configure_osm2pgsql,            # 16 |
+        compile_osm2pgsql,              # 17 |
+        install_osm2pgsql,              # 18 |
+        ensure_superuser,               # 19 | Database (part 1)
+        ensure_database,                # 20 |
+        ensure_role,                    # 21 |
+        initialize_database,            # 22 |
+        download_osm_data,              # 23 | OSM (part 1)
+        import_osm_data,                # 24 |
+        grant_permissions,              # 25 | Database (part 2)
+        setup_admin_ruby_env,           # 26 |
+        ensure_citysdk_admin,           # 27 |
+        create_required_layers,         # 28 |
+        create_osm_nodes,               # 29 | OSM (part 2)
+        modify_osm_nodes,               # 30 |
+        insert_osm_import,              # 31 |
+        update_osm_bounds,              # 32 |
+        update_modalities,              # 33 |
+        ensure_turtle_prefixes,         # 34 |
+        insert_osm_properties,          # 35 |
+        copy_periodic_importer,         # 36 | Periodic import
+        create_periodic_import_cron,    # 37 |
+        copy_ssl_files,                 # 38 | Nginx
+        configure_nginx,                # 39 |
+        configure_default_nginx_server, # 40 |
+        configure_nginx_servers,        # 41 |
+        ensure_deploy_user,             # 42 | Deploy user
+        write_deploy_scripts,           # 43 | Deploy apps
+        make_deploy_directories,        # 44 |
+        setup_deploy_directories,       # 45 |
+        check_deploy_directories,       # 46 |
+        deploy_all,                     # 47 | Deploy
+        copy_config,                    # 48 |
+        restart_nginx,                  # 49 |
     ]
 
     start = int(start) - 1
@@ -363,6 +364,11 @@ RVM_BIN = '/usr/local/rvm/bin/rvm'
 @task
 def install_rvm():
     return sudo('curl --location https://get.rvm.io | bash -s stable')
+
+
+@task
+def upgrade_rvm():
+    return sudo('{} get stable'.format(RVM_BIN))
 
 
 @task
@@ -737,7 +743,7 @@ def create_periodic_import_cron():
        |#!/usr/bin/env bash
        |set -o errexit
        |cd /home/{user}/periodic_importer
-       |/usr/local/rvm/bin/rvm 2.1.1@citysdk do \
+       |/usr/local/rvm/bin/rvm 2.1.2@citysdk do \
        |        bundle exec                     \
        |        ruby bin/import.rb config.json  \
        |        &>> /home/{user}/import.log

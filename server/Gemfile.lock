@@ -9,7 +9,7 @@ GIT
 
 GIT
   remote: https://github.com/foxdog-studios/sinatra-authentication.git
-  revision: 909de044cb002a581d071adc4400c0e3eda1e5e4
+  revision: 4243f4e7a455decf7dfd7a6b4547bb798995a405
   specs:
     sinatra-authentication (0.4.2)
       dm-core
@@ -24,7 +24,7 @@ GIT
 GEM
   remote: https://rubygems.org/
   specs:
-    activesupport (4.1.0)
+    activesupport (4.1.1)
       i18n (~> 0.6, >= 0.6.9)
       json (~> 1.7, >= 1.7.7)
       minitest (~> 5.1)
@@ -44,11 +44,8 @@ GEM
       capistrano (>= 1.0.0)
     celluloid (0.15.2)
       timers (~> 1.1.0)
-    celluloid-io (0.15.0)
-      celluloid (>= 0.15.0)
-      nio4r (>= 0.5.0)
     daemons (1.1.9)
-    dalli (2.7.0)
+    dalli (2.7.2)
     dm-core (1.2.1)
       addressable (~> 2.3)
     dm-migrations (1.2.0)
@@ -66,22 +63,20 @@ GEM
     httpauth (0.2.1)
     i18n (0.6.9)
     json (1.8.1)
-    listen (2.7.1)
+    listen (2.7.9)
       celluloid (>= 0.15.2)
-      celluloid-io (>= 0.15.0)
       rb-fsevent (>= 0.9.3)
       rb-inotify (>= 0.9)
     logger (1.2.8)
-    minitest (5.3.3)
+    minitest (5.3.5)
     multipart-post (2.0.0)
-    net-scp (1.2.0)
+    net-scp (1.2.1)
       net-ssh (>= 2.6.5)
     net-sftp (2.1.2)
       net-ssh (>= 2.6.5)
-    net-ssh (2.8.0)
+    net-ssh (2.9.1)
     net-ssh-gateway (1.2.0)
       net-ssh (>= 2.6.5)
-    nio4r (1.0.0)
     pg (0.17.1)
     rack (1.5.2)
     rack-flash3 (1.0.5)
@@ -94,15 +89,15 @@ GEM
       rack (>= 1.0)
       rack-test (>= 0.5)
     rb-fsevent (0.9.4)
-    rb-inotify (0.9.3)
+    rb-inotify (0.9.5)
       ffi (>= 0.5.0)
-    rerun (0.9.0)
-      listen (~> 2.7)
+    rerun (0.10.0)
+      listen (~> 2.7, >= 2.7.3)
     rgeo (0.3.20)
-    rgeo-geojson (0.2.3)
-      rgeo (>= 0.3.7)
+    rgeo-geojson (0.3.1)
+      rgeo (~> 0.3)
     rufus-tokyo (1.0.7)
-    sequel (4.9.0)
+    sequel (4.11.0)
     sinatra (1.4.5)
       rack (~> 1.4)
       rack-protection (~> 1.4)
@@ -117,13 +112,13 @@ GEM
       daemons (>= 1.0.9)
       eventmachine (>= 1.0.0)
       rack (>= 1.0.0)
-    thread_safe (0.3.3)
+    thread_safe (0.3.4)
     tilt (1.4.1)
     timers (1.1.0)
-    tins (1.1.0)
-    tzinfo (1.1.0)
+    tins (1.3.0)
+    tzinfo (1.2.1)
       thread_safe (~> 0.1)
-    yajl-ruby (1.2.0)
+    yajl-ruby (1.2.1)
 
 PLATFORMS
   ruby

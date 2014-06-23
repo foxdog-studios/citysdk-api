@@ -53,10 +53,10 @@ GEM
       multipart-post (~> 1.2.0)
     fastercsv (1.5.5)
     georuby (2.0.0)
-    mini_portile (0.5.3)
+    mini_portile (0.6.0)
     multipart-post (1.2.0)
-    nokogiri (1.6.1)
-      mini_portile (~> 0.5.0)
+    nokogiri (1.6.2.1)
+      mini_portile (= 0.6.0)
     pg (0.17.1)
     rack (1.5.2)
     rack-flash3 (1.0.5)
@@ -64,10 +64,10 @@ GEM
     rack-protection (1.5.3)
       rack
     rgeo (0.3.20)
-    rgeo-geojson (0.2.3)
-      rgeo (>= 0.3.7)
+    rgeo-geojson (0.3.1)
+      rgeo (~> 0.3)
     rufus-tokyo (1.0.7)
-    sequel (4.9.0)
+    sequel (4.11.0)
     sinatra (1.4.5)
       rack (~> 1.4)
       rack-protection (~> 1.4)
@@ -75,7 +75,7 @@ GEM
     sinbook (0.1.9)
       yajl-ruby
     tilt (1.4.1)
-    yajl-ruby (1.2.0)
+    yajl-ruby (1.2.1)
 
 PLATFORMS
   ruby

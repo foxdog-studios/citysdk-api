@@ -18,7 +18,7 @@ set :user, 'deploy'
 
 # XXX: Hack to make Blunder's Capistrano tasks see the RVM. Is there a
 #      better way of doing this?
-set :bundle_cmd, '/usr/local/rvm/bin/rvm 2.1.1@citysdk do bundle'
+set :bundle_cmd, '/usr/local/rvm/bin/rvm 2.1.2@citysdk do bundle'
 
 # Without verbose it hangs for ages without any output.
 set :bundle_flags, '--deployment --verbose'
