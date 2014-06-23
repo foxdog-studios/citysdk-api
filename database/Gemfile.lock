@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/foxdog-studios/sinatra-authentication.git
-  revision: 909de044cb002a581d071adc4400c0e3eda1e5e4
+  revision: 4243f4e7a455decf7dfd7a6b4547bb798995a405
   specs:
     sinatra-authentication (0.4.2)
       dm-core
@@ -32,7 +32,7 @@ GEM
     rack-protection (1.5.3)
       rack
     rufus-tokyo (1.0.7)
-    sequel (4.9.0)
+    sequel (4.11.0)
     sinatra (1.4.5)
       rack (~> 1.4)
       rack-protection (~> 1.4)
@@ -43,7 +43,7 @@ GEM
     sinbook (0.1.9)
       yajl-ruby
     tilt (1.4.1)
-    yajl-ruby (1.2.0)
+    yajl-ruby (1.2.1)
 
 PLATFORMS
   ruby

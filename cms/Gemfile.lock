@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/foxdog-studios/citysdk-client.git
-  revision: b388af2d1acc45c82c6d2361e91fb2751760c7d9
+  revision: 1aecdb58ca02be22a2edccdcf2a4bbface781a6b
   specs:
     citysdk-client (0.2)
       addressable (~> 2.3.5)
@@ -43,7 +43,6 @@ GEM
       thread_safe (~> 0.1)
       tzinfo (~> 1.1)
     addressable (2.3.6)
-    bacon (1.2.0)
     capistrano (2.15.5)
       highline
       net-scp (>= 1.0.0)
@@ -125,7 +124,6 @@ GEM
       rack-protection (~> 1.4)
       tilt (~> 1.3, >= 1.3.4)
     sinatra-sequel (0.9.0)
-      bacon
       sequel (>= 3.2.0)
       sinatra (>= 0.9.4)
     sinatra-session (1.0.0)
