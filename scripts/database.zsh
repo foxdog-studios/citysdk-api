@@ -107,7 +107,9 @@ function initialize_database()
 function update_osm_data()
 {(
     mkdir --parent $osm_dir
+    unsetopt ERR_EXIT NO_UNSET
     cd $osm_dir
+    setopt ERR_EXIT NO_UNSET
     wget --timestamping $osm_url
 )}
 
@@ -153,7 +155,9 @@ function grant_permissions()
 function create_admin()
 {(
     local config=$CITYSDK_CONFIG_DIR
+    unsetopt ERR_EXIT NO_UNSET
     cd $db_dir
+    setopt ERR_EXIT NO_UNSET
     bundle exec ruby create_admin.rb $config/server.json  $config/setup.json
 )}
 
@@ -161,7 +165,9 @@ function create_required_layers()
 {(
     # Requires administrative rights to reset the layer ID sequence.
     local config=$CITYSDK_CONFIG_DIR
+    unsetopt ERR_EXIT NO_UNSET
     cd $db_dir
+    setopt ERR_EXIT NO_UNSET
     bundle exec ruby $db_dir/create_required_layers.rb \
                      $config/server.json               \
                      $config/setup.json
@@ -219,13 +225,17 @@ function update_osm_bounds()
 function update_modalities()
 {(
     local config=$CITYSDK_CONFIG_DIR/server.json
+    unsetopt ERR_EXIT NO_UNSET
     cd $db_dir
+    setopt ERR_EXIT NO_UNSET
     bundle exec ruby $db_dir/update_modalities.rb $config
 )}
 
 function ensure_turtle_prefixes()
 {(
+    unsetopt ERR_EXIT NO_UNSET
     cd $db_dir
+    setopt ERR_EXIT NO_UNSET
     bundle exec ruby $db_dir/ensure_turtle_prefixes.rb \
                      "dbname=$db_name"                 \
                      "$(config-setup admin.email)"

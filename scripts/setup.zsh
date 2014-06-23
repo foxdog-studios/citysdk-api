@@ -82,7 +82,9 @@ function install_aur_packages()
 
 function init_submodules()
 {(
+    unsetopt ERR_EXIT NO_UNSET
     cd $repo
+    setopt ERR_EXIT NO_UNSET
     git submodule init
     git submodule update
 )}

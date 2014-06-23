@@ -78,7 +78,7 @@ env.nginx_conf       = '/etc/nginx'
 env.nginx_log        = '/var/log/nginx'
 env.nodejs_dir       = '/opt/nodejs'
 env.nodejs_bin       = '/opt/nodejs/bin/node'
-env.nodejs_tag       = '0.10.25'
+env.nodejs_tag       = '0.10.29'
 env.osm2pgsql_tag    = '0.84.0'
 env.osm_data         = 'osm.pbf'
 env.passenger_group  = 'www-data'
@@ -341,6 +341,10 @@ def download_nodejs():
     ))
 
 
+def already_downloaded(path):
+    return run('[[ -d {} ]]'.format(quote(path)), warn_only=True).succeeded
+
+
 @task
 def install_nodejs():
     # remove old version
@@ -349,10 +353,6 @@ def install_nodejs():
         src=quote(env.nodejs_path),
         dst=quote(env.nodejs_dir)
     ))
-
-
-def already_downloaded(path):
-    return run('[[ -d {} ]]'.format(quote(path)), warn_only=True).succeeded
 
 
 # =============================================================================
@@ -990,10 +990,12 @@ set :user, '{user}'
 server '{host}', :app, :web, :primary => true
 '''[1:-1]
 
+
 @task
 def write_deploy_scripts():
     for app in env.apps.itervalues():
         write_deploy_script(app)
+
 
 def write_deploy_script(app):
     if not os.path.exists(app.local_deploy):
@@ -1005,6 +1007,7 @@ def write_deploy_script(app):
             host=env.host,
             user=env.deploy_user,
         ))
+
 
 @task
 def make_deploy_directories():
@@ -1073,10 +1076,12 @@ def check_deploy_directories():
 def deploy_all():
     return map(deploy, env.apps.itervalues())
 
+
 @task
 def copy_config():
     for app in env.apps.itervalues():
         write_conf_file(app.local_config, app.server_config)
+
 
 def write_conf_file(local_path, remote_path):
     remote_dir = posixpath.dirname(remote_path)
